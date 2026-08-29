@@ -22,4 +22,3 @@ tests/test_organizer_pipeline.py
 # 'python -m retrieval.build_dense_index'.
 models/
 artifacts/
-data/synthetic_catalog.jsonl

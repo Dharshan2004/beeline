@@ -204,7 +204,7 @@ class DenseIndexBuildTest(unittest.TestCase):
         metrics = self.manifest["metrics"]
 
         self.assertGreater(metrics["build_seconds"], 0)
-        self.assertGreater(metrics["artifact_bytes"], 0)
+        self.assertGreater(metrics["artifact_bytes_before_manifest"], 0)
         self.assertGreater(metrics["peak_rss_bytes"], 0)
 
     def test_artifact_loads_offline_without_network_access(self) -> None:

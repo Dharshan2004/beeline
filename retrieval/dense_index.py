@@ -136,7 +136,9 @@ def build(config: BuildConfig) -> dict:
             "products_per_second": (
                 round(len(products) / embed_seconds, 2) if embed_seconds else None
             ),
-            "artifact_bytes": directory_size_bytes(artifact_dir),
+            # Excludes the manifest itself, which cannot describe its own size.
+            # DenseIndex.load_metrics reports the true total.
+            "artifact_bytes_before_manifest": directory_size_bytes(artifact_dir),
             "peak_rss_bytes": peak_rss_bytes(),
         },
     }

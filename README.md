@@ -98,7 +98,7 @@ docs/baseline_results.json        reproducible weak-starter reference score
 starter/agent.py                  editable weak starter
 evaluator/local_evaluator.py      public-set simulator and scorer
 retrieval/                        Retrieval Routes and their local index artifacts
-tools/                            one-time model fetch and development helpers
+tools/                            one-time embedding model fetch
 docs/dense_index.md               dense index build, verification, and measured scale
 ```
 
