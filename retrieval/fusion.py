@@ -81,19 +81,53 @@ class FixedFusionPolicy:
         self,
         route_scores: Mapping[str, Sequence[tuple[str, float]]],
     ) -> list[str]:
+        normalized_routes = {
+            route_name: _normalized_scores(route_scores.get(route_name, ()))
+            for route_name in ROUTE_NAMES
+        }
         fused: dict[str, float] = {}
         for route_name in ROUTE_NAMES:
             weight = self.weights[route_name]
-            for identifier, normalized in _normalized_scores(
-                route_scores.get(route_name, ()),
-            ).items():
+            for identifier, normalized in normalized_routes[route_name].items():
                 fused[identifier] = fused.get(identifier, 0.0) + weight * normalized
-        return [
+        base_identifiers = set(normalized_routes["bm25"]) | set(
+            normalized_routes["dense"],
+        )
+        base_scores = {
+            identifier: (
+                self.weights["bm25"]
+                * normalized_routes["bm25"].get(identifier, 0.0)
+                + self.weights["dense"]
+                * normalized_routes["dense"].get(identifier, 0.0)
+            )
+            for identifier in base_identifiers
+        }
+        selected = [
             identifier
             for identifier, _score in sorted(
-                fused.items(),
+                base_scores.items(),
                 key=lambda item: (-item[1], item[0]),
             )[:self.candidate_limit]
+        ]
+        if len(selected) < self.candidate_limit:
+            selected_set = set(selected)
+            structured_additions = [
+                identifier
+                for identifier in normalized_routes["structured"]
+                if identifier not in selected_set
+            ]
+            structured_additions.sort(
+                key=lambda identifier: (-fused[identifier], identifier),
+            )
+            selected.extend(
+                structured_additions[:self.candidate_limit - len(selected)],
+            )
+        return [
+            identifier
+            for identifier in sorted(
+                selected,
+                key=lambda identifier: (-fused[identifier], identifier),
+            )
         ]
 
 

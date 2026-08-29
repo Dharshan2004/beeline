@@ -330,7 +330,7 @@ class CatalogRetrieval:
             for identifier in structured_ids
             if self._eligible(identifier, hard)
         }
-        if constraints and len(structured_scores) < route_limit:
+        if active and len(structured_scores) < route_limit:
             backfill_ids = (
                 sorted(hard_eligible)
                 if hard_eligible is not None

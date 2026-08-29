@@ -150,7 +150,10 @@ class Agent:
         active_evidence = [
             f"{constraint.attribute}: {', '.join(constraint.values)}"
             for constraint in state.constraints
-            if constraint.status == "active"
+            if (
+                constraint.status == "active"
+                and constraint.classification == "hard"
+            )
         ]
         if not active_evidence:
             return user_message
@@ -194,6 +197,12 @@ class Agent:
             route_limit=DENSE_CANDIDATE_DEPTH,
         )
         fused_candidates = self.fusion_policy.rank(route_scores)
+        if not fused_candidates:
+            fused_candidates = self.retrieval.recommend(
+                user_message,
+                state.constraints,
+                self.fusion_policy.candidate_limit,
+            )
         recommendation_limit = max(0, min(top_k, 10))
         recommendations = [
             {"parent_asin": parent_asin}

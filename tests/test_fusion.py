@@ -78,6 +78,22 @@ class FixedFusionPolicyTest(unittest.TestCase):
         self.assertEqual(ranked[0], "A00")
         self.assertEqual(ranked[-1], "A29")
 
+    def test_structured_preference_cannot_evict_an_admitted_base_candidate(self) -> None:
+        base_ids = [f"BASE{index:02d}" for index in range(30)]
+        ranked = FixedFusionPolicy().rank({
+            "structured": [
+                (f"SOFT{index:02d}", float(100 - index))
+                for index in range(10)
+            ],
+            "bm25": [
+                (identifier, float(30 - index))
+                for index, identifier in enumerate(base_ids)
+            ],
+            "dense": [],
+        })
+
+        self.assertEqual(set(ranked), set(base_ids))
+
     def test_baseline_cli_uses_the_official_evaluation_function(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)

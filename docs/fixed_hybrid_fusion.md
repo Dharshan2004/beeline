@@ -27,10 +27,16 @@ The default policy is `fixed-hybrid-v1`:
 | Evaluator recommendation depth | 10 |
 
 For each turn, finite scores within each route are min-max normalized. A
-non-empty constant-score route assigns `1.0` to all of its candidates; an empty
+non-empty constant nonzero route assigns `1.0` to all candidates, while an
+all-zero route keeps `0.0` because it carries no positive evidence. An empty
 route contributes nothing. Missing candidates receive no contribution from that
-route. Weighted scores are summed and ties are resolved by `parent_asin`, making
-the ordering deterministic for fixed route outputs.
+route.
+
+BM25 and dense candidates establish stable base membership in the 30-product
+Candidate Pool. Structured evidence can reorder those products and add exact
+matches when fewer than 30 base candidates exist, but cannot evict an admitted
+base product. Weighted-score ties are resolved by `parent_asin`, making the
+ordering deterministic for fixed route outputs.
 
 These weights are a transparent fixed starting point, not a learned or tuned
 claim. Later slices train and validate the Fusion Policy on the allowed
@@ -68,11 +74,11 @@ and evaluator scoring code. The Slice 05 baseline was captured at commit
 | Metric | Slice 05 | Slice 06 | Absolute change |
 | --- | ---: | ---: | ---: |
 | Hit Rate@10 | 0.560000 | 0.530000 | -0.030000 |
-| MRR | 0.383780 | 0.370480 | -0.013300 |
+| MRR | 0.383780 | 0.370536 | -0.013244 |
 | Mean turns to conversion | 6.725 | 6.975 | +0.250 |
 | Efficiency | 0.427500 | 0.402500 | -0.025000 |
-| TechnicalScore | 0.480634 | 0.456644 | -0.023990 |
-| Evaluator wall time | 139.00 s | 163.70 s | +24.70 s |
+| TechnicalScore | 0.480634 | 0.456661 | -0.023973 |
+| Evaluator wall time | 139.00 s | 164.62 s | +25.62 s |
 
 Scenario Hit Rate@10 changed from `0.600000` to `0.600000` for Boundary,
 `0.650000` to `0.625000` for Browsing, `0.512500` to `0.475000` for Buying,
