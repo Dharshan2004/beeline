@@ -85,15 +85,22 @@ class Agent:
             raise RuntimeError("reset must be called before respond")
         unique_terms = list(dict.fromkeys(_terms(user_message)))[:40]
         expression = " OR ".join(f'"{term}"' for term in unique_terms)
-        if not expression:
-            recommendations: list[dict] = []
-        else:
+        recommendations: list[dict] = []
+        if expression and top_k > 0:
             rows = self.connection.execute(
                 "SELECT parent_asin FROM products WHERE products MATCH ? "
-                "ORDER BY bm25(products, 0.0, 6.0, 4.0, 2.5, 2.5, 1.5, 1.0) LIMIT ?",
-                (expression, top_k),
-            ).fetchall()
-            recommendations = [{"parent_asin": str(row[0])} for row in rows]
+                "ORDER BY bm25(products, 0.0, 6.0, 4.0, 2.5, 2.5, 1.5, 1.0)",
+                (expression,),
+            )
+            seen: set[str] = set()
+            for row in rows:
+                parent_asin = str(row[0])
+                if parent_asin in seen:
+                    continue
+                seen.add(parent_asin)
+                recommendations.append({"parent_asin": parent_asin})
+                if len(recommendations) >= top_k:
+                    break
         return {
             "message": "Here are the closest matches I found.",
             "ask_attribute": None,
