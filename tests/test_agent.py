@@ -58,6 +58,174 @@ class AgentContractTest(unittest.TestCase):
         response = agent.respond("ready", "blue shoe", 1, 10)
         self.assertEqual(response["recommendations"], [{"parent_asin": "A"}])
 
+    def test_hard_constraint_has_complete_provenance_and_persists(self) -> None:
+        self.write_catalog([
+            {
+                "parent_asin": "A",
+                "title": "Everyday walking shoe",
+                "features": ["cotton"],
+            },
+            {
+                "parent_asin": "B",
+                "title": "Everyday walking shoe",
+                "features": ["leather"],
+            },
+        ])
+        agent = Agent(self.catalog_path)
+        agent.reset("session", {})
+
+        first_response = agent.respond(
+            "session",
+            "I need Cotton walking shoes.",
+            1,
+            10,
+        )
+        second_response = agent.respond(
+            "session",
+            "Show me the walking shoes again.",
+            2,
+            10,
+        )
+
+        expected_recommendations = [{"parent_asin": "A"}]
+        self.assertEqual(first_response["recommendations"], expected_recommendations)
+        self.assertEqual(second_response["recommendations"], expected_recommendations)
+        self.assertEqual(agent.get_constraint_state("session"), [{
+            "attribute": "material",
+            "raw_phrase": "Cotton",
+            "normalized_value": "cotton",
+            "classification": "hard",
+            "source_turn": 1,
+            "confidence": 0.95,
+            "status": "active",
+        }])
+
+    def test_soft_preference_changes_order_without_excluding_candidates(self) -> None:
+        self.write_catalog([
+            {
+                "parent_asin": "A_BLACK",
+                "title": "Everyday walking shoe",
+                "features": ["black"],
+            },
+            {
+                "parent_asin": "B_BLUE",
+                "title": "Everyday walking shoe",
+                "features": ["blue"],
+            },
+        ])
+        agent = Agent(self.catalog_path)
+        agent.reset("with-preference", {})
+        agent.reset("without-preference", {})
+
+        initial_preference = agent.respond(
+            "with-preference",
+            "I prefer blue.",
+            1,
+            10,
+        )
+        preferred = agent.respond(
+            "with-preference",
+            "Show me an everyday walking shoe.",
+            2,
+            10,
+        )
+        baseline = agent.respond(
+            "without-preference",
+            "Show me an everyday walking shoe.",
+            1,
+            10,
+        )
+
+        self.assertEqual(
+            [item["parent_asin"] for item in baseline["recommendations"]],
+            ["A_BLACK", "B_BLUE"],
+        )
+        self.assertEqual(
+            [item["parent_asin"] for item in initial_preference["recommendations"]],
+            ["B_BLUE", "A_BLACK"],
+        )
+        self.assertEqual(
+            [item["parent_asin"] for item in preferred["recommendations"]],
+            ["B_BLUE", "A_BLACK"],
+        )
+
+    def test_unsupported_value_does_not_corrupt_constraint_state(self) -> None:
+        self.write_catalog([
+            {"parent_asin": "A", "title": "Cotton walking shoe"},
+            {"parent_asin": "B", "title": "Leather walking shoe"},
+        ])
+        agent = Agent(self.catalog_path)
+        agent.reset("session", {})
+        agent.respond("session", "I need cotton.", 1, 10)
+        original_state = agent.get_constraint_state("session")
+
+        response = agent.respond("session", "I need unobtainium.", 2, 10)
+
+        self.assertEqual(agent.get_constraint_state("session"), original_state)
+        self.assertEqual(response["recommendations"], [{"parent_asin": "A"}])
+
+    def test_constraint_improves_small_catalog_evaluator_ranking(self) -> None:
+        class ConstraintBlindAgent(Agent):
+            def _extract_constraint(self, user_message: str, turn: int):
+                return None
+
+            def respond(
+                self,
+                session_id: str,
+                user_message: str,
+                turn: int,
+                top_k: int,
+            ) -> dict:
+                return super().respond(
+                    session_id,
+                    user_message.replace("cotton", ""),
+                    turn,
+                    top_k,
+                )
+
+        target = {
+            "parent_asin": "TARGET",
+            "title": "Plain footwear",
+            "features": ["cotton"],
+            "categories": ["Clothing", "Shoes"],
+        }
+        decoys = [
+            {
+                "parent_asin": f"DECOY_{index:02d}",
+                "title": "Shoes key requirement",
+                "features": ["leather"],
+                "categories": ["Clothing", "Shoes"],
+            }
+            for index in range(12)
+        ]
+        self.write_catalog([target, *decoys])
+        samples = [{
+            "sample_id": "constraint_0001",
+            "scenario_type": "buying",
+            "user_profile": {"summary": "Prefers practical shoes"},
+            "ground_truth": {"parent_asin": "TARGET"},
+        }]
+        catalog_ids, categories, products = catalog_index(self.catalog_path)
+
+        constrained_result = evaluate(
+            Agent(self.catalog_path),
+            samples,
+            catalog_ids,
+            categories,
+            products,
+        )
+        baseline_result = evaluate(
+            ConstraintBlindAgent(self.catalog_path),
+            samples,
+            catalog_ids,
+            categories,
+            products,
+        )
+
+        self.assertEqual(constrained_result["hit_rate_at_10"], 1.0)
+        self.assertEqual(baseline_result["hit_rate_at_10"], 0.0)
+        self.assertGreater(constrained_result["mrr"], baseline_result["mrr"])
+
     def test_empty_input_and_empty_candidate_pool_return_deterministic_responses(self) -> None:
         self.write_catalog([{"parent_asin": "A", "title": "Blue shoe"}])
         agent = Agent(self.catalog_path)
