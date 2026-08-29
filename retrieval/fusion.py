@@ -20,7 +20,7 @@ class FusionPolicy(Protocol):
     ) -> list[str]: ...
 
 
-def _normalized_scores(candidates: Sequence[tuple[str, float]]) -> dict[str, float]:
+def _best_scores(candidates: Sequence[tuple[str, float]]) -> dict[str, float]:
     best: dict[str, float] = {}
     for parent_asin, raw_score in candidates:
         identifier = str(parent_asin)
@@ -29,12 +29,18 @@ def _normalized_scores(candidates: Sequence[tuple[str, float]]) -> dict[str, flo
             continue
         if identifier not in best or score > best[identifier]:
             best[identifier] = score
+    return best
+
+
+def _normalized_scores(candidates: Sequence[tuple[str, float]]) -> dict[str, float]:
+    best = _best_scores(candidates)
     if not best:
         return {}
     low = min(best.values())
     high = max(best.values())
     if high == low:
-        return {identifier: 1.0 for identifier in best}
+        normalized = 0.0 if high == 0.0 else 1.0
+        return {identifier: normalized for identifier in best}
     scale = high - low
     return {
         identifier: (score - low) / scale
@@ -108,14 +114,7 @@ class SingleRoutePolicy:
         self,
         route_scores: Mapping[str, Sequence[tuple[str, float]]],
     ) -> list[str]:
-        best: dict[str, float] = {}
-        for identifier, raw_score in route_scores.get(self.route_name, ()):
-            score = float(raw_score)
-            identifier = str(identifier)
-            if identifier and isfinite(score) and (
-                identifier not in best or score > best[identifier]
-            ):
-                best[identifier] = score
+        best = _best_scores(route_scores.get(self.route_name, ()))
         return [
             identifier
             for identifier, _score in sorted(

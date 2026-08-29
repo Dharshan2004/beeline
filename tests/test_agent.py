@@ -187,6 +187,22 @@ class AgentContractTest(unittest.TestCase):
             "last_candidate_count": 1,
         })
 
+    def test_dense_query_includes_accumulated_active_constraint_state(self) -> None:
+        self.write_catalog([
+            {"parent_asin": "A", "title": "Cotton walking shoe"},
+            {"parent_asin": "B", "title": "Leather walking shoe"},
+        ])
+        route = self.RecordingDenseRoute([("A", 0.9)])
+        agent = Agent(self.catalog_path, dense_route=route)
+        agent.reset("session", {})
+        agent.respond("session", "I need cotton.", 1, 10)
+
+        agent.respond("session", "Show me options.", 2, 10)
+
+        second_query, depth = route.queries[1]
+        self.assertIn("material: cotton", second_query)
+        self.assertEqual(depth, 100)
+
     def test_missing_dense_assets_disable_route_without_network_or_invalid_output(self) -> None:
         self.write_catalog([{"parent_asin": "A", "title": "Blue running shoe"}])
         absent_model = Path(self.directory.name) / "absent-model"

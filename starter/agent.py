@@ -146,6 +146,19 @@ class Agent:
         self._last_asked_attributes[session_id] = None
         return None
 
+    def _dense_query(self, user_message: str, state: ConstraintState) -> str:
+        active_evidence = [
+            f"{constraint.attribute}: {', '.join(constraint.values)}"
+            for constraint in state.constraints
+            if constraint.status == "active"
+        ]
+        if not active_evidence:
+            return user_message
+        return (
+            f"{user_message.strip()}\n"
+            f"Active constraints: {'; '.join(active_evidence)}"
+        )
+
     def respond(
         self,
         session_id: str,
@@ -169,7 +182,7 @@ class Agent:
 
         try:
             dense_candidates = self.dense_route.search(
-                user_message,
+                self._dense_query(user_message, state),
                 DENSE_CANDIDATE_DEPTH,
             )
         except Exception:  # noqa: BLE001 - an optional route cannot invalidate a turn

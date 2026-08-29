@@ -41,17 +41,17 @@ development split.
 The evaluator uses the default fixed policy when no switch is supplied:
 
 ```bash
-python3 -m evaluator.local_evaluator --retrieval-policy fixed
+python3 -m tools.evaluate_retrieval --policy fixed
 ```
 
 The same command and output schema can run fixed Reciprocal Rank Fusion or any
 single route:
 
 ```bash
-python3 -m evaluator.local_evaluator --retrieval-policy rrf
-python3 -m evaluator.local_evaluator --retrieval-policy structured
-python3 -m evaluator.local_evaluator --retrieval-policy bm25
-python3 -m evaluator.local_evaluator --retrieval-policy dense
+python3 -m tools.evaluate_retrieval --policy rrf
+python3 -m tools.evaluate_retrieval --policy structured
+python3 -m tools.evaluate_retrieval --policy bm25
+python3 -m tools.evaluate_retrieval --policy dense
 ```
 
 Each result records the selected baseline plus the policy version, route depth,
@@ -72,7 +72,7 @@ and evaluator scoring code. The Slice 05 baseline was captured at commit
 | Mean turns to conversion | 6.725 | 6.975 | +0.250 |
 | Efficiency | 0.427500 | 0.402500 | -0.025000 |
 | TechnicalScore | 0.480634 | 0.456644 | -0.023990 |
-| Evaluator wall time | 139.00 s | 167.42 s | +28.42 s |
+| Evaluator wall time | 139.00 s | 163.70 s | +24.70 s |
 
 Scenario Hit Rate@10 changed from `0.600000` to `0.600000` for Boundary,
 `0.650000` to `0.625000` for Browsing, `0.512500` to `0.475000` for Buying,
@@ -92,8 +92,8 @@ selection and regression guardrails remain work for Slices 10 and 11.
 Reproduction commands:
 
 ```bash
-/usr/bin/time -p python3 -m evaluator.local_evaluator \
-  --retrieval-policy fixed \
+/usr/bin/time -p python3 -m tools.evaluate_retrieval \
+  --policy fixed \
   --output results.json
 python3 -m unittest discover -v
 ```

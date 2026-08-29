@@ -358,7 +358,7 @@ class CatalogRetrieval:
         ]
         terms.extend(
             term
-            for constraint in active
+            for constraint in hard
             for value in constraint.values
             for variant in value_variants(value)
             for term in query_terms(variant)

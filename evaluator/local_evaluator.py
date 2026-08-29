@@ -9,7 +9,6 @@ import uuid
 from collections import defaultdict
 from pathlib import Path
 
-from retrieval.fusion import POLICY_NAMES
 from starter.agent import Agent
 
 
@@ -301,25 +300,10 @@ def main() -> None:
     parser.add_argument("--catalog", default="data/catalog.jsonl")
     parser.add_argument("--dataset", default="data/public_set.jsonl")
     parser.add_argument("--output", default="results.json")
-    parser.add_argument(
-        "--retrieval-policy",
-        choices=POLICY_NAMES,
-        default="fixed",
-        help="fixed hybrid policy or a transparent RRF/single-route baseline",
-    )
     args = parser.parse_args()
     samples = load_jsonl(args.dataset)
     catalog_ids, categories, products = catalog_index(args.catalog)
-    agent = Agent(args.catalog, fusion_policy=args.retrieval_policy)
-    result = evaluate(
-        agent,
-        samples,
-        catalog_ids,
-        categories,
-        products,
-    )
-    result["retrieval_policy"] = args.retrieval_policy
-    result["retrieval_configuration"] = agent.get_retrieval_configuration()
+    result = evaluate(Agent(args.catalog), samples, catalog_ids, categories, products)
     Path(args.output).write_text(json.dumps(result, indent=2) + "\n", encoding="utf-8")
     print(json.dumps({key: value for key, value in result.items() if key != "sessions"}, indent=2))
 

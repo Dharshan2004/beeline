@@ -145,9 +145,10 @@ The default policy min-max normalizes the three route scores per turn, combines
 them with fixed weights (`structured=0.15`, `bm25=0.55`, `dense=0.30`), and
 narrows the union to 30 candidates before returning at most ten. Constant-score
 and missing routes have deterministic behavior. Run transparent baselines
-through the same evaluator command with `--retrieval-policy rrf`, `structured`,
-`bm25`, or `dense`. See `docs/fixed_hybrid_fusion.md` for the exact policy and
-commands.
+through the same official-scoring wrapper with
+`python3 -m tools.evaluate_retrieval --policy <name>`. The official evaluator
+remains unchanged and uses the fixed policy through the default `Agent`. See
+`docs/fixed_hybrid_fusion.md` for the exact policy and commands.
 
 ### Reproducibility and external assets
 

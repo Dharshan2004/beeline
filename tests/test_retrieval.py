@@ -134,6 +134,26 @@ class CatalogRetrievalTest(unittest.TestCase):
         self.assertIn("BM25", dict(scores["bm25"]))
         self.assertEqual(scores["dense"], [("DENSE", 0.95)])
 
+    def test_soft_preference_does_not_remove_a_base_bm25_candidate(self) -> None:
+        self.write_catalog([
+            {"parent_asin": "BASE", "title": "Everyday walking shoe"},
+            {"parent_asin": "SOFT", "title": "Blue blue blue accessory"},
+        ])
+        retrieval = CatalogRetrieval(self.catalog_path)
+
+        base = retrieval.hybrid_route_scores("walking shoe", [], [], route_limit=1)
+        preferred = retrieval.hybrid_route_scores(
+            "walking shoe",
+            [constraint("color", ("blue",), "soft")],
+            [],
+            route_limit=1,
+        )
+
+        self.assertLessEqual(
+            {identifier for identifier, _score in base["bm25"]},
+            {identifier for identifier, _score in preferred["bm25"]},
+        )
+
 
 if __name__ == "__main__":
     unittest.main()
