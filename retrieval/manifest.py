@@ -7,19 +7,22 @@ from pathlib import Path
 from retrieval.product_text import product_text
 
 
-ARTIFACT_VERSION = 1
+ARTIFACT_VERSION = 2
 MANIFEST_NAME = "manifest.json"
 _CHUNK = 1024 * 1024
 
-# Weight files are large and are covered by the tokenizer/config hashes plus the
-# recorded revision; hashing every shard on each load would dominate startup, so
-# the model fingerprint covers the files that actually change behavior.
-MODEL_FINGERPRINT_FILES = (
+# The fingerprint must bind every file that can change the model's output. The
+# downloaded revision is useful provenance, but it is not a substitute for
+# checking the exact weights present on disk.
+MODEL_FINGERPRINT_PATTERNS = (
     "config.json",
     "tokenizer.json",
     "tokenizer_config.json",
     "special_tokens_map.json",
     "vocab.txt",
+    "FETCHED.json",
+    "*.safetensors",
+    "pytorch_model*.bin",
 )
 
 
@@ -56,11 +59,34 @@ def catalog_content_sha256(products: list[dict]) -> str:
 def model_fingerprint(model_dir: str | Path) -> str:
     directory = Path(model_dir)
     digest = hashlib.sha256()
-    for name in MODEL_FINGERPRINT_FILES:
-        candidate = directory / name
-        if not candidate.is_file():
-            continue
+    candidates = {
+        candidate.relative_to(directory).as_posix(): candidate
+        for pattern in MODEL_FINGERPRINT_PATTERNS
+        for candidate in directory.glob(pattern)
+        if candidate.is_file()
+    }
+    for name, candidate in sorted(candidates.items()):
         digest.update(name.encode("utf-8"))
+        digest.update(b"\0")
+        digest.update(file_sha256(candidate).encode("ascii"))
+        digest.update(b"\n")
+    return digest.hexdigest()
+
+
+def model_provenance(model_dir: str | Path) -> dict:
+    fetched = Path(model_dir) / "FETCHED.json"
+    if not fetched.is_file():
+        return {}
+    return json.loads(fetched.read_text(encoding="utf-8"))
+
+
+def directory_sha256(path: str | Path) -> str:
+    """Checksum a persisted directory independently of filesystem walk order."""
+    directory = Path(path)
+    digest = hashlib.sha256()
+    for candidate in sorted(item for item in directory.rglob("*") if item.is_file()):
+        relative = candidate.relative_to(directory).as_posix()
+        digest.update(relative.encode("utf-8"))
         digest.update(b"\0")
         digest.update(file_sha256(candidate).encode("ascii"))
         digest.update(b"\n")
@@ -163,6 +189,15 @@ def verify_manifest(
                 f"{model.get('identity')!r} fingerprint {str(model.get('fingerprint_sha256'))[:12]}… "
                 f"but {model_dir} fingerprints as {actual_model[:12]}…"
             )
+        provenance = model_provenance(model_dir)
+        for field in ("identity", "revision"):
+            actual_value = provenance.get(field)
+            if actual_value is not None and model.get(field) != actual_value:
+                problems.append(
+                    f"embedding model {field} mismatch: artifact records "
+                    f"{model.get(field)!r}, but {model_dir / 'FETCHED.json'} records "
+                    f"{actual_value!r}"
+                )
 
     if embedding_dimensions is not None and model.get("dimensions") != embedding_dimensions:
         problems.append(

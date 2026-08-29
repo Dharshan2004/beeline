@@ -4,18 +4,15 @@ import os
 from pathlib import Path
 
 
-DEFAULT_MODEL_IDENTITY = "BAAI/bge-small-en-v1.5"
-DEFAULT_MODEL_DIR = Path("models") / "BAAI__bge-small-en-v1.5"
+DEFAULT_MODEL_IDENTITY = "sentence-transformers/all-MiniLM-L6-v2"
+DEFAULT_MODEL_DIR = Path("models") / "sentence-transformers__all-MiniLM-L6-v2"
 
-# bge-small-en-v1.5 reads the [CLS] token and expects L2-normalized vectors.
-POOLING = "cls"
+# all-MiniLM-L6-v2 uses attention-mask-aware mean pooling and normalized vectors.
+POOLING = "mean"
 NORMALIZE = True
 MAX_SEQUENCE_LENGTH = 256
 
-# Asymmetric retrieval: passages are embedded bare, queries carry this prefix.
-# Recorded in the manifest so the live Retrieval Route cannot drift from the
-# convention the index was built under.
-QUERY_PREFIX = "Represent this sentence for searching relevant passages: "
+QUERY_PREFIX = ""
 
 
 class ModelUnavailable(RuntimeError):
@@ -88,7 +85,9 @@ class LocalEmbedder:
                     max_length=self.max_sequence_length,
                     return_tensors="pt",
                 )
-                output = self.model(**encoded).last_hidden_state[:, 0]
+                hidden = self.model(**encoded).last_hidden_state
+                mask = encoded["attention_mask"].unsqueeze(-1)
+                output = (hidden * mask).sum(dim=1) / mask.sum(dim=1).clamp(min=1)
                 if NORMALIZE:
                     output = torch.nn.functional.normalize(output, p=2, dim=1)
                 chunks.append(output.to(torch.float32).numpy())

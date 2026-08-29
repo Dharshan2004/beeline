@@ -1,15 +1,35 @@
 from __future__ import annotations
 
+import importlib.util
 import json
 import socket
 import tempfile
 import unittest
 from pathlib import Path
+from types import SimpleNamespace
 from unittest.mock import patch
 
-from retrieval.dense_index import BuildConfig, DenseIndex, build, load_catalog
+from retrieval.dense_index import (
+    BuildConfig,
+    DenseIndex,
+    IDS_NAME,
+    VECTOR_STORE_DIRECTORY,
+    _write_vector_store,
+    _verify_artifact_files,
+    _verify_loaded_collection,
+    build,
+    load_catalog,
+)
 from retrieval.embedder import DEFAULT_MODEL_DIR, ModelUnavailable
-from retrieval.manifest import ARTIFACT_VERSION, DenseIndexMismatch
+from retrieval.manifest import (
+    ARTIFACT_VERSION,
+    DenseIndexMismatch,
+    directory_sha256,
+    file_sha256,
+    model_fingerprint,
+    verify_manifest,
+    write_manifest,
+)
 from retrieval.product_text import product_text
 
 
@@ -18,6 +38,10 @@ model_available = MODEL_DIR.is_dir()
 requires_model = unittest.skipUnless(
     model_available,
     f"bundled embedding model missing at {MODEL_DIR}; run 'python -m tools.fetch_model'",
+)
+requires_qdrant = unittest.skipUnless(
+    importlib.util.find_spec("qdrant_client") is not None,
+    "qdrant-client is not installed",
 )
 
 
@@ -118,6 +142,191 @@ class MissingModelTest(unittest.TestCase):
                 )
 
 
+class IntegrityVerificationTest(unittest.TestCase):
+    def setUp(self) -> None:
+        self.directory = tempfile.TemporaryDirectory()
+        self.addCleanup(self.directory.cleanup)
+        self.root = Path(self.directory.name)
+
+    def test_model_fingerprint_detects_weight_and_revision_changes(self) -> None:
+        model = self.root / "model"
+        model.mkdir()
+        (model / "config.json").write_text('{"hidden_size": 2}', encoding="utf-8")
+        (model / "FETCHED.json").write_text(
+            '{"identity": "example/model", "revision": "first"}', encoding="utf-8"
+        )
+        weights = model / "model.safetensors"
+        weights.write_bytes(b"first weights")
+        original = model_fingerprint(model)
+
+        weights.write_bytes(b"second weights")
+        self.assertNotEqual(model_fingerprint(model), original)
+
+        weights.write_bytes(b"first weights")
+        (model / "FETCHED.json").write_text(
+            '{"identity": "example/model", "revision": "second"}', encoding="utf-8"
+        )
+        self.assertNotEqual(model_fingerprint(model), original)
+
+    def test_manifest_model_identity_must_match_fetched_provenance(self) -> None:
+        catalog = self.root / "catalog.jsonl"
+        write_catalog(catalog, CATALOG_ROWS[:1])
+        model = self.root / "model"
+        model.mkdir()
+        (model / "model.safetensors").write_bytes(b"test weights")
+        (model / "FETCHED.json").write_text(
+            '{"identity": "expected/model", "revision": "abc123"}',
+            encoding="utf-8",
+        )
+        manifest = {
+            "artifact_version": ARTIFACT_VERSION,
+            "catalog": {"file_sha256": file_sha256(catalog)},
+            "embedding_model": {
+                "identity": "wrong/model",
+                "revision": "abc123",
+                "fingerprint_sha256": model_fingerprint(model),
+            },
+        }
+
+        with self.assertRaisesRegex(DenseIndexMismatch, "identity mismatch"):
+            verify_manifest(manifest, catalog, model)
+
+    def test_artifact_file_verification_rejects_changed_identifier_map(self) -> None:
+        artifact = self.root / "artifact"
+        store = artifact / "qdrant"
+        store.mkdir(parents=True)
+        ids = artifact / "ids.json"
+        ids.write_text('["A"]\n', encoding="utf-8")
+        (store / "storage.db").write_bytes(b"vector store")
+        manifest = {
+            "vector_store": {
+                "directory": "qdrant",
+                "directory_sha256": directory_sha256(store),
+                "ids_file": "ids.json",
+                "ids_sha256": file_sha256(ids),
+            }
+        }
+        _verify_artifact_files(manifest, artifact)
+
+        ids.write_text('["B"]\n', encoding="utf-8")
+        with self.assertRaisesRegex(DenseIndexMismatch, "identifier map checksum"):
+            _verify_artifact_files(manifest, artifact)
+
+    def test_artifact_file_verification_rejects_changed_vector_store(self) -> None:
+        artifact = self.root / "artifact"
+        store = artifact / "qdrant"
+        store.mkdir(parents=True)
+        ids = artifact / "ids.json"
+        ids.write_text('["A"]\n', encoding="utf-8")
+        stored_vector = store / "storage.db"
+        stored_vector.write_bytes(b"first")
+        manifest = {
+            "vector_store": {
+                "directory": "qdrant",
+                "directory_sha256": directory_sha256(store),
+                "ids_file": "ids.json",
+                "ids_sha256": file_sha256(ids),
+            }
+        }
+
+        stored_vector.write_bytes(b"corrupt")
+        with self.assertRaisesRegex(DenseIndexMismatch, "vector store checksum"):
+            _verify_artifact_files(manifest, artifact)
+
+    def test_loaded_collection_must_match_manifest_shape_and_count(self) -> None:
+        client = SimpleNamespace(
+            get_collection=lambda _: SimpleNamespace(
+                config=SimpleNamespace(
+                    params=SimpleNamespace(vectors=SimpleNamespace(size=128))
+                ),
+                points_count=2,
+            )
+        )
+        manifest = {
+            "embedding_model": {"dimensions": 384},
+            "catalog": {"product_count": 3},
+        }
+
+        with self.assertRaisesRegex(
+            DenseIndexMismatch,
+            "(?s)embedding dimensions mismatch.*vector count mismatch",
+        ):
+            _verify_loaded_collection(client, manifest, ["A", "B"])
+
+    def test_failed_staged_build_preserves_previous_artifact(self) -> None:
+        artifact = self.root / "artifact"
+        artifact.mkdir()
+        previous_manifest = artifact / "manifest.json"
+        previous_manifest.write_text('{"artifact_version": 1}\n', encoding="utf-8")
+        config = BuildConfig(
+            catalog_path=self.root / "catalog.jsonl",
+            artifact_dir=artifact,
+            model_dir=self.root / "model",
+        )
+
+        def fail_after_partial_write(_: BuildConfig, staging_dir: Path) -> dict:
+            (staging_dir / "partial").write_text("incomplete", encoding="utf-8")
+            raise RuntimeError("simulated build interruption")
+
+        with (
+            patch("retrieval.dense_index._build_into", side_effect=fail_after_partial_write),
+            self.assertRaisesRegex(RuntimeError, "simulated build interruption"),
+        ):
+            build(config)
+
+        self.assertEqual(
+            previous_manifest.read_text(encoding="utf-8"),
+            '{"artifact_version": 1}\n',
+        )
+        self.assertEqual(list(self.root.glob(".artifact.build-*")), [])
+
+    @requires_qdrant
+    def test_real_qdrant_artifact_remains_verifiable_across_reloads(self) -> None:
+        import numpy
+
+        catalog = self.root / "catalog.jsonl"
+        write_catalog(catalog, CATALOG_ROWS[:2])
+        model = self.root / "model"
+        model.mkdir()
+        (model / "config.json").write_text('{"hidden_size": 3}', encoding="utf-8")
+        (model / "model.safetensors").write_bytes(b"test weights")
+        artifact = self.root / "artifact"
+        artifact.mkdir()
+        identifiers = ["B0000000A1", "B0000000C1"]
+        (artifact / IDS_NAME).write_text(json.dumps(identifiers) + "\n", encoding="utf-8")
+        _write_vector_store(
+            artifact,
+            identifiers,
+            numpy.asarray([[1.0, 0.0, 0.0], [0.0, 1.0, 0.0]], dtype=numpy.float32),
+        )
+        manifest = {
+            "artifact_version": ARTIFACT_VERSION,
+            "catalog": {
+                "file_sha256": file_sha256(catalog),
+                "content_sha256": "unused because file checksum matches",
+                "product_count": 2,
+            },
+            "embedding_model": {
+                "fingerprint_sha256": model_fingerprint(model),
+                "dimensions": 3,
+            },
+            "vector_store": {
+                "directory": VECTOR_STORE_DIRECTORY,
+                "directory_sha256": directory_sha256(
+                    artifact / VECTOR_STORE_DIRECTORY
+                ),
+                "ids_file": IDS_NAME,
+                "ids_sha256": file_sha256(artifact / IDS_NAME),
+            },
+        }
+        write_manifest(artifact, manifest)
+
+        with DenseIndex(artifact, catalog, model) as index:
+            self.assertEqual(index.dimensions, 3)
+        with DenseIndex(artifact, catalog, model) as index:
+            self.assertEqual(index.identifiers, identifiers)
+
+
 @requires_model
 class DenseIndexBuildTest(unittest.TestCase):
     """Covers the Slice 04 acceptance criteria against a small fixed catalog."""
@@ -194,7 +403,10 @@ class DenseIndexBuildTest(unittest.TestCase):
         self.assertEqual(manifest["catalog"]["product_count"], len(CATALOG_ROWS))
         self.assertEqual(len(manifest["catalog"]["file_sha256"]), 64)
         self.assertEqual(len(manifest["catalog"]["content_sha256"]), 64)
-        self.assertEqual(manifest["embedding_model"]["identity"], "BAAI/bge-small-en-v1.5")
+        self.assertEqual(
+            manifest["embedding_model"]["identity"],
+            "sentence-transformers/all-MiniLM-L6-v2",
+        )
         self.assertEqual(manifest["embedding_model"]["dimensions"], 384)
         self.assertEqual(len(manifest["embedding_model"]["fingerprint_sha256"]), 64)
         self.assertIn("text_template_version", manifest["build_config"])
