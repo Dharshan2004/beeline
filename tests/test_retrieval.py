@@ -154,6 +154,66 @@ class CatalogRetrievalTest(unittest.TestCase):
             {identifier for identifier, _score in preferred["bm25"]},
         )
 
+    def test_structured_route_keeps_every_member_of_a_truncated_tie_group(self) -> None:
+        # Regression: on the public set, 145 products tied on structured score
+        # and the route cut the ground-truth product purely by ASIN order.
+        self.write_catalog([
+            {
+                "parent_asin": f"A{index:02d}",
+                "title": "Cotton slipper house shoe",
+            }
+            for index in range(7)
+        ] + [
+            {"parent_asin": "ZZ_TARGET", "title": "Cotton slipper house shoe"},
+        ])
+        retrieval = CatalogRetrieval(self.catalog_path)
+
+        scores = retrieval.hybrid_route_scores(
+            "cotton slipper",
+            [constraint("material", ("cotton",), "hard")],
+            [],
+            route_limit=5,
+        )
+
+        structured = dict(scores["structured"])
+        self.assertIn("ZZ_TARGET", structured)
+        tied_score = structured["ZZ_TARGET"]
+        self.assertEqual(
+            {identifier for identifier, score in structured.items() if score == tied_score},
+            {*(f"A{index:02d}" for index in range(7)), "ZZ_TARGET"},
+        )
+
+    def test_structured_membership_is_invariant_to_asin_spelling(self) -> None:
+        # Regression: whether a product kept its structured evidence depended
+        # on where its ASIN sorted inside a tied score group.
+        def structured_for(target_asin: str) -> set[str]:
+            self.write_catalog([
+                {
+                    "parent_asin": f"M{index:02d}",
+                    "title": "Cotton slipper house shoe",
+                }
+                for index in range(6)
+            ] + [
+                {"parent_asin": target_asin, "title": "Cotton slipper house shoe"},
+            ])
+            retrieval = CatalogRetrieval(self.catalog_path)
+            scores = retrieval.hybrid_route_scores(
+                "cotton slipper",
+                [constraint("material", ("cotton",), "hard")],
+                [],
+                route_limit=4,
+            )
+            return {identifier for identifier, _score in scores["structured"]}
+
+        first = structured_for("AA_TARGET")
+        last = structured_for("ZZ_TARGET")
+        self.assertIn("AA_TARGET", first)
+        self.assertIn("ZZ_TARGET", last)
+        self.assertEqual(
+            {identifier for identifier in first if not identifier.endswith("_TARGET")},
+            {identifier for identifier in last if not identifier.endswith("_TARGET")},
+        )
+
 
 if __name__ == "__main__":
     unittest.main()

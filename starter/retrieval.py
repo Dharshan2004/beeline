@@ -344,6 +344,14 @@ class CatalogRetrieval:
                     break
         structured = list(structured_scores.items())
         structured.sort(key=lambda item: (-item[1], item[0]))
+        if len(structured) > route_limit:
+            # Never split a tied score group: cutting ties by ASIN order would
+            # make route membership, and therefore fused evidence, arbitrary.
+            cutoff_score = structured[route_limit - 1][1]
+            end = route_limit
+            while end < len(structured) and structured[end][1] == cutoff_score:
+                end += 1
+            structured = structured[:end]
 
         inactive_terms = {
             term
@@ -380,7 +388,7 @@ class CatalogRetrieval:
             if len(dense) >= route_limit:
                 break
         return {
-            "structured": structured[:route_limit],
+            "structured": structured,
             "bm25": bm25,
             "dense": dense,
         }

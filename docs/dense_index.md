@@ -23,6 +23,36 @@ candidate count. These operational values let development and evaluation tooling
 measure the route without changing the official response schema. Times use the
 process monotonic performance clock and are reported in seconds.
 
+## Required preflight before a scored run
+
+The dense route is deliberately fail-open: an unavailable dependency or asset
+does not invalidate the Agent response, but it does mean the evaluation is no
+longer measuring the intended three-route system. Run this preflight with the
+exact Python interpreter that will launch the evaluator:
+
+```bash
+.venv/bin/python - <<'PY'
+from starter.agent import Agent
+
+agent = Agent("data/catalog.jsonl")
+metrics = agent.get_dense_route_metrics()
+assert metrics["status"] == "available", metrics
+agent.reset("dense-preflight", {})
+agent.respond("dense-preflight", "comfortable house shoes for cold floors", 1, 10)
+metrics = agent.get_dense_route_metrics()
+assert metrics["status"] == "available", metrics
+assert metrics["query_count"] == 1, metrics
+assert metrics["last_candidate_count"] > 0, metrics
+print(metrics)
+PY
+```
+
+All assertions must pass. `disabled_reason` identifies the first startup or
+query failure. Common causes are using system Python instead of `.venv`, missing
+packages from `requirements-dense.txt`, missing model/index directories, or a
+catalog/model checksum mismatch. Do not accept an evaluator result as
+dense-enabled unless this preflight passes in the same environment.
+
 ## Build it
 
 ```bash

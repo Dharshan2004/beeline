@@ -120,10 +120,38 @@ incompatible, or failed dense assets disable only that route without
 invalidating the response.
 
 ```bash
-pip install -r requirements-dense.txt
+python3 -m venv .venv
+source .venv/bin/activate
+python -m pip install -r requirements-dense.txt
 python -m tools.fetch_model
 python -m retrieval.build_dense_index --catalog data/catalog.jsonl --verify-load
 ```
+
+Before benchmarking, verify that the same interpreter used for scoring can load
+and query the dense route. This command exits nonzero if the route silently
+falls back because a dependency, model, catalog checksum, or index is missing or
+incompatible:
+
+```bash
+.venv/bin/python - <<'PY'
+from starter.agent import Agent
+
+agent = Agent("data/catalog.jsonl")
+before = agent.get_dense_route_metrics()
+assert before["status"] == "available", before
+agent.reset("dense-readiness", {})
+agent.respond("dense-readiness", "comfortable house shoes for cold floors", 1, 10)
+after = agent.get_dense_route_metrics()
+assert after["status"] == "available", after
+assert after["query_count"] == 1, after
+assert after["last_candidate_count"] > 0, after
+print(after)
+PY
+```
+
+Do not benchmark with the system `python3` after installing into `.venv`; use
+`.venv/bin/python` or activate the environment first. A valid readiness result
+has `status: available`, `disabled_reason: None`, and a positive candidate count.
 
 With those runtime dependencies and ignored local assets prepared, exercise the
 real MiniLM-to-Qdrant paraphrase fixture through the public Agent path with:
