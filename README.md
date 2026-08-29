@@ -97,7 +97,25 @@ docs/evaluation_config.json       scoring configuration
 docs/baseline_results.json        reproducible weak-starter reference score
 starter/agent.py                  editable weak starter
 evaluator/local_evaluator.py      public-set simulator and scorer
+retrieval/                        Retrieval Routes and their local index artifacts
+tools/                            one-time model fetch and development helpers
+docs/dense_index.md               dense index build, verification, and measured scale
 ```
+
+## Dense Retrieval Route
+
+The dense route searches a versioned artifact built ahead of time and loaded once
+at startup, using embedded Qdrant Local Mode and a bundled embedding model. It
+requires no listening port, no separate vector service, and no runtime download.
+
+```bash
+pip install -r requirements-dense.txt
+python -m tools.fetch_model
+python -m retrieval.build_dense_index --catalog data/catalog.jsonl --verify-load
+```
+
+See `docs/dense_index.md` for the manifest contents, determinism guarantees, and
+mismatch behavior.
 
 ## Judging and Submission Policy
 
