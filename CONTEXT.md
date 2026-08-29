@@ -1,0 +1,61 @@
+# Conversational Shopping
+
+This context describes the language used by the shopping agent and the official evaluation sessions it participates in.
+
+## Language
+
+**Shopping Agent**:
+The participant-built system that converses with a customer and ranks catalog products within an evaluation session.
+_Avoid_: Chatbot, search bot
+
+**Target Product**:
+The catalog product hidden by the evaluator that the Shopping Agent must place in its scored recommendations.
+_Avoid_: Correct item, answer product
+
+**Constraint**:
+A customer requirement or preference that narrows or influences the acceptable products.
+_Avoid_: Filter, slot value
+
+**Hard Constraint**:
+A requirement that a recommended product is expected to satisfy.
+_Avoid_: Mandatory filter
+
+**Soft Preference**:
+A preference that improves a product's relevance without necessarily excluding alternatives.
+_Avoid_: Optional filter
+
+**Constraint State**:
+The current, revisable account of a customer's active constraints, their origin, and whether they remain applicable.
+_Avoid_: Memory, slot store
+
+**Session Mode**:
+The Shopping Agent's current view of whether the customer is ready to narrow toward a purchase, is exploring possibilities, or remains uncertain. A Session Mode may change as the conversation develops.
+_Avoid_: Permanent intent class, traffic bucket
+
+**Intent Override**:
+A customer correction that replaces or withdraws an earlier constraint.
+_Avoid_: Preference update, changed slot
+
+**Boundary Response**:
+A customer response stating that a requested attribute has no useful preference and should not be asked again.
+_Avoid_: Rejection, null answer
+
+**Clarification**:
+A question asked to obtain information expected to improve the next recommendation decision.
+_Avoid_: Follow-up prompt
+
+**Candidate Pool**:
+The set of catalog products still under consideration for the current Constraint State.
+_Avoid_: Search results, shortlist
+
+**Retrieval Route**:
+A distinct method for producing or narrowing a Candidate Pool from the current customer evidence.
+_Avoid_: Search engine, retriever
+
+**Fusion Policy**:
+The versioned rule that combines evidence from multiple Retrieval Routes into one product ordering.
+_Avoid_: Magic weights, ensemble formula
+
+**Conversion**:
+The first evaluation turn on which the Target Product appears in the scored recommendations.
+_Avoid_: Purchase, success

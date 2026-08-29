@@ -1,0 +1,5 @@
+# Version and test the complete submission
+
+Every scored build will use one versioned configuration that identifies its catalog and index checksums, local and connected model versions, prompt versions, Fusion Policy weights, candidate depths, feature flags, timeout policy, and cost limits. The TikTok starter repository's required `Agent` interface remains the primary execution contract; Docker is a reproducible packaging and demonstration path rather than a replacement for that interface. The submission package will include the bundled local assets, Dockerfile, evaluation scripts, architecture notes, and demo instructions needed to reproduce a run.
+
+A build is releasable only after state-transition and Intent Override unit tests, per-route retrieval tests, official evaluator runs, network-disabled fallback tests, Langfuse failure tests, a Docker smoke test, and one locked scenario-stratified holdout evaluation. These gates test both the connected LLM-centered path and the deterministic fallback, so optional intelligence and observability cannot break the required response contract.
