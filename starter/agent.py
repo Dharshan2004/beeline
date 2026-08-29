@@ -4,6 +4,7 @@ from pathlib import Path
 from typing import Protocol
 
 from retrieval.dense_route import DenseRetrievalRoute
+from retrieval.fusion import FusionPolicy, build_fusion_policy
 from starter.constraint_state import ConstraintState, PlanValidationError, TurnPlan
 from starter.retrieval import CatalogRetrieval
 from starter.turn_interpreter import interpret_turn
@@ -30,11 +31,17 @@ class Agent:
         catalog_path: str | Path = "data/catalog.jsonl",
         *,
         dense_route: DenseRoute | None = None,
+        fusion_policy: FusionPolicy | str = "fixed",
     ) -> None:
         self.catalog_path = Path(catalog_path)
         self.retrieval = CatalogRetrieval(self.catalog_path)
         self.dense_route: DenseRoute = dense_route or DenseRetrievalRoute(
             self.catalog_path
+        )
+        self.fusion_policy = (
+            build_fusion_policy(fusion_policy)
+            if isinstance(fusion_policy, str)
+            else fusion_policy
         )
         self._sessions: dict[str, ConstraintState] = {}
         self._last_asked_attributes: dict[str, str | None] = {}
@@ -77,6 +84,18 @@ class Agent:
     def get_dense_route_metrics(self) -> dict:
         """Return measurable load/query evidence for the dense Retrieval Route."""
         return dict(self.dense_route.metrics())
+
+    def get_retrieval_configuration(self) -> dict:
+        """Return the versioned retrieval settings used by scored turns."""
+        configuration = {
+            "policy_version": self.fusion_policy.version,
+            "route_depth": DENSE_CANDIDATE_DEPTH,
+            "fused_candidate_depth": self.fusion_policy.candidate_limit,
+        }
+        weights = getattr(self.fusion_policy, "weights", None)
+        if weights is not None:
+            configuration["weights"] = dict(weights)
+        return configuration
 
     def _state(self, session_id: str) -> ConstraintState:
         if session_id not in self._sessions:
@@ -155,14 +174,17 @@ class Agent:
             )
         except Exception:  # noqa: BLE001 - an optional route cannot invalidate a turn
             dense_candidates = []
+        route_scores = self.retrieval.hybrid_route_scores(
+            user_message,
+            state.constraints,
+            dense_candidates,
+            route_limit=DENSE_CANDIDATE_DEPTH,
+        )
+        fused_candidates = self.fusion_policy.rank(route_scores)
+        recommendation_limit = max(0, min(top_k, 10))
         recommendations = [
             {"parent_asin": parent_asin}
-            for parent_asin in self.retrieval.recommend_with_dense(
-                user_message,
-                state.constraints,
-                dense_candidates,
-                top_k,
-            )
+            for parent_asin in fused_candidates[:recommendation_limit]
         ]
         ask_attribute = self._next_ask_attribute(session_id, state)
         message = "Here are the closest matches I found."

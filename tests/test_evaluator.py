@@ -4,8 +4,15 @@ import unittest
 from pathlib import Path
 import json
 import tempfile
+from unittest.mock import patch
 
-from evaluator.local_evaluator import catalog_index, evaluate, metric_summary, normalize_recommendations
+from evaluator.local_evaluator import (
+    catalog_index,
+    evaluate,
+    main,
+    metric_summary,
+    normalize_recommendations,
+)
 
 
 class EchoTargetAgent:
@@ -78,6 +85,38 @@ class EvaluatorTest(unittest.TestCase):
                 "ground_truth": {"parent_asin": "A"},
             }]
             result = evaluate(EchoTargetAgent(), samples, catalog_ids, categories, products)
+            self.assertEqual(result["hit_rate_at_10"], 1.0)
+
+    def test_cli_runs_single_route_baseline_with_the_same_evaluator_command(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            catalog_path = root / "catalog.jsonl"
+            dataset_path = root / "samples.jsonl"
+            output_path = root / "result.json"
+            catalog_path.write_text(json.dumps({
+                "parent_asin": "A",
+                "title": "Blue cotton running shoe",
+                "features": ["cotton"],
+                "categories": ["Clothing", "Shoes"],
+            }) + "\n", encoding="utf-8")
+            dataset_path.write_text(json.dumps({
+                "sample_id": "sample-1",
+                "scenario_type": "buying",
+                "user_profile": {},
+                "ground_truth": {"parent_asin": "A"},
+            }) + "\n", encoding="utf-8")
+
+            with patch("sys.argv", [
+                "local_evaluator",
+                "--catalog", str(catalog_path),
+                "--dataset", str(dataset_path),
+                "--output", str(output_path),
+                "--retrieval-policy", "bm25",
+            ]), patch("builtins.print"):
+                main()
+
+            result = json.loads(output_path.read_text(encoding="utf-8"))
+            self.assertEqual(result["retrieval_policy"], "bm25")
             self.assertEqual(result["hit_rate_at_10"], 1.0)
 
 

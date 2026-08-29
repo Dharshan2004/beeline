@@ -35,9 +35,13 @@ from retrieval.product_text import product_text
 
 MODEL_DIR = DEFAULT_MODEL_DIR
 model_available = MODEL_DIR.is_dir()
-requires_model = unittest.skipUnless(
-    model_available,
-    f"bundled embedding model missing at {MODEL_DIR}; run 'python -m tools.fetch_model'",
+dense_runtime_available = model_available and all(
+    importlib.util.find_spec(module_name) is not None
+    for module_name in ("numpy", "qdrant_client", "torch", "transformers")
+)
+requires_dense_runtime = unittest.skipUnless(
+    dense_runtime_available,
+    "bundled embedding model and requirements-dense.txt dependencies are required",
 )
 requires_qdrant = unittest.skipUnless(
     importlib.util.find_spec("qdrant_client") is not None,
@@ -327,7 +331,7 @@ class IntegrityVerificationTest(unittest.TestCase):
             self.assertEqual(index.identifiers, identifiers)
 
 
-@requires_model
+@requires_dense_runtime
 class DenseIndexBuildTest(unittest.TestCase):
     """Covers the Slice 04 acceptance criteria against a small fixed catalog."""
 

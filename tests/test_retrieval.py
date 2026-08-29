@@ -116,6 +116,24 @@ class CatalogRetrievalTest(unittest.TestCase):
         self.assertEqual(scores["A_RED"], 0)
         self.assertEqual(scores["C_NONE"], 0)
 
+    def test_hybrid_route_scores_keep_structured_bm25_and_dense_independent(self) -> None:
+        self.write_catalog([
+            {"parent_asin": "STRUCTURED", "title": "Cotton gala footwear"},
+            {"parent_asin": "BM25", "title": "Formal ceremony dress"},
+            {"parent_asin": "DENSE", "title": "Evening accessory"},
+        ])
+        retrieval = CatalogRetrieval(self.catalog_path)
+
+        scores = retrieval.hybrid_route_scores(
+            "ceremony",
+            [constraint("material", ("cotton",), "soft")],
+            [("DENSE", 0.95), ("UNKNOWN", 0.99)],
+        )
+
+        self.assertIn("STRUCTURED", dict(scores["structured"]))
+        self.assertIn("BM25", dict(scores["bm25"]))
+        self.assertEqual(scores["dense"], [("DENSE", 0.95)])
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -13,6 +13,7 @@ from evaluator.local_evaluator import catalog_index, evaluate
 from retrieval.dense_index import BuildConfig, build
 from retrieval.dense_route import DenseRetrievalRoute
 from retrieval.embedder import DEFAULT_MODEL_DIR
+from retrieval.fusion import FixedFusionPolicy
 from starter.agent import Agent
 from starter.constraint_state import AddConstraint, TurnPlan
 
@@ -120,6 +121,40 @@ class AgentContractTest(unittest.TestCase):
             response["recommendations"],
             [{"parent_asin": "B"}, {"parent_asin": "A"}],
         )
+
+    def test_fixed_hybrid_fusion_combines_all_routes_through_agent(self) -> None:
+        self.write_catalog([
+            {"parent_asin": "STRUCTURED", "title": "Cotton gala footwear"},
+            {"parent_asin": "BM25", "title": "Formal ceremony dress"},
+            {"parent_asin": "DENSE", "title": "Evening accessory"},
+        ])
+        route = self.RecordingDenseRoute([("DENSE", 0.95)])
+        agent = Agent(
+            self.catalog_path,
+            dense_route=route,
+            fusion_policy=FixedFusionPolicy(
+                weights={"structured": 0.4, "bm25": 0.3, "dense": 0.3},
+            ),
+        )
+        agent.reset("session", {})
+
+        response = agent.respond(
+            "session",
+            "I prefer cotton for a ceremony.",
+            1,
+            10,
+        )
+
+        self.assertEqual(
+            {item["parent_asin"] for item in response["recommendations"]},
+            {"STRUCTURED", "BM25", "DENSE"},
+        )
+        self.assertEqual(agent.get_retrieval_configuration(), {
+            "policy_version": "fixed-hybrid-v1",
+            "route_depth": 100,
+            "fused_candidate_depth": 30,
+            "weights": {"structured": 0.4, "bm25": 0.3, "dense": 0.3},
+        })
 
     def test_dense_query_failure_falls_back_to_deterministic_local_retrieval(self) -> None:
         self.write_catalog([

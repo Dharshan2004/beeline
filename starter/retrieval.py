@@ -93,6 +93,9 @@ class CatalogRetrieval:
         self.supported_values: dict[str, set[str]] = {
             attribute: set() for attribute in CONSTRAINT_VALUES
         }
+        self.value_index: dict[str, dict[str, set[str]]] = {
+            attribute: {} for attribute in CONSTRAINT_VALUES
+        }
         self._build_index()
 
     def _build_index(self) -> None:
@@ -120,7 +123,12 @@ class CatalogRetrieval:
                 for attribute, values in CONSTRAINT_VALUES.items():
                     for value in values:
                         if _contains_value(normalized, value):
-                            self.supported_values[attribute].add(normalize_text(value))
+                            normalized_value = normalize_text(value)
+                            self.supported_values[attribute].add(normalized_value)
+                            self.value_index[attribute].setdefault(
+                                normalized_value,
+                                set(),
+                            ).add(parent_asin)
                 batch.append((parent_asin, *fields))
                 if len(batch) >= 1000:
                     cursor.executemany(
@@ -286,6 +294,118 @@ class CatalogRetrieval:
             if len(ranked) >= top_k:
                 break
         return ranked
+
+    def hybrid_route_scores(
+        self,
+        user_message: str,
+        constraints: list[Constraint],
+        dense_candidates: list[tuple[str, float]],
+        route_limit: int = 100,
+    ) -> dict[str, list[tuple[str, float]]]:
+        """Return independent, higher-is-better scores for each Retrieval Route."""
+        if route_limit <= 0:
+            return {"structured": [], "bm25": [], "dense": []}
+        active = [item for item in constraints if item.status == "active"]
+        hard = [item for item in active if item.classification == "hard"]
+
+        structured_ids: set[str] = set()
+        for constraint in active:
+            structured_ids.update(self._constraint_identifiers(constraint))
+        hard_eligible: set[str] | None = None
+        for constraint in hard:
+            matches = self._constraint_identifiers(constraint)
+            hard_eligible = (
+                matches
+                if hard_eligible is None
+                else hard_eligible.intersection(matches)
+            )
+        if hard_eligible is not None:
+            structured_ids.intersection_update(hard_eligible)
+        structured_scores = {
+            identifier: float(sum(
+                _soft_constraint_score(self.product_text[identifier], item)
+                * (2 if item.classification == "hard" else 1)
+                for item in active
+            ))
+            for identifier in structured_ids
+            if self._eligible(identifier, hard)
+        }
+        if constraints and len(structured_scores) < route_limit:
+            backfill_ids = (
+                sorted(hard_eligible)
+                if hard_eligible is not None
+                else self.product_text
+            )
+            for identifier in backfill_ids:
+                if identifier in structured_scores:
+                    continue
+                structured_scores[identifier] = 0.0
+                if len(structured_scores) >= route_limit:
+                    break
+        structured = list(structured_scores.items())
+        structured.sort(key=lambda item: (-item[1], item[0]))
+
+        inactive_terms = {
+            term
+            for constraint in constraints
+            if constraint.status != "active"
+            for value in constraint.values
+            for variant in value_variants(value)
+            for term in query_terms(variant)
+        }
+        terms = [
+            term for term in query_terms(user_message) if term not in inactive_terms
+        ]
+        terms.extend(
+            term
+            for constraint in active
+            for value in constraint.values
+            for variant in value_variants(value)
+            for term in query_terms(variant)
+        )
+        bm25 = [
+            (identifier, -score)
+            for identifier, score in self._search(terms)
+            if self._eligible(identifier, hard)
+        ][:route_limit]
+
+        dense: list[tuple[str, float]] = []
+        dense_seen: set[str] = set()
+        for parent_asin, score in dense_candidates:
+            identifier = str(parent_asin)
+            if identifier in dense_seen or not self._eligible(identifier, hard):
+                continue
+            dense_seen.add(identifier)
+            dense.append((identifier, float(score)))
+            if len(dense) >= route_limit:
+                break
+        return {
+            "structured": structured[:route_limit],
+            "bm25": bm25,
+            "dense": dense,
+        }
+
+    def _constraint_identifiers(self, constraint: Constraint) -> set[str]:
+        value_sets = [
+            self.value_index.get(constraint.attribute, {}).get(value, set())
+            for value in constraint.values
+        ]
+        if not value_sets:
+            return set()
+        if constraint.match_rule == "any":
+            return set.union(*value_sets)
+        return set.intersection(*value_sets)
+
+    def _eligible(
+        self,
+        parent_asin: str,
+        hard_constraints: list[Constraint],
+    ) -> bool:
+        product_text = self.product_text.get(parent_asin)
+        return product_text is not None and all(
+            _constraint_matches(product_text, item)
+            for item in hard_constraints
+        )
 
     def _search(self, terms: list[str]) -> list[tuple[str, float]]:
         unique_terms = list(dict.fromkeys(terms))[:40]

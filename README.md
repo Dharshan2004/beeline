@@ -104,6 +104,7 @@ evaluator/local_evaluator.py      public-set simulator and scorer
 retrieval/                        Retrieval Routes and their local index artifacts
 tools/                            one-time embedding model fetch
 docs/dense_index.md               dense index build, verification, and measured scale
+docs/fixed_hybrid_fusion.md       fixed policy, score normalization, and baselines
 ```
 
 ## Dense Retrieval Route
@@ -112,11 +113,11 @@ The dense route searches a versioned artifact built ahead of time and loaded onc
 at startup, using embedded Qdrant Local Mode and a bundled embedding model. It
 requires no listening port, no separate vector service, and no runtime download.
 It is a local Python support module for the Shopping Agent, not a website, UI, or
-hosted search service. `starter.Agent` queries the route at depth 100, preserves
-its ordering while enforcing catalog validity and Hard Constraints, and then
-backfills any remaining recommendation positions with deterministic lexical
-retrieval. Missing, incompatible, or failed dense assets disable the route for
-the process without invalidating the response.
+hosted search service. `starter.Agent` queries the route at depth 100 and
+combines its candidates with independent structured and BM25 evidence through
+`fixed-hybrid-v1`. Hard Constraints govern eligibility before fusion; missing,
+incompatible, or failed dense assets disable only that route without
+invalidating the response.
 
 ```bash
 pip install -r requirements-dense.txt
@@ -137,6 +138,16 @@ large model and derived index are intentionally not committed.
 
 See `docs/dense_index.md` for the manifest contents, determinism guarantees,
 mismatch behavior, and live route metrics.
+
+## Fixed Hybrid Fusion
+
+The default policy min-max normalizes the three route scores per turn, combines
+them with fixed weights (`structured=0.15`, `bm25=0.55`, `dense=0.30`), and
+narrows the union to 30 candidates before returning at most ten. Constant-score
+and missing routes have deterministic behavior. Run transparent baselines
+through the same evaluator command with `--retrieval-policy rrf`, `structured`,
+`bm25`, or `dense`. See `docs/fixed_hybrid_fusion.md` for the exact policy and
+commands.
 
 ### Reproducibility and external assets
 
