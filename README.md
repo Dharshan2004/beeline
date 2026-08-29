@@ -97,7 +97,52 @@ docs/evaluation_config.json       scoring configuration
 docs/baseline_results.json        reproducible weak-starter reference score
 starter/agent.py                  editable weak starter
 evaluator/local_evaluator.py      public-set simulator and scorer
+retrieval/                        Retrieval Routes and their local index artifacts
+tools/                            one-time embedding model fetch
+docs/dense_index.md               dense index build, verification, and measured scale
 ```
+
+## Dense Retrieval Route
+
+The dense route searches a versioned artifact built ahead of time and loaded once
+at startup, using embedded Qdrant Local Mode and a bundled embedding model. It
+requires no listening port, no separate vector service, and no runtime download.
+It is a local Python support module for the Shopping Agent, not a website, UI, or
+hosted search service. Slice 05 wires it into `starter.Agent`; until then the
+official `Agent` entry point remains the runnable standard-library BM25 baseline.
+
+```bash
+pip install -r requirements-dense.txt
+python -m tools.fetch_model
+python -m retrieval.build_dense_index --catalog data/catalog.jsonl --verify-load
+```
+
+See `docs/dense_index.md` for the manifest contents, determinism guarantees, and
+mismatch behavior.
+
+### Reproducibility and external assets
+
+The official harness entry point remains:
+
+```bash
+python3 -m evaluator.local_evaluator
+```
+
+Large reproducible assets are deliberately excluded by `.gitignore` and must not
+be committed:
+
+| Asset or dependency | Source and purpose | Reproduction |
+| --- | --- | --- |
+| Frozen Amazon Reviews 2023 catalog | Organizer release; evaluator and retrieval corpus | Download and verify as described in **Download the Catalog** above |
+| `sentence-transformers/all-MiniLM-L6-v2` (`1110a243…`) | Local 384-dimensional embedding model; no scoring-time API | `python -m tools.fetch_model` |
+| Dense Qdrant index | Derived locally from the frozen catalog and pinned MiniLM model | `python -m retrieval.build_dense_index --catalog data/catalog.jsonl --verify-load` |
+| Qdrant, PyTorch, Transformers, NumPy | Local dense-route runtime dependencies | `pip install -r requirements-dense.txt` |
+
+The dense route makes no runtime network call, uses no hosted API, and binds no
+listening port. `models/`, `artifacts/`, and `data/catalog.jsonl` are ignored;
+only source code, manifests, public evaluation data, and reproduction instructions
+belong in the repository. Token usage and any connected APIs introduced by later
+slices must continue to be reported through the official response schema.
 
 ## Judging and Submission Policy
 

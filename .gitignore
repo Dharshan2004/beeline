@@ -2,6 +2,7 @@ __pycache__/
 *.py[cod]
 .DS_Store
 .env
+.venv/
 results.json
 data/catalog.jsonl
 data/releases/
@@ -16,3 +17,9 @@ docs/participant_release_checklist.md
 tests/test_5core_builder.py
 tests/test_organizer_pipeline.py
 *.log
+
+# Bundled local models and built index artifacts are large and reproducible.
+# Fetch with 'python -m tools.fetch_model', build with
+# 'python -m retrieval.build_dense_index'.
+models/
+artifacts/
