@@ -34,7 +34,11 @@ Verify the downloaded file using the published `SHA256SUMS` file.
 
 ## Run the Starter
 
-Python 3.10 or later is recommended. The starter uses only the Python standard library.
+Use Python 3.11.9, the exact runtime used for the reported builds, benchmarks,
+and test results. Install the local dense-route dependencies and prepare its
+reproducible assets as described under **Dense Retrieval Route**. If they are
+absent or incompatible, the agent remains valid by falling back to its
+standard-library lexical route.
 
 ```bash
 python3 -m evaluator.local_evaluator
@@ -108,8 +112,11 @@ The dense route searches a versioned artifact built ahead of time and loaded onc
 at startup, using embedded Qdrant Local Mode and a bundled embedding model. It
 requires no listening port, no separate vector service, and no runtime download.
 It is a local Python support module for the Shopping Agent, not a website, UI, or
-hosted search service. Slice 05 wires it into `starter.Agent`; until then the
-official `Agent` entry point remains the runnable standard-library BM25 baseline.
+hosted search service. `starter.Agent` queries the route at depth 100, preserves
+its ordering while enforcing catalog validity and Hard Constraints, and then
+backfills any remaining recommendation positions with deterministic lexical
+retrieval. Missing, incompatible, or failed dense assets disable the route for
+the process without invalidating the response.
 
 ```bash
 pip install -r requirements-dense.txt
@@ -117,8 +124,19 @@ python -m tools.fetch_model
 python -m retrieval.build_dense_index --catalog data/catalog.jsonl --verify-load
 ```
 
-See `docs/dense_index.md` for the manifest contents, determinism guarantees, and
-mismatch behavior.
+With those runtime dependencies and ignored local assets prepared, exercise the
+real MiniLM-to-Qdrant paraphrase fixture through the public Agent path with:
+
+```bash
+python -m unittest \
+  tests.test_agent.AgentContractTest.test_real_local_dense_route_recovers_paraphrase_through_agent
+```
+
+The test is skipped in the dependency-free fallback environment because the
+large model and derived index are intentionally not committed.
+
+See `docs/dense_index.md` for the manifest contents, determinism guarantees,
+mismatch behavior, and live route metrics.
 
 ### Reproducibility and external assets
 

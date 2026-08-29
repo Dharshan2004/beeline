@@ -247,6 +247,46 @@ class CatalogRetrieval:
             )[:top_k]
         ]
 
+    def recommend_with_dense(
+        self,
+        user_message: str,
+        constraints: list[Constraint],
+        dense_candidates: list[tuple[str, float]],
+        top_k: int,
+    ) -> list[str]:
+        """Preserve dense order, enforce eligibility, then backfill lexically."""
+        if top_k <= 0:
+            return []
+        hard_constraints = [
+            item
+            for item in constraints
+            if item.status == "active" and item.classification == "hard"
+        ]
+        ranked: list[str] = []
+        seen: set[str] = set()
+        for parent_asin, _score in dense_candidates:
+            identifier = str(parent_asin)
+            product_text = self.product_text.get(identifier)
+            if product_text is None or identifier in seen:
+                continue
+            if not all(
+                _constraint_matches(product_text, item)
+                for item in hard_constraints
+            ):
+                continue
+            seen.add(identifier)
+            ranked.append(identifier)
+            if len(ranked) >= top_k:
+                return ranked
+
+        for identifier in self.recommend(user_message, constraints, top_k):
+            if identifier in seen:
+                continue
+            ranked.append(identifier)
+            if len(ranked) >= top_k:
+                break
+        return ranked
+
     def _search(self, terms: list[str]) -> list[tuple[str, float]]:
         unique_terms = list(dict.fromkeys(terms))[:40]
         if not unique_terms:

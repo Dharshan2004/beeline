@@ -1,7 +1,9 @@
 from __future__ import annotations
 
 from pathlib import Path
+from typing import Protocol
 
+from retrieval.dense_route import DenseRetrievalRoute
 from starter.constraint_state import ConstraintState, PlanValidationError, TurnPlan
 from starter.retrieval import CatalogRetrieval
 from starter.turn_interpreter import interpret_turn
@@ -11,14 +13,29 @@ QUESTION_ORDER = (
     "category", "material", "color", "size", "style", "brand", "budget",
     "feature", "use_case", "other",
 )
+DENSE_CANDIDATE_DEPTH = 100
+
+
+class DenseRoute(Protocol):
+    def search(self, query: str, limit: int) -> list[tuple[str, float]]: ...
+
+    def metrics(self) -> dict: ...
 
 
 class Agent:
     """Offline Shopping Agent with validated Constraint State transitions."""
 
-    def __init__(self, catalog_path: str | Path = "data/catalog.jsonl") -> None:
+    def __init__(
+        self,
+        catalog_path: str | Path = "data/catalog.jsonl",
+        *,
+        dense_route: DenseRoute | None = None,
+    ) -> None:
         self.catalog_path = Path(catalog_path)
         self.retrieval = CatalogRetrieval(self.catalog_path)
+        self.dense_route: DenseRoute = dense_route or DenseRetrievalRoute(
+            self.catalog_path
+        )
         self._sessions: dict[str, ConstraintState] = {}
         self._last_asked_attributes: dict[str, str | None] = {}
         self._session_ids_by_state: dict[int, str] = {}
@@ -56,6 +73,10 @@ class Agent:
             dict(event)
             for event in self._state(session_id).transition_history
         ]
+
+    def get_dense_route_metrics(self) -> dict:
+        """Return measurable load/query evidence for the dense Retrieval Route."""
+        return dict(self.dense_route.metrics())
 
     def _state(self, session_id: str) -> ConstraintState:
         if session_id not in self._sessions:
@@ -127,11 +148,19 @@ class Agent:
                 # Retrieval still uses the original unchanged state.
                 pass
 
+        try:
+            dense_candidates = self.dense_route.search(
+                user_message,
+                DENSE_CANDIDATE_DEPTH,
+            )
+        except Exception:  # noqa: BLE001 - an optional route cannot invalidate a turn
+            dense_candidates = []
         recommendations = [
             {"parent_asin": parent_asin}
-            for parent_asin in self.retrieval.recommend(
+            for parent_asin in self.retrieval.recommend_with_dense(
                 user_message,
                 state.constraints,
+                dense_candidates,
                 top_k,
             )
         ]
