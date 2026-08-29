@@ -10,6 +10,7 @@ from unittest.mock import patch
 
 from evaluator.local_evaluator import catalog_index, evaluate
 from starter.agent import Agent
+from starter.constraint_state import AddConstraint, TurnPlan
 
 
 class AgentContractTest(unittest.TestCase):
@@ -90,15 +91,20 @@ class AgentContractTest(unittest.TestCase):
         expected_recommendations = [{"parent_asin": "A"}]
         self.assertEqual(first_response["recommendations"], expected_recommendations)
         self.assertEqual(second_response["recommendations"], expected_recommendations)
-        self.assertEqual(agent.get_constraint_state("session"), [{
-            "attribute": "material",
-            "raw_phrase": "Cotton",
-            "normalized_value": "cotton",
-            "classification": "hard",
-            "source_turn": 1,
-            "confidence": 0.95,
-            "status": "active",
-        }])
+        state = agent.get_constraint_state("session")
+        self.assertEqual(
+            [(item["attribute"], item["normalized_value"]) for item in state],
+            [("category", "shoe"), ("material", "cotton")],
+        )
+        material = state[1]
+        self.assertEqual(material["raw_phrase"], "Cotton")
+        self.assertEqual(material["classification"], "hard")
+        self.assertEqual(material["source_turn"], 1)
+        self.assertEqual(material["confidence"], 0.95)
+        self.assertEqual(material["status"], "active")
+        self.assertEqual(material["scope"], "product_intent")
+        self.assertEqual(material["match_rule"], "all")
+        self.assertTrue(material["constraint_id"])
 
     def test_soft_preference_changes_order_without_excluding_candidates(self) -> None:
         self.write_catalog([
@@ -180,7 +186,12 @@ class AgentContractTest(unittest.TestCase):
             2,
             10,
         )
-        slippers = agent.respond("session", "I need slippers now.", 3, 10)
+        slippers = agent.respond(
+            "session",
+            "Actually, I need slippers instead of boots.",
+            3,
+            10,
+        )
 
         self.assertEqual(shoes["recommendations"], [{"parent_asin": "A"}])
         self.assertEqual(boots["recommendations"], [{"parent_asin": "B"}])
@@ -300,6 +311,101 @@ class AgentContractTest(unittest.TestCase):
             [("cotton", "dismissed")],
         )
 
+    def test_compound_boundary_and_requirement_apply_on_the_same_turn(self) -> None:
+        self.write_catalog([
+            {"parent_asin": "A", "title": "Blue cotton walking shoe"},
+            {"parent_asin": "B", "title": "Red leather walking shoe"},
+        ])
+        agent = Agent(self.catalog_path)
+        agent.reset("session", {})
+        agent.respond("session", "I prefer blue.", 1, 10)
+
+        response = agent.respond(
+            "session",
+            "I don't care about color, but I need cotton.",
+            2,
+            10,
+        )
+
+        self.assertEqual(response["recommendations"], [{"parent_asin": "A"}])
+        self.assertEqual(agent.get_constraint_revision("session"), 2)
+        self.assertEqual(
+            [
+                (item["attribute"], item["status"])
+                for item in agent.get_constraint_state("session")
+            ],
+            [("color", "dismissed"), ("material", "active")],
+        )
+
+    def test_mixed_soft_and_hard_requirements_are_both_active(self) -> None:
+        self.write_catalog([
+            {"parent_asin": "A", "title": "Blue cotton walking shoe"},
+            {"parent_asin": "B", "title": "Blue leather walking shoe"},
+            {"parent_asin": "C", "title": "Red cotton walking shoe"},
+        ])
+        agent = Agent(self.catalog_path)
+        agent.reset("session", {})
+
+        response = agent.respond(
+            "session",
+            "I prefer blue, but must have cotton.",
+            1,
+            10,
+        )
+
+        self.assertEqual(
+            [item["parent_asin"] for item in response["recommendations"]],
+            ["A", "C"],
+        )
+        self.assertEqual(
+            [
+                (item["attribute"], item["classification"])
+                for item in agent.get_constraint_state("session")
+            ],
+            [("color", "soft"), ("material", "hard")],
+        )
+
+    def test_invalid_fallback_plan_preserves_state_and_still_recommends(self) -> None:
+        class InvalidPlanAgent(Agent):
+            def _interpret_turn(self, user_message, turn, state):
+                return TurnPlan(
+                    expected_state_revision=state.revision,
+                    source_turn=turn,
+                    mutations=(
+                        AddConstraint(
+                            attribute="unknown",
+                            values=("invalid",),
+                            match_rule="all",
+                            classification="hard",
+                            scope="product_intent",
+                            raw_phrase="invalid",
+                            confidence=0.9,
+                        ),
+                    ),
+                )
+
+        self.write_catalog([{"parent_asin": "A", "title": "Blue shoe"}])
+        agent = InvalidPlanAgent(self.catalog_path)
+        agent.reset("session", {})
+
+        response = agent.respond("session", "blue shoe", 1, 10)
+
+        self.assertEqual(agent.get_constraint_revision("session"), 1)
+        self.assertEqual(
+            [item["attribute"] for item in agent.get_constraint_state("session")],
+            ["category", "color"],
+        )
+        self.assertEqual(response["recommendations"], [{"parent_asin": "A"}])
+
+    def test_clarification_tracking_does_not_change_constraint_revision(self) -> None:
+        self.write_catalog([{"parent_asin": "A", "title": "Blue shoe"}])
+        agent = Agent(self.catalog_path)
+        agent.reset("session", {})
+
+        agent.respond("session", "unrecognized phrase", 1, 10)
+
+        self.assertEqual(agent.get_constraint_revision("session"), 0)
+
     def test_intent_override_evaluator_converts_only_after_new_intent(self) -> None:
         self.write_catalog([
             {
@@ -356,7 +462,133 @@ class AgentContractTest(unittest.TestCase):
                 (item["normalized_value"], item["status"])
                 for item in agent.get_constraint_state(session_id)
             ],
-            [("blue", "superseded"), ("cotton", "active")],
+            [("shoe", "active"), ("blue", "superseded"), ("cotton", "active")],
+        )
+
+    def test_evaluator_handles_repeated_product_intent_overrides(self) -> None:
+        class ScriptedOverrideAgent(Agent):
+            def respond(self, session_id, user_message, turn, top_k):
+                scripted_messages = {
+                    1: "I need shoes.",
+                    2: "Actually, I need boots instead of shoes.",
+                    3: "Actually, I need slippers instead of boots.",
+                }
+                return super().respond(
+                    session_id,
+                    scripted_messages.get(turn, user_message),
+                    turn,
+                    top_k,
+                )
+
+        self.write_catalog([
+            {"parent_asin": "A", "title": "Everyday shoes", "categories": ["Shoes"]},
+            {"parent_asin": "B", "title": "Everyday boots", "categories": ["Boots"]},
+            {"parent_asin": "C", "title": "Everyday slippers", "categories": ["Slippers"]},
+        ])
+        samples = [{
+            "sample_id": "repeated_override_0001",
+            "scenario_type": "intent_override",
+            "user_profile": {},
+            "ground_truth": {"parent_asin": "C"},
+            "intent_card": {
+                "target_category": "slippers",
+                "hard_constraints": ["slipper"],
+                "soft_preferences": ["shoe"],
+            },
+            "behavior": {
+                "scenario_type": "intent_override",
+                "override": {
+                    "turn": 2,
+                    "old_value": "shoe",
+                    "new_value": "boot",
+                    "message": "Actually, boots instead of shoes.",
+                },
+            },
+        }]
+        catalog_ids, categories, products = catalog_index(self.catalog_path)
+        agent = ScriptedOverrideAgent(self.catalog_path)
+
+        result = evaluate(agent, samples, catalog_ids, categories, products)
+
+        self.assertEqual(result["sessions"][0]["first_hit_turn"], 3)
+        session_id = next(iter(agent._sessions))
+        self.assertEqual(
+            [
+                (item["normalized_value"], item["status"])
+                for item in agent.get_constraint_state(session_id)
+            ],
+            [
+                ("shoe", "superseded"),
+                ("boot", "superseded"),
+                ("slipper", "active"),
+            ],
+        )
+
+    def test_evaluator_falls_back_from_a_contradictory_turn_plan(self) -> None:
+        class ContradictoryPlanAgent(Agent):
+            def _interpret_turn(self, user_message, turn, state):
+                return TurnPlan(
+                    expected_state_revision=state.revision,
+                    source_turn=turn,
+                    mutations=(
+                        AddConstraint(
+                            attribute="color",
+                            values=("blue",),
+                            match_rule="all",
+                            classification="hard",
+                            scope="product_intent",
+                            raw_phrase="blue",
+                            confidence=0.9,
+                        ),
+                        AddConstraint(
+                            attribute="color",
+                            values=("red",),
+                            match_rule="all",
+                            classification="hard",
+                            scope="product_intent",
+                            raw_phrase="red",
+                            confidence=0.9,
+                        ),
+                    ),
+                )
+
+        self.write_catalog([
+            {
+                "parent_asin": "TARGET",
+                "title": "Blue walking shoe",
+                "features": ["blue"],
+                "categories": ["Shoes"],
+            },
+            {
+                "parent_asin": "DECOY",
+                "title": "Red walking shoe",
+                "features": ["red"],
+                "categories": ["Shoes"],
+            },
+        ])
+        samples = [{
+            "sample_id": "contradictory_plan_0001",
+            "scenario_type": "buying",
+            "user_profile": {},
+            "ground_truth": {"parent_asin": "TARGET"},
+            "intent_card": {
+                "target_category": "walking shoe",
+                "hard_constraints": ["blue"],
+                "soft_preferences": [],
+            },
+            "behavior": {"scenario_type": "buying"},
+        }]
+        catalog_ids, categories, products = catalog_index(self.catalog_path)
+        agent = ContradictoryPlanAgent(self.catalog_path)
+
+        result = evaluate(agent, samples, catalog_ids, categories, products)
+
+        self.assertEqual(result["sessions"][0]["first_hit_turn"], 1)
+        session_id = next(iter(agent._sessions))
+        self.assertEqual(agent.get_constraint_revision(session_id), 1)
+        self.assertEqual(
+            [item["normalized_value"] for item in agent.get_constraint_state(session_id)],
+            ["shoe", "blue"],
         )
 
     def test_boundary_evaluator_records_dismissed_attributes(self) -> None:
