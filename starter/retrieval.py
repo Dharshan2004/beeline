@@ -301,57 +301,65 @@ class CatalogRetrieval:
         constraints: list[Constraint],
         dense_candidates: list[tuple[str, float]],
         route_limit: int = 100,
+        enabled_routes: set[str] | None = None,
     ) -> dict[str, list[tuple[str, float]]]:
         """Return independent, higher-is-better scores for each Retrieval Route."""
         if route_limit <= 0:
             return {"structured": [], "bm25": [], "dense": []}
+        enabled = (
+            {"structured", "bm25", "dense"}
+            if enabled_routes is None
+            else set(enabled_routes)
+        )
         active = [item for item in constraints if item.status == "active"]
         hard = [item for item in active if item.classification == "hard"]
 
-        structured_ids: set[str] = set()
-        for constraint in active:
-            structured_ids.update(self._constraint_identifiers(constraint))
-        hard_eligible: set[str] | None = None
-        for constraint in hard:
-            matches = self._constraint_identifiers(constraint)
-            hard_eligible = (
-                matches
-                if hard_eligible is None
-                else hard_eligible.intersection(matches)
-            )
-        if hard_eligible is not None:
-            structured_ids.intersection_update(hard_eligible)
-        structured_scores = {
-            identifier: float(sum(
-                _soft_constraint_score(self.product_text[identifier], item)
-                * (2 if item.classification == "hard" else 1)
-                for item in active
-            ))
-            for identifier in structured_ids
-            if self._eligible(identifier, hard)
-        }
-        if active and len(structured_scores) < route_limit:
-            backfill_ids = (
-                sorted(hard_eligible)
-                if hard_eligible is not None
-                else self.product_text
-            )
-            for identifier in backfill_ids:
-                if identifier in structured_scores:
-                    continue
-                structured_scores[identifier] = 0.0
-                if len(structured_scores) >= route_limit:
-                    break
-        structured = list(structured_scores.items())
-        structured.sort(key=lambda item: (-item[1], item[0]))
-        if len(structured) > route_limit:
-            # Never split a tied score group: cutting ties by ASIN order would
-            # make route membership, and therefore fused evidence, arbitrary.
-            cutoff_score = structured[route_limit - 1][1]
-            end = route_limit
-            while end < len(structured) and structured[end][1] == cutoff_score:
-                end += 1
-            structured = structured[:end]
+        structured: list[tuple[str, float]] = []
+        if "structured" in enabled:
+            structured_ids: set[str] = set()
+            for constraint in active:
+                structured_ids.update(self._constraint_identifiers(constraint))
+            hard_eligible: set[str] | None = None
+            for constraint in hard:
+                matches = self._constraint_identifiers(constraint)
+                hard_eligible = (
+                    matches
+                    if hard_eligible is None
+                    else hard_eligible.intersection(matches)
+                )
+            if hard_eligible is not None:
+                structured_ids.intersection_update(hard_eligible)
+            structured_scores = {
+                identifier: float(sum(
+                    _soft_constraint_score(self.product_text[identifier], item)
+                    * (2 if item.classification == "hard" else 1)
+                    for item in active
+                ))
+                for identifier in structured_ids
+                if self._eligible(identifier, hard)
+            }
+            if active and len(structured_scores) < route_limit:
+                backfill_ids = (
+                    sorted(hard_eligible)
+                    if hard_eligible is not None
+                    else self.product_text
+                )
+                for identifier in backfill_ids:
+                    if identifier in structured_scores:
+                        continue
+                    structured_scores[identifier] = 0.0
+                    if len(structured_scores) >= route_limit:
+                        break
+            structured = list(structured_scores.items())
+            structured.sort(key=lambda item: (-item[1], item[0]))
+            if len(structured) > route_limit:
+                # Never split a tied score group: cutting ties by ASIN order would
+                # make route membership, and therefore fused evidence, arbitrary.
+                cutoff_score = structured[route_limit - 1][1]
+                end = route_limit
+                while end < len(structured) and structured[end][1] == cutoff_score:
+                    end += 1
+                structured = structured[:end]
 
         inactive_terms = {
             term
@@ -371,22 +379,25 @@ class CatalogRetrieval:
             for variant in value_variants(value)
             for term in query_terms(variant)
         )
-        bm25 = [
-            (identifier, -score)
-            for identifier, score in self._search(terms)
-            if self._eligible(identifier, hard)
-        ][:route_limit]
+        bm25 = []
+        if "bm25" in enabled:
+            bm25 = [
+                (identifier, -score)
+                for identifier, score in self._search(terms)
+                if self._eligible(identifier, hard)
+            ][:route_limit]
 
         dense: list[tuple[str, float]] = []
         dense_seen: set[str] = set()
-        for parent_asin, score in dense_candidates:
-            identifier = str(parent_asin)
-            if identifier in dense_seen or not self._eligible(identifier, hard):
-                continue
-            dense_seen.add(identifier)
-            dense.append((identifier, float(score)))
-            if len(dense) >= route_limit:
-                break
+        if "dense" in enabled:
+            for parent_asin, score in dense_candidates:
+                identifier = str(parent_asin)
+                if identifier in dense_seen or not self._eligible(identifier, hard):
+                    continue
+                dense_seen.add(identifier)
+                dense.append((identifier, float(score)))
+                if len(dense) >= route_limit:
+                    break
         return {
             "structured": structured,
             "bm25": bm25,

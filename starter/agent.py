@@ -1,11 +1,18 @@
 from __future__ import annotations
 
+from copy import deepcopy
 from pathlib import Path
 from typing import Protocol
 
 from retrieval.dense_route import DenseRetrievalRoute
 from retrieval.fusion import FusionPolicy, build_fusion_policy
 from starter.constraint_state import ConstraintState, PlanValidationError, TurnPlan
+from starter.planning import (
+    DEFAULT_RETRIEVAL_TOOLS,
+    PlanningLoop,
+    PlanningOutcome,
+    PlanningProvider,
+)
 from starter.retrieval import CatalogRetrieval
 from starter.turn_interpreter import interpret_turn
 
@@ -32,6 +39,7 @@ class Agent:
         *,
         dense_route: DenseRoute | None = None,
         fusion_policy: FusionPolicy | str = "fixed",
+        planning_provider: PlanningProvider | None = None,
     ) -> None:
         self.catalog_path = Path(catalog_path)
         self.retrieval = CatalogRetrieval(self.catalog_path)
@@ -46,6 +54,8 @@ class Agent:
         self._sessions: dict[str, ConstraintState] = {}
         self._last_asked_attributes: dict[str, str | None] = {}
         self._session_ids_by_state: dict[int, str] = {}
+        self._planning_history: dict[str, list[dict]] = {}
+        self.planning_loop = PlanningLoop(planning_provider)
 
     def reset(self, session_id: str, user_profile: dict) -> None:
         # The profile is anonymized and may be used for later personalization.
@@ -55,6 +65,7 @@ class Agent:
         state = ConstraintState()
         self._sessions[session_id] = state
         self._last_asked_attributes[session_id] = None
+        self._planning_history[session_id] = []
         self._session_ids_by_state[id(state)] = session_id
 
     def get_constraint_state(self, session_id: str) -> list[dict]:
@@ -80,6 +91,11 @@ class Agent:
             dict(event)
             for event in self._state(session_id).transition_history
         ]
+
+    def get_planning_history(self, session_id: str) -> list[dict]:
+        """Return local planning evidence without provider conversation state."""
+        self._state(session_id)
+        return deepcopy(self._planning_history[session_id])
 
     def get_dense_route_metrics(self) -> dict:
         """Return measurable load/query evidence for the dense Retrieval Route."""
@@ -172,9 +188,33 @@ class Agent:
         if session_id not in self._sessions:
             raise RuntimeError("reset must be called before respond")
         state = self._sessions[session_id]
-        plan = self._interpret_turn(user_message, turn, state)
+        if self.planning_loop.provider is None:
+            outcome = PlanningOutcome(
+                turn_plan=self._interpret_turn(user_message, turn, state),
+                retrieval_tools=DEFAULT_RETRIEVAL_TOOLS,
+                clarification=None,
+                source="fallback",
+                attempts=0,
+                prompt_tokens=0,
+                completion_tokens=0,
+                fallback_reason="missing_credentials",
+            )
+        else:
+            outcome = self.planning_loop.run(
+                session_id=session_id,
+                turn=turn,
+                user_message=user_message,
+                state=state,
+                supported_values=self.retrieval.supported_values,
+                recent_history=self._planning_history[session_id],
+                fallback_plan=lambda: self._fallback_turn(
+                    user_message,
+                    turn,
+                    state,
+                ),
+            )
         try:
-            state.apply(plan, self.retrieval.supported_values)
+            state.apply(outcome.turn_plan, self.retrieval.supported_values)
         except PlanValidationError:
             fallback = self._fallback_turn(user_message, turn, state)
             try:
@@ -183,21 +223,27 @@ class Agent:
                 # Retrieval still uses the original unchanged state.
                 pass
 
-        try:
-            dense_candidates = self.dense_route.search(
-                self._dense_query(user_message, state),
-                DENSE_CANDIDATE_DEPTH,
-            )
-        except Exception:  # noqa: BLE001 - an optional route cannot invalidate a turn
-            dense_candidates = []
+        selected_tools = set(outcome.retrieval_tools)
+        dense_candidates = []
+        if "dense" in selected_tools:
+            try:
+                dense_candidates = self.dense_route.search(
+                    self._dense_query(user_message, state),
+                    DENSE_CANDIDATE_DEPTH,
+                )
+            except Exception:  # noqa: BLE001 - optional route must fail open
+                dense_candidates = []
         route_scores = self.retrieval.hybrid_route_scores(
             user_message,
             state.constraints,
             dense_candidates,
             route_limit=DENSE_CANDIDATE_DEPTH,
+            enabled_routes=selected_tools.intersection(
+                {"structured", "bm25", "dense"}
+            ),
         )
         fused_candidates = self.fusion_policy.rank(route_scores)
-        if not fused_candidates:
+        if not fused_candidates and outcome.source == "fallback":
             fused_candidates = self.retrieval.recommend(
                 user_message,
                 state.constraints,
@@ -208,16 +254,40 @@ class Agent:
             {"parent_asin": parent_asin}
             for parent_asin in fused_candidates[:recommendation_limit]
         ]
-        ask_attribute = self._next_ask_attribute(session_id, state)
         message = "Here are the closest matches I found."
-        if ask_attribute is not None:
-            message = (
-                f"{message} Do you have a preference for "
-                f"{ask_attribute.replace('_', ' ')}?"
+        if outcome.source == "connected":
+            ask_attribute = (
+                outcome.clarification.ask_attribute
+                if outcome.clarification is not None
+                else None
             )
+            if outcome.clarification is not None:
+                message = f"{message} {outcome.clarification.message}"
+                self._last_asked_attributes[session_id] = ask_attribute
+        else:
+            ask_attribute = self._next_ask_attribute(session_id, state)
+            if ask_attribute is not None:
+                message = (
+                    f"{message} Do you have a preference for "
+                    f"{ask_attribute.replace('_', ' ')}?"
+                )
+        self._planning_history[session_id].append({
+            "turn": turn,
+            "user_message": user_message,
+            "state_revision": state.revision,
+            "source": outcome.source,
+            "attempts": outcome.attempts,
+            "retrieval_tools": list(outcome.retrieval_tools),
+            "ask_attribute": ask_attribute,
+            "fallback_reason": outcome.fallback_reason,
+            "errors": list(outcome.errors),
+        })
         return {
             "message": message,
             "ask_attribute": ask_attribute,
             "recommendations": recommendations,
-            "usage": {"prompt_tokens": 0, "completion_tokens": 0},
+            "usage": {
+                "prompt_tokens": outcome.prompt_tokens,
+                "completion_tokens": outcome.completion_tokens,
+            },
         }
