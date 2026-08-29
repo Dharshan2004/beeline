@@ -1,5 +1,5 @@
-# Dense Retrieval Route (Slice 04). The official Agent contract still runs on the
-# standard library alone until Slice 05 wires this route into live recommendations.
+# Dense Retrieval Route runtime dependencies. If these or the versioned local
+# assets are absent, the live Agent disables this route and falls back locally.
 qdrant-client>=1.9,<2
 torch>=2.2
 transformers>=4.40

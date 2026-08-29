@@ -4,8 +4,24 @@ The dense Retrieval Route searches a versioned artifact that is built ahead of
 time and loaded once at agent startup. No turn pays indexing cost, no model is
 downloaded on the scoring path, and no vector service has to be running.
 
-Slice 04 delivers the artifact, its manifest, and its verification. Wiring the
-route into live recommendations is Slice 05 (issue #6).
+The live Shopping Agent loads the Slice 04 artifact once at startup and queries
+it at depth 100 on every turn. Dense candidates keep their route order after
+unknown identifiers, duplicates, and Hard Constraint mismatches are removed;
+deterministic lexical retrieval fills any recommendation positions left open.
+
+The route is optional for validity. Missing dependencies or assets, manifest
+mismatches, load failures, and query failures set its status to `disabled` and
+leave the standard-library lexical route in control. The failure reason remains
+inspectable through `Agent.get_dense_route_metrics()` and never appears as an
+extra field in the schema-constrained turn response.
+
+## Live route measurements
+
+`Agent.get_dense_route_metrics()` returns the route status and disabled reason,
+startup load time, completed query count, most recent query time, and raw dense
+candidate count. These operational values let development and evaluation tooling
+measure the route without changing the official response schema. Times use the
+process monotonic performance clock and are reported in seconds.
 
 ## Build it
 

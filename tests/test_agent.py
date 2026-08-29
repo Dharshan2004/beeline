@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import importlib.util
 import json
 import os
 import socket
@@ -9,6 +10,9 @@ from pathlib import Path
 from unittest.mock import patch
 
 from evaluator.local_evaluator import catalog_index, evaluate
+from retrieval.dense_index import BuildConfig, build
+from retrieval.dense_route import DenseRetrievalRoute
+from retrieval.embedder import DEFAULT_MODEL_DIR
 from starter.agent import Agent
 from starter.constraint_state import AddConstraint, TurnPlan
 
@@ -24,6 +28,216 @@ class AgentContractTest(unittest.TestCase):
             "".join(json.dumps(row) + "\n" for row in rows),
             encoding="utf-8",
         )
+
+    class RecordingDenseRoute:
+        def __init__(self, candidates: list[tuple[str, float]]) -> None:
+            self.candidates = candidates
+            self.queries: list[tuple[str, int]] = []
+            self.query_count = 0
+            self.last_candidate_count = 0
+
+        def search(self, query: str, limit: int) -> list[tuple[str, float]]:
+            self.queries.append((query, limit))
+            self.query_count += 1
+            result = self.candidates[:limit]
+            self.last_candidate_count = len(result)
+            return result
+
+        def metrics(self) -> dict:
+            return {
+                "status": "available",
+                "load_seconds": 0.125,
+                "query_count": self.query_count,
+                "last_query_seconds": 0.004,
+                "last_candidate_count": self.last_candidate_count,
+            }
+
+    class FailingDenseRoute:
+        def search(self, query: str, limit: int) -> list[tuple[str, float]]:
+            raise RuntimeError("dense query failed")
+
+        def metrics(self) -> dict:
+            return {"status": "available", "query_count": 0}
+
+    def test_semantic_paraphrase_uses_ordered_dense_candidates_live(self) -> None:
+        self.write_catalog([
+            {
+                "parent_asin": "SCARF",
+                "title": "Red wool winter scarf",
+                "description": ["Soft cold-weather accessory"],
+            },
+            {"parent_asin": "BOOTS", "title": "Black leather ankle boots"},
+        ])
+        literal_agent = Agent(
+            self.catalog_path,
+            dense_route=self.RecordingDenseRoute([]),
+        )
+        literal_agent.reset("literal-session", {})
+        literal_response = literal_agent.respond(
+            "literal-session",
+            "Something cozy to wrap around my neck",
+            1,
+            2,
+        )
+        route = self.RecordingDenseRoute([("SCARF", 0.91), ("BOOTS", 0.42)])
+        agent = Agent(self.catalog_path, dense_route=route)
+        agent.reset("session", {})
+
+        response = agent.respond(
+            "session",
+            "Something cozy to wrap around my neck",
+            1,
+            2,
+        )
+
+        self.assertEqual(literal_response["recommendations"], [])
+        self.assertEqual(
+            response["recommendations"],
+            [{"parent_asin": "SCARF"}, {"parent_asin": "BOOTS"}],
+        )
+        self.assertEqual(
+            route.queries,
+            [("Something cozy to wrap around my neck", 100)],
+        )
+
+    def test_dense_candidates_are_catalog_valid_unique_and_keep_route_order(self) -> None:
+        self.write_catalog([
+            {"parent_asin": "A", "title": "First product"},
+            {"parent_asin": "B", "title": "Second product"},
+        ])
+        route = self.RecordingDenseRoute([
+            ("UNKNOWN", 0.99),
+            ("B", 0.90),
+            ("B", 0.85),
+            ("A", 0.80),
+        ])
+        agent = Agent(self.catalog_path, dense_route=route)
+        agent.reset("session", {})
+
+        response = agent.respond("session", "semantic wording", 1, 10)
+
+        self.assertEqual(
+            response["recommendations"],
+            [{"parent_asin": "B"}, {"parent_asin": "A"}],
+        )
+
+    def test_dense_query_failure_falls_back_to_deterministic_local_retrieval(self) -> None:
+        self.write_catalog([
+            {"parent_asin": "A", "title": "Blue running shoe"},
+            {"parent_asin": "B", "title": "Red wool scarf"},
+        ])
+        agent = Agent(self.catalog_path, dense_route=self.FailingDenseRoute())
+        agent.reset("session", {})
+
+        first = agent.respond("session", "blue running shoe", 1, 10)
+        second = agent.respond("session", "blue running shoe", 2, 10)
+
+        expected = [{"parent_asin": "A"}]
+        self.assertEqual(first["recommendations"], expected)
+        self.assertEqual(second["recommendations"], expected)
+
+    def test_dense_route_metrics_expose_load_latency_and_candidate_count(self) -> None:
+        self.write_catalog([{"parent_asin": "A", "title": "Product"}])
+        route = self.RecordingDenseRoute([("A", 0.90)])
+        agent = Agent(self.catalog_path, dense_route=route)
+        agent.reset("session", {})
+
+        agent.respond("session", "semantic wording", 1, 10)
+
+        self.assertEqual(agent.get_dense_route_metrics(), {
+            "status": "available",
+            "load_seconds": 0.125,
+            "query_count": 1,
+            "last_query_seconds": 0.004,
+            "last_candidate_count": 1,
+        })
+
+    def test_missing_dense_assets_disable_route_without_network_or_invalid_output(self) -> None:
+        self.write_catalog([{"parent_asin": "A", "title": "Blue running shoe"}])
+        absent_model = Path(self.directory.name) / "absent-model"
+        absent_artifact = Path(self.directory.name) / "absent-artifact"
+        with (
+            patch.object(
+                socket.socket,
+                "connect",
+                side_effect=AssertionError("network access is disabled"),
+            ),
+            patch.object(
+                socket.socket,
+                "bind",
+                side_effect=AssertionError("listening ports are not permitted"),
+            ),
+        ):
+            route = DenseRetrievalRoute(
+                self.catalog_path,
+                artifact_dir=absent_artifact,
+                model_dir=absent_model,
+            )
+            agent = Agent(self.catalog_path, dense_route=route)
+            agent.reset("session", {})
+            response = agent.respond("session", "blue running shoe", 1, 10)
+
+        self.assertEqual(response["recommendations"], [{"parent_asin": "A"}])
+        metrics = agent.get_dense_route_metrics()
+        self.assertEqual(metrics["status"], "disabled")
+        self.assertIn("ModelUnavailable", metrics["disabled_reason"])
+        self.assertEqual(metrics["query_count"], 0)
+        self.assertEqual(metrics["last_candidate_count"], 0)
+
+    @unittest.skipUnless(
+        DEFAULT_MODEL_DIR.is_dir()
+        and importlib.util.find_spec("qdrant_client") is not None,
+        "bundled dense runtime assets are not installed",
+    )
+    def test_real_local_dense_route_recovers_paraphrase_through_agent(self) -> None:
+        self.write_catalog([
+            {
+                "parent_asin": "SCARF",
+                "title": "Red wool winter scarf",
+                "description": ["A soft scarf for cold weather"],
+            },
+            {
+                "parent_asin": "BOOTS",
+                "title": "Black leather ankle boots",
+                "description": ["Durable footwear for wet trails"],
+            },
+        ])
+        artifact = Path(self.directory.name) / "dense"
+        build(BuildConfig(
+            catalog_path=self.catalog_path,
+            artifact_dir=artifact,
+            model_dir=DEFAULT_MODEL_DIR,
+            batch_size=2,
+        ))
+        with (
+            patch.object(
+                socket.socket,
+                "connect",
+                side_effect=AssertionError("network access is disabled"),
+            ),
+            patch.object(
+                socket.socket,
+                "bind",
+                side_effect=AssertionError("listening ports are not permitted"),
+            ),
+        ):
+            route = DenseRetrievalRoute(
+                self.catalog_path,
+                artifact_dir=artifact,
+                model_dir=DEFAULT_MODEL_DIR,
+            )
+            agent = Agent(self.catalog_path, dense_route=route)
+            agent.reset("session", {})
+            response = agent.respond(
+                "session",
+                "Something warm to wrap around my neck in winter",
+                1,
+                2,
+            )
+            route.close()
+
+        self.assertEqual(response["recommendations"][0], {"parent_asin": "SCARF"})
+        self.assertEqual(agent.get_dense_route_metrics()["last_candidate_count"], 2)
 
     def test_recommendations_are_unique_and_preserve_rank_order(self) -> None:
         rows = [
