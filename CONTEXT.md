@@ -13,7 +13,7 @@ The catalog product hidden by the evaluator that the Shopping Agent must place i
 _Avoid_: Correct item, answer product
 
 **Constraint**:
-A customer requirement or preference that narrows or influences the acceptable products.
+A customer requirement or preference that relates one attribute to one or more values and narrows or influences acceptable products. Multiple values use an explicit any-value or all-values relationship.
 _Avoid_: Filter, slot value
 
 **Hard Constraint**:
@@ -28,17 +28,33 @@ _Avoid_: Optional filter
 The current, revisable account of a customer's active constraints, their origin, and whether they remain applicable.
 _Avoid_: Memory, slot store
 
+**Product Intent Constraint**:
+A Constraint that applies only to the Target Product currently being described and does not carry across a broad Intent Override.
+_Avoid_: Temporary constraint, product filter
+
+**Session Constraint**:
+A Constraint the customer explicitly establishes as applying across Target Product changes within the current evaluation session.
+_Avoid_: Global constraint, permanent preference
+
+**Product Intent**:
+The cohesive description of one Target Product currently under consideration, including its Product Intent Constraints.
+_Avoid_: Constraint group, search context
+
 **Session Mode**:
 The Shopping Agent's current view of whether the customer is ready to narrow toward a purchase, is exploring possibilities, or remains uncertain. A Session Mode may change as the conversation develops.
 _Avoid_: Permanent intent class, traffic bucket
 
 **Intent Override**:
-A customer correction that replaces or withdraws an earlier constraint.
+A customer correction that explicitly replaces or withdraws an earlier Constraint or Product Intent. Mentioning a different product or value does not by itself establish an Intent Override.
 _Avoid_: Preference update, changed slot
 
 **Boundary Response**:
 A customer response stating that a requested attribute has no useful preference and should not be asked again.
 _Avoid_: Rejection, null answer
+
+**Turn Plan**:
+The complete proposed interpretation of one customer turn, including every intended Constraint State transition.
+_Avoid_: Mutation list, model output
 
 **Clarification**:
 A question asked to obtain information expected to improve the next recommendation decision.
