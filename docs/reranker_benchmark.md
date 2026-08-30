@@ -184,6 +184,23 @@ Until this section carries measured numbers, the reranker identity and depth
 constants in `retrieval/reranker.py` and `starter/agent.py` are provisional
 defaults chosen from the sizing measurement above, not a selection.
 
+## Live integration (Slice 08)
+
+Slice 08 places the selected cross-encoder after fixed fusion in the live Agent
+and applies it to the deep pool rather than a pre-truncated fused top 30:
+
+- fusion produces exactly `RERANK_CANDIDATE_DEPTH` candidates, so there is no
+  fused-30 truncation before reranking;
+- the reranker may only reorder that set. If it returns a different candidate
+  set, the Agent refuses the result and keeps the fused ordering;
+- a missing model, a load error, a scoring error, or an expired per-turn
+  deadline all return the fused ordering over the same candidates;
+- the returned ten are catalog-valid and unique in every case.
+
+`Agent.get_reranker_metrics()` exposes status, disabled reason, load time, turn
+count, fallback and deadline counts, and last turn duration, without adding
+fields to the official response schema.
+
 ## Reproduction
 
 The machine-readable summary of the run reported above is checked in as

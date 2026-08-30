@@ -2,10 +2,11 @@ from __future__ import annotations
 
 from copy import deepcopy
 from pathlib import Path
-from typing import Protocol
+from typing import Mapping, Protocol, Sequence
 
 from retrieval.dense_route import DenseRetrievalRoute
 from retrieval.fusion import FusionPolicy, build_fusion_policy
+from retrieval.reranker import DEFAULT_RERANKER_DIR, RerankRoute
 from starter.constraint_state import ConstraintState, PlanValidationError, TurnPlan
 from starter.planning import (
     DEFAULT_RETRIEVAL_TOOLS,
@@ -23,9 +24,33 @@ QUESTION_ORDER = (
 )
 DENSE_CANDIDATE_DEPTH = 100
 
+# The deep Candidate Pool handed to the cross-encoder, drawn from the base-route
+# union rather than a pre-truncated fused top 30. Slice 07 freezes this number
+# from its quality-versus-runtime rule; until that benchmark is run against a
+# dense-enabled baseline these are provisional defaults taken from its
+# preliminary sizing measurement. Changing the selection is a change here and
+# in retrieval.reranker.DEFAULT_RERANKER_IDENTITY, nowhere else.
+RERANK_CANDIDATE_DEPTH = 50
+
+# A hard per-turn ceiling on cross-encoder work. Exceeding it abandons reranking
+# for the turn and returns the fused ordering, so a slow host degrades ranking
+# quality instead of risking a turn the evaluator scores as a miss.
+RERANK_DEADLINE_SECONDS = 1.5
+
 
 class DenseRoute(Protocol):
     def search(self, query: str, limit: int) -> list[tuple[str, float]]: ...
+
+    def metrics(self) -> dict: ...
+
+
+class Reranker(Protocol):
+    def rerank(
+        self,
+        query: str,
+        candidates: Sequence[str],
+        documents: Mapping[str, str],
+    ) -> list[str]: ...
 
     def metrics(self) -> dict: ...
 
@@ -38,6 +63,7 @@ class Agent:
         catalog_path: str | Path = "data/catalog.jsonl",
         *,
         dense_route: DenseRoute | None = None,
+        reranker: Reranker | None = None,
         fusion_policy: FusionPolicy | str = "fixed",
         planning_provider: PlanningProvider | None = None,
         candidate_pool_depth: int | None = None,
@@ -48,6 +74,10 @@ class Agent:
         self.dense_route: DenseRoute = dense_route or DenseRetrievalRoute(
             self.catalog_path
         )
+        self.reranker: Reranker = reranker or RerankRoute(
+            DEFAULT_RERANKER_DIR,
+            deadline_seconds=RERANK_DEADLINE_SECONDS,
+        )
         self.fusion_policy = (
             build_fusion_policy(fusion_policy)
             if isinstance(fusion_policy, str)
@@ -57,7 +87,7 @@ class Agent:
         # recorded for offline benchmarking. Tracing never changes the response,
         # so a cached benchmark run replays the shipped trajectory exactly.
         self.candidate_pool_depth = (
-            self.fusion_policy.candidate_limit
+            RERANK_CANDIDATE_DEPTH
             if candidate_pool_depth is None
             else candidate_pool_depth
         )
@@ -124,12 +154,21 @@ class Agent:
         """Return measurable load/query evidence for the dense Retrieval Route."""
         return dict(self.dense_route.metrics())
 
+    def get_reranker_metrics(self) -> dict:
+        """Return load, deadline, and fallback evidence for the rerank stage."""
+        return dict(self.reranker.metrics())
+
     def get_retrieval_configuration(self) -> dict:
         """Return the versioned retrieval settings used by scored turns."""
         configuration = {
             "policy_version": self.fusion_policy.version,
             "route_depth": DENSE_CANDIDATE_DEPTH,
+            # Fusion now produces exactly the pool the cross-encoder reranks,
+            # so this one depth is both the fused depth and the rerank boundary.
             "fused_candidate_depth": self.candidate_pool_depth,
+            "rerank_deadline_seconds": RERANK_DEADLINE_SECONDS,
+            "reranker_status": self.reranker.metrics().get("status"),
+            "reranker_identity": self.reranker.metrics().get("identity"),
         }
         weights = getattr(self.fusion_policy, "weights", None)
         if weights is not None:
@@ -200,6 +239,25 @@ class Agent:
             f"{user_message.strip()}\n"
             f"Active constraints: {'; '.join(active_evidence)}"
         )
+
+    def _rerank(self, query: str, candidates: list[str]) -> list[str]:
+        """Reorder the deep Candidate Pool, falling back to the fused ordering.
+
+        The rerank stage is never allowed to change which products are eligible,
+        only their order, so a failure returns exactly the same candidate set.
+        """
+        if not candidates:
+            return candidates
+        ranked = self.reranker.rerank(
+            query,
+            candidates,
+            self.retrieval.rerank_text,
+        )
+        if sorted(ranked) != sorted(candidates):
+            # A reranker that dropped, duplicated, or invented an identifier has
+            # broken the contract; the fused ordering is the safe answer.
+            return candidates
+        return ranked
 
     def respond(
         self,
@@ -287,9 +345,13 @@ class Agent:
                 "response_pool": list(fused_candidates),
             })
         recommendation_limit = max(0, min(top_k, 10))
+        # The reranker sees the whole deep pool, not a pre-truncated top ten:
+        # reordering only the products fusion already ranked first would leave
+        # the deeper candidates it was introduced to reach permanently unread.
+        ranked_candidates = self._rerank(dense_query, fused_candidates)
         recommendations = [
             {"parent_asin": parent_asin}
-            for parent_asin in fused_candidates[:recommendation_limit]
+            for parent_asin in ranked_candidates[:recommendation_limit]
         ]
         message = "Here are the closest matches I found."
         if outcome.source == "connected":
