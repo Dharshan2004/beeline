@@ -187,6 +187,27 @@ class AgentContractTest(unittest.TestCase):
             "last_candidate_count": 1,
         })
 
+    def test_candidate_tracing_records_each_requested_depth_independently(self) -> None:
+        self.write_catalog([
+            {"parent_asin": "A", "title": "Blue running shoe"},
+            {"parent_asin": "B", "title": "Blue walking shoe"},
+            {"parent_asin": "C", "title": "Blue casual shoe"},
+        ])
+        agent = Agent(
+            self.catalog_path,
+            dense_route=self.RecordingDenseRoute([]),
+            trace_pool_depths=(1, 2, 3),
+        )
+        agent.reset("session", {})
+
+        agent.respond("session", "blue shoe", 1, 10)
+
+        trace = agent.get_candidate_traces()["session"][0]
+        self.assertEqual(set(trace["pools"]), {"1", "2", "3"})
+        self.assertEqual(len(trace["pools"]["1"]), 1)
+        self.assertEqual(len(trace["pools"]["2"]), 2)
+        self.assertEqual(len(trace["pools"]["3"]), 3)
+
     def test_dense_query_includes_accumulated_active_constraint_state(self) -> None:
         self.write_catalog([
             {"parent_asin": "A", "title": "Cotton walking shoe"},

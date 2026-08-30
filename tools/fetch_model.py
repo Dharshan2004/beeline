@@ -1,8 +1,8 @@
-"""One-time download of the bundled embedding model.
+"""One-time download of a bundled embedding or cross-encoder model.
 
 Run this during development or image build only. The scoring path loads the
-model from disk and never downloads, so this script is deliberately separate
-from `retrieval.build_dense_index`.
+model from disk and never downloads. The resolved immutable revision is written
+to ``FETCHED.json`` for benchmark and release reproducibility.
 """
 from __future__ import annotations
 

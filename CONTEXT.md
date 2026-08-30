@@ -64,6 +64,14 @@ _Avoid_: Follow-up prompt
 The set of catalog products still under consideration for the current Constraint State.
 _Avoid_: Search results, shortlist
 
+**Route Candidate Set**:
+The catalog products independently admitted by one Retrieval Route before evidence from different routes is combined.
+_Avoid_: Route ranking, route output
+
+**Deep Candidate Pool**:
+The deduplicated union of every Route Candidate Set that remains eligible for local reranking.
+_Avoid_: BM25-dense union, fused top 30
+
 **Retrieval Route**:
 A distinct method for producing or narrowing a Candidate Pool from the current customer evidence.
 _Avoid_: Search engine, retriever
@@ -75,3 +83,7 @@ _Avoid_: Magic weights, ensemble formula
 **Conversion**:
 The first evaluation turn on which the Target Product appears in the scored recommendations.
 _Avoid_: Purchase, success
+
+**Locked Holdout**:
+The reserved evaluation sessions that cannot be executed, inspected, or used for quality, latency, or configuration decisions before the final human-reviewed release gate.
+_Avoid_: Test split, timing set

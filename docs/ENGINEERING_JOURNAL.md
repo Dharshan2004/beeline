@@ -353,7 +353,7 @@ Full artifact measurements: 669.8-second build, 198 MB artifact, 1.89-second fre
 **Evidence received from the candidate-boundary analysis:**
 
 - The fused pool of 30 makes the Target Product reachable in approximately 0.77 of sessions.
-- The deeper base-route union of roughly 100–200 candidates makes it reachable in approximately 0.93 of sessions.
+- The deeper Candidate Pool of roughly 100–200 candidates makes it reachable in approximately 0.93 of sessions.
 - Intent Override has the largest gap between post-override target recall and a valid post-override hit.
 - The latest dense-enabled end-to-end run already costs 248.45 seconds for 200 sessions before adding a cross-encoder.
 
@@ -362,7 +362,7 @@ These reachability figures currently come from the latest analysis/plan review a
 **What we changed in the plan:**
 
 1. Slice 7 now benchmarks both compact cross-encoders and practical deep-pool depths, reporting per-turn latency, full-run time, memory, package size, pool recall, final HitRate@10, MRR, and recall-to-hit conversion.
-2. Slice 8 reranks the base-route union up to the Slice 7 frozen latency budget rather than hard-coding the fused top 30.
+2. Slice 8 reranks the Deep Candidate Pool up to the Slice 7 frozen latency budget rather than hard-coding the fused top 30.
 3. Slice 10 trains Fusion Policy weights to reward the Target Product entering the rerank pool before refining final ordering.
 4. Slice 11 validates pool recall separately from post-rerank ranking, compares the fused-30 and full-union ceilings, and freezes rerank depth with the weights and models.
 5. Slice 12 is narrowed to validated LLM planning for Intent Overrides and measures only post-override eligibility and conversion; evaluator hits before the override do not count.
@@ -373,7 +373,45 @@ These reachability figures currently come from the latest analysis/plan review a
 
 **Known limitations:** A cross-encoder over 100–200 candidates per turn may exceed the evaluator budget. The 0.77 and 0.93 measurements need reproducible checked-in evidence, and the feasible depth may be smaller than the full union.
 
-**Next experiment:** Produce cached per-turn base-route unions and labels, reproduce recall@30 and full-union recall, then benchmark cross-encoders at several candidate depths against the 248.45-second no-reranker baseline.
+**Next experiment:** Produce cached per-turn Deep Candidate Pools and labels, reproduce recall@30 and full-pool recall, then benchmark cross-encoders at several candidate depths against the 248.45-second no-reranker baseline.
+
+### 2026-08-30 — Iteration 11: carry validated planning through the retrieval experiments
+
+**Related issues/commit:** #8–#13; validated planning commit `0f3130e` is already in `main` and in the ancestry of the Slice 7 and Slice 8 branches.
+
+**Problem or hypothesis:** Slices 7–11 were originally planned as a retrieval sequence parallel to Slice 12. Because validated LLM planning landed first, every reranker benchmark, replay dataset, Fusion Policy experiment, and validation run now executes through the planning-aware Agent. Treating those experiments as stateless ranking work would allow pre-override recommendations, obsolete Product Intent Constraints, or a different set of selected Retrieval Routes to corrupt the measured result.
+
+**Evidence:** The Agent validates and commits the Turn Plan before it chooses Retrieval Routes, constructs route scores, applies fusion, and returns recommendations. The official evaluator counts an Intent Override conversion only after the override is applied. The initial Slice 7 replay implementation cached the Target Product and ranking but not conversion eligibility, so its offline scorer could count a pre-override target that the evaluator correctly rejects.
+
+**Cross-slice consequences:**
+
+1. **Slice 7 — reranker decision gate.** Generate the benchmark trajectory with deterministic offline planning, record hit eligibility on every turn, and compute Intent Override HitRate@10, MRR, efficiency, and TechnicalScore only from eligible post-override recommendations. A reranker comparison is invalid if planning or route selection varies between candidate configurations.
+2. **Slice 8 — live deep reranking.** Keep reranking downstream of the committed Turn Plan and Fusion Policy. After an Intent Override, the reranker must receive the new-intent Candidate Pool immediately; timeout or model failure must preserve that post-override fused ordering and may never restore obsolete constraints.
+3. **Slice 9 — replayable fusion-training dataset.** Record the planning configuration, Turn Plan source, selected Retrieval Routes, Constraint State revision, per-turn conversion eligibility, exact depth-specific Candidate Pools, scenario type, and post-override query/target evidence. Generate the dataset with deterministic offline planning so repeated runs do not vary with provider output.
+4. **Slice 10 — pool-aware Fusion Policy training.** Ignore pre-override target inclusion. For Intent Override sessions, optimize pool recall only after the new Product Intent commits, and report the scenario separately rather than allowing aggregate gains to hide a post-override regression.
+5. **Slice 11 — validation and freeze.** Validate the complete versioned planning/retrieval trajectory: planner and fallback versions, selected tools, route limits, Fusion Policy, reranker identity, depth, and timeout. Apply scenario regression guardrails to post-override Intent Override metrics and keep the locked holdout unopened until Slice 18.
+
+**Decision and rationale:** Slice 12 does not move behind the retrieval work and is not bypassed during benchmarking. Its validated planning boundary is now part of the experimental contract for Slices 7–11. Development reranker and fusion experiments use `planning_provider=None` to obtain deterministic local Turn Plans; connected-provider quality and cost remain the responsibility of Slices 14–15. This isolates retrieval decisions while preserving the same state-transition and conversion semantics used by the official Agent.
+
+**Known limitations:** Slice 7 measures the local/offline Agent budget, not the eventual connected configuration's complete latency. Later connected-model and release gates must remeasure end-to-end latency with planning enabled. Existing candidate-boundary figures produced before eligibility-aware replay remain hypotheses until regenerated.
+
+**Next experiment:** Repair Slice 7 replay eligibility and exact Candidate Pool tracing, run the 160-session development benchmark without opening the holdout, and preserve the selected configuration and machine-readable evidence before Slice 8 activates live reranking.
+
+### 2026-08-30 — Iteration 12: freeze the local reranker at MiniLM-L6 depth 50
+
+**Related issue/artifact:** #8; `docs/reranker_benchmark.json`.
+
+**Problem or hypothesis:** Select the deepest three-route Candidate Pool that a compact CPU cross-encoder can rerank without sacrificing fused-30 quality or exceeding the predeclared runtime gates.
+
+**Change:** Repaired route admission and strict caps, cached exact pools at depths 30/50/100/150/200/250/300 across all 160 development sessions, preserved post-override conversion eligibility, and benchmarked three immutable local cross-encoder revisions on the same 1,009 cached turns. Frozen split identifiers discarded the locked 40-session JSONL rows before their payloads were deserialized or inspected.
+
+**Evidence:** The fused-30 baseline produced HitRate@10 0.543750, MRR 0.368237, TechnicalScore 0.467096, and a normalized 200-session wall projection of 239.8 seconds. `ms-marco-MiniLM-L-6-v2` at depth 50 produced HitRate@10 0.600000, MRR 0.376215, TechnicalScore 0.507240, p95 rerank latency 548.9 ms, and an 800.6-second projection. Its depth-100 row improved HitRate@10 to 0.618750 and TechnicalScore to 0.519015 but projected to 1,366.9 seconds, failing the 900-second gate. TinyBERT never improved TechnicalScore; MiniLM-L2 qualified only at depth 30.
+
+**Decision and rationale:** Freeze `cross-encoder/ms-marco-MiniLM-L-6-v2` revision `233902d25c440f23af6f7d6e94d2946bac0bee0a` at Candidate Pool depth 50. It is the deepest configuration that passes both runtime gates and both quality floors. Depth 50 has 0.775 session pool recall versus the observed depth-300 ceiling of 0.900, so truncation gives up 0.125 reachability for runtime feasibility.
+
+**Known limitation:** These quality figures are replay metrics on a fixed deterministic trajectory. Slice 8 must validate live end-to-end behavior and implement the persistent cancellable worker with an absolute 1.5-second deadline; Slice 7 does not activate reranking.
+
+**Next experiment:** Integrate the frozen model and depth downstream of the committed Turn Plan and Fusion Policy, then run the official development evaluator with timeout and fail-open tests.
 
 ## Current architectural invariants
 
@@ -386,6 +424,8 @@ These reachability figures currently come from the latest analysis/plan review a
 - The complete Turn Plan validates against one state revision and commits once.
 - Invalid, stale, replayed, or contradictory plans change nothing.
 - Connected and offline interpreters must use the same Turn Plan and validation boundary.
+- A valid Turn Plan commits before Retrieval Routes, fusion, or reranking execute for that turn.
+- Intent Override conversion eligibility begins only after the replacement Product Intent commits; pre-override recommendations never count as hits in live or replay evaluation.
 
 ### Retrieval
 
@@ -400,6 +440,8 @@ These reachability figures currently come from the latest analysis/plan review a
 - A malformed connected plan receives at most one bounded correction attempt before deterministic takeover.
 - Fallback begins from the same unchanged state snapshot after a rejected model plan.
 - Recommendations remain ordered, unique, catalog-valid, and bounded by `top_k`.
+- Development retrieval experiments use deterministic offline planning unless connected planning is the variable explicitly under test.
+- Replay evidence records enough planning and state identity to reproduce the route set, Candidate Pools, and conversion eligibility of every scored turn.
 
 ## Open questions and risks
 
@@ -408,8 +450,8 @@ These reachability figures currently come from the latest analysis/plan review a
 - Whether Session Constraints should participate in every future Product Intent automatically or require attribute-specific compatibility checks.
 - How Clarifications should behave when a same-attribute addition versus replacement remains ambiguous.
 - Intent Override quality remains weak at 0.433333 Hit Rate@10 in the dense-enabled run; pre-override hits are irrelevant after the evaluator resets conversion eligibility.
-- The fused top-30 pool appears to cap reachability near 0.77 versus approximately 0.93 for the deep base-route union; these figures need a checked-in reproduction artifact.
-- Cross-encoding 100–200 candidates per turn may exceed the evaluator time limit on top of the current 248.45-second dense-enabled run.
+- The fused top-30 pool appears to cap reachability near 0.77 versus approximately 0.93 for the Deep Candidate Pool; these figures need eligibility-aware checked-in reproduction evidence.
+- Cross-encoding practical depths up to the 300-candidate three-route cap may exceed the evaluator time limit on top of the current 248.45-second dense-enabled run.
 - Fusion training can overfit final ordering while failing to improve pool membership unless pool recall at the frozen rerank depth is an explicit objective.
 - Public evaluator sessions are not sufficient evidence for robust compound-turn behavior. Adversarial tests are required.
 
@@ -452,19 +494,19 @@ These reachability figures currently come from the latest analysis/plan review a
 
 ### Deep Candidate Pool and reranker budget
 
-- Cache the per-turn structured/BM25/dense base-route union and target label.
-- Reproduce aggregate and per-scenario pool recall at fused depth 30 and across practical depths from 100 to the full union.
+- Cache the per-turn structured/BM25/dense Route Candidate Sets, exact depth-specific Candidate Pools, target label, state revision, selected tools, and conversion eligibility.
+- Reproduce aggregate and per-scenario pool recall at exact depths 30, 50, 100, 150, 200, 250, and 300.
 - Benchmark at least two compact cross-encoders on identical cached pools.
-- Record reranker p50/p95 turn latency, complete 200-session wall time, peak memory, and package size.
+- Measure the complete 160-session development run; report p50/p95 rerank latency, peak memory, package size, and a clearly labelled 200-session runtime projection without executing the locked holdout.
 - Freeze the deepest pool that fits the evaluator time budget and record any recall ceiling sacrificed by truncation.
-- Report pool recall, post-rerank HitRate@10, MRR, and recall-to-hit conversion as separate metrics.
+- Report pool recall, post-rerank HitRate@10, MRR, efficiency, TechnicalScore, and recall-to-hit conversion separately, using post-override-only eligibility for Intent Override sessions.
 
 ### Pool-aware fusion
 
 - Train non-negative weights with target inclusion at the frozen rerank depth as the primary signal.
 - Compare learned membership with fused-30, full-union, fixed RRF, and every single route.
 - Use the official Technical Score and final rank metrics to refine policies within the accepted pool-recall range.
-- Preserve per-scenario regression guardrails and call out Intent Override separately.
+- Preserve per-scenario regression guardrails and compute Intent Override training and validation signals only after the replacement Product Intent commits.
 
 ### Post-override planning
 

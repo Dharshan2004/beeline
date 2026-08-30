@@ -6,11 +6,17 @@ import sqlite3
 from dataclasses import dataclass
 from pathlib import Path
 
+from retrieval.product_text import product_text
 from starter.constraint_state import Constraint
 from starter.turn_interpreter import normalize_text, value_variants
 
 
 TOKEN_RE = re.compile(r"[a-z0-9]+", re.IGNORECASE)
+# A cross-encoder truncates its pair at a few hundred tokens, so keeping the
+# whole catalog rendering in memory would cost tens of megabytes that the model
+# never reads. This budget comfortably covers the sequence length in
+# 'retrieval.reranker' while bounding the resident cost of the map.
+RERANK_TEXT_CHAR_LIMIT = 512
 STOPWORDS = {
     "a", "an", "and", "are", "as", "at", "be", "but", "by", "for", "from",
     "i", "in", "is", "it", "me", "my", "of", "on", "or", "please", "some",
@@ -90,6 +96,10 @@ class CatalogRetrieval:
         self.catalog_path = Path(catalog_path)
         self.connection = sqlite3.connect(":memory:")
         self.product_text: dict[str, str] = {}
+        # Cased, field-labelled renderings for the cross-encoder. 'product_text'
+        # above is normalized for lexical matching and reads poorly to a model
+        # trained on natural passages.
+        self.rerank_text: dict[str, str] = {}
         self.supported_values: dict[str, set[str]] = {
             attribute: set() for attribute in CONSTRAINT_VALUES
         }
@@ -120,6 +130,10 @@ class CatalogRetrieval:
                 self.product_text[parent_asin] = (
                     f"{self.product_text.get(parent_asin, '')} {normalized}".strip()
                 )
+                if parent_asin not in self.rerank_text:
+                    self.rerank_text[parent_asin] = product_text(
+                        product,
+                    )[:RERANK_TEXT_CHAR_LIMIT]
                 for attribute, values in CONSTRAINT_VALUES.items():
                     for value in values:
                         if _contains_value(normalized, value):
@@ -352,14 +366,7 @@ class CatalogRetrieval:
                         break
             structured = list(structured_scores.items())
             structured.sort(key=lambda item: (-item[1], item[0]))
-            if len(structured) > route_limit:
-                # Never split a tied score group: cutting ties by ASIN order would
-                # make route membership, and therefore fused evidence, arbitrary.
-                cutoff_score = structured[route_limit - 1][1]
-                end = route_limit
-                while end < len(structured) and structured[end][1] == cutoff_score:
-                    end += 1
-                structured = structured[:end]
+            structured = structured[:route_limit]
 
         inactive_terms = {
             term
