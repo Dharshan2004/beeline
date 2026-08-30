@@ -1,20 +1,38 @@
 from __future__ import annotations
 
 import os
+from dataclasses import dataclass
 from pathlib import Path
+from types import MappingProxyType
 from typing import Sequence
 
 
-# Candidate cross-encoders compared in Slice 07. Each is small enough to bundle
-# and runs on CPU without a runtime download.
-RERANKER_CANDIDATES: dict[str, str] = {
-    "cross-encoder/ms-marco-TinyBERT-L-2-v2": "cross-encoder__ms-marco-TinyBERT-L-2-v2",
-    "cross-encoder/ms-marco-MiniLM-L-2-v2": "cross-encoder__ms-marco-MiniLM-L-2-v2",
-    "cross-encoder/ms-marco-MiniLM-L-6-v2": "cross-encoder__ms-marco-MiniLM-L-6-v2",
-}
+@dataclass(frozen=True)
+class RerankerCandidate:
+    directory: str
+    revision: str
+
+
+# The one immutable candidate manifest used by fetch, score, and summarize.
+RERANKER_CANDIDATES = MappingProxyType({
+    "cross-encoder/ms-marco-TinyBERT-L-2-v2": RerankerCandidate(
+        "cross-encoder__ms-marco-TinyBERT-L-2-v2",
+        "81d1926f67cb8eee2c2be17ca9f793c7c3bd20cc",
+    ),
+    "cross-encoder/ms-marco-MiniLM-L-2-v2": RerankerCandidate(
+        "cross-encoder__ms-marco-MiniLM-L-2-v2",
+        "1b5cd67b15209f24824c50370e0397743aa9b787",
+    ),
+    "cross-encoder/ms-marco-MiniLM-L-6-v2": RerankerCandidate(
+        "cross-encoder__ms-marco-MiniLM-L-6-v2",
+        "233902d25c440f23af6f7d6e94d2946bac0bee0a",
+    ),
+})
 
 DEFAULT_RERANKER_IDENTITY = "cross-encoder/ms-marco-MiniLM-L-6-v2"
-DEFAULT_RERANKER_DIR = Path("models") / RERANKER_CANDIDATES[DEFAULT_RERANKER_IDENTITY]
+DEFAULT_RERANKER_DIR = (
+    Path("models") / RERANKER_CANDIDATES[DEFAULT_RERANKER_IDENTITY].directory
+)
 FROZEN_RERANK_DEPTH = 50
 
 # A query plus one product rendering. Cross-encoder cost is dominated by

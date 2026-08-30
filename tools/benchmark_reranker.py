@@ -34,6 +34,7 @@ import platform
 import socket
 import statistics
 import time
+from contextlib import ExitStack, contextmanager
 from pathlib import Path
 from typing import Sequence
 from unittest.mock import patch
@@ -81,12 +82,18 @@ def _directory_size_bytes(path: Path) -> int:
     return sum(item.stat().st_size for item in path.rglob("*") if item.is_file())
 
 
+@contextmanager
 def _network_disabled():
-    return patch.object(
-        socket.socket,
-        "connect",
-        side_effect=RuntimeError("network is disabled during reranker benchmarking"),
-    )
+    blocked = RuntimeError("network is disabled during reranker benchmarking")
+    methods = ["connect", "connect_ex", "sendto"]
+    if hasattr(socket.socket, "sendmsg"):
+        methods.append("sendmsg")
+    with ExitStack() as stack:
+        for method in methods:
+            stack.enter_context(
+                patch.object(socket.socket, method, side_effect=blocked)
+            )
+        yield
 
 
 def _records_digest(records: Sequence[dict]) -> str:
@@ -103,7 +110,11 @@ def _model_provenance(model_dir: Path, identity: str) -> dict:
     if not fetched_path.is_file():
         raise RuntimeError(f"missing model provenance: {fetched_path}")
     fetched = json.loads(fetched_path.read_text(encoding="utf-8"))
-    if fetched.get("identity") != identity or not fetched.get("revision"):
+    candidate = RERANKER_CANDIDATES[identity]
+    if (
+        fetched.get("identity") != identity
+        or fetched.get("revision") != candidate.revision
+    ):
         raise RuntimeError(
             f"model provenance does not match {identity}: {fetched_path}"
         )
@@ -378,7 +389,8 @@ def _score_cache_offline(arguments: argparse.Namespace) -> dict:
         records = subset_records(records, arguments.sessions)
     if not records:
         raise ValueError("the reranker cache contains no scored turns")
-    model_dir = Path(arguments.model_dir or Path("models") / RERANKER_CANDIDATES[arguments.identity])
+    candidate = RERANKER_CANDIDATES[arguments.identity]
+    model_dir = Path(arguments.model_dir or Path("models") / candidate.directory)
 
     documents: dict[str, str] = {}
     wanted = {
@@ -492,33 +504,39 @@ def _score_cache_offline(arguments: argparse.Namespace) -> dict:
     }
 
 
+def _score_manifest(report: dict) -> dict:
+    return {
+        "cache_sha256": report.get("cache_sha256"),
+        "session_count": report.get("session_count"),
+        "turn_count": report.get("turn_count"),
+        "depths": report.get("depths"),
+        "baseline_row": report.get("baseline_row"),
+    }
+
+
 def summarize(arguments: argparse.Namespace) -> dict:
     """Merge the per-model reports and apply the documented selection rule."""
     reports = [
         json.loads(Path(path).read_text(encoding="utf-8"))
         for path in arguments.reports
     ]
+    identities = [report.get("identity") for report in reports]
+    if (
+        len(identities) != len(set(identities))
+        or set(identities) != set(RERANKER_CANDIDATES)
+    ):
+        raise RuntimeError(
+            "reports must contain every declared reranker candidate exactly once"
+        )
     expected_depths = list(DEFAULT_DEPTHS)
     reference = reports[0]
-    required_manifest = {
-        "cache_sha256": reference.get("cache_sha256"),
-        "session_count": reference.get("session_count"),
-        "turn_count": reference.get("turn_count"),
-        "depths": reference.get("depths"),
-        "baseline_row": reference.get("baseline_row"),
-    }
+    required_manifest = _score_manifest(reference)
     if required_manifest["cache_sha256"] is None:
         raise RuntimeError("score report is missing its cache identity manifest")
     if required_manifest["depths"] != expected_depths:
         raise RuntimeError("score report does not cover every declared exact depth")
     for report in reports[1:]:
-        manifest = {
-            "cache_sha256": report.get("cache_sha256"),
-            "session_count": report.get("session_count"),
-            "turn_count": report.get("turn_count"),
-            "depths": report.get("depths"),
-            "baseline_row": report.get("baseline_row"),
-        }
+        manifest = _score_manifest(report)
         if manifest != required_manifest:
             raise RuntimeError(
                 "score reports do not share one identical cache/depth manifest"
@@ -547,6 +565,25 @@ def summarize(arguments: argparse.Namespace) -> dict:
     metadata = json.loads(Path(arguments.cache_meta).read_text(encoding="utf-8"))
     if metadata.get("cache_sha256") != required_manifest["cache_sha256"]:
         raise RuntimeError("cache metadata does not match the score-report cache")
+    if (
+        metadata.get("session_count") != required_manifest["session_count"]
+        or metadata.get("turn_count") != required_manifest["turn_count"]
+    ):
+        raise RuntimeError("cache metadata counts do not match the score reports")
+    metadata_baseline = metadata.get("baseline_metrics", {})
+    report_baseline = required_manifest["baseline_row"]
+    for field in (
+        "hit_rate_at_10", "mrr", "mttc", "efficiency",
+        "recommended_technical_score",
+    ):
+        if field in report_baseline and metadata_baseline.get(field) != report_baseline[field]:
+            raise RuntimeError("cache metadata baseline does not match score reports")
+    metadata_recall = metadata.get("pool_recall_by_depth", {}).get(
+        str(FUSED_BASELINE_DEPTH), {}
+    )
+    for field in ("session_pool_recall", "turn_pool_recall"):
+        if metadata_recall.get(field) != report_baseline[field]:
+            raise RuntimeError("cache metadata pool recall does not match score reports")
     cached_sessions = int(metadata["session_count"])
     cached_turns = int(metadata["turn_count"])
     baseline_seconds = float(metadata["baseline_wall_seconds"])

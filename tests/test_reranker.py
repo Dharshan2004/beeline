@@ -13,6 +13,7 @@ from retrieval.reranker import (
     FROZEN_RERANK_DEPTH,
     RERANKER_CANDIDATES,
     CrossEncoderReranker,
+    RerankerCandidate,
     RerankerUnavailable,
     order_by_scores,
 )
@@ -308,16 +309,25 @@ class BenchmarkMetricsTest(unittest.TestCase):
 
 class BenchmarkCacheTest(unittest.TestCase):
     def test_score_stage_rejects_general_network_connections(self) -> None:
-        def attempt_connection(_arguments):
-            with socket.socket() as connection:
-                connection.connect(("127.0.0.1", 9))
+        attempts = {
+            "connect": lambda connection: connection.connect(("127.0.0.1", 9)),
+            "connect_ex": lambda connection: connection.connect_ex(("127.0.0.1", 9)),
+            "sendto": lambda connection: connection.sendto(
+                b"blocked", ("127.0.0.1", 9)
+            ),
+        }
+        for name, attempt in attempts.items():
+            with self.subTest(name=name):
+                def attempt_connection(_arguments):
+                    with socket.socket() as connection:
+                        attempt(connection)
 
-        with patch(
-            "tools.benchmark_reranker._score_cache_offline",
-            side_effect=attempt_connection,
-        ):
-            with self.assertRaisesRegex(RuntimeError, "network is disabled"):
-                score_cache(object())
+                with patch(
+                    "tools.benchmark_reranker._score_cache_offline",
+                    side_effect=attempt_connection,
+                ):
+                    with self.assertRaisesRegex(RuntimeError, "network is disabled"):
+                        score_cache(object())
 
     def test_cache_refuses_to_measure_without_the_dense_route(self) -> None:
         class DisabledDenseAgent:
@@ -343,6 +353,17 @@ class BenchmarkCacheTest(unittest.TestCase):
 
 
 class SummaryTest(unittest.TestCase):
+    def summarize_declared_reports(self, arguments):
+        identities = {
+            json.loads(Path(path).read_text(encoding="utf-8"))["identity"]
+            for path in arguments.reports
+        }
+        with patch(
+            "tools.benchmark_reranker.RERANKER_CANDIDATES",
+            {identity: object() for identity in identities},
+        ):
+            return summarize(arguments)
+
     def test_model_provenance_requires_the_declared_immutable_revision(self) -> None:
         directory = tempfile.TemporaryDirectory()
         self.addCleanup(directory.cleanup)
@@ -353,12 +374,17 @@ class SummaryTest(unittest.TestCase):
             "revision": "abc123",
         }), encoding="utf-8")
 
-        provenance = _model_provenance(root, "candidate/model")
+        manifest = {
+            "candidate/model": RerankerCandidate("candidate", "abc123"),
+            "different/model": RerankerCandidate("different", "abc123"),
+        }
+        with patch("tools.benchmark_reranker.RERANKER_CANDIDATES", manifest):
+            provenance = _model_provenance(root, "candidate/model")
 
-        self.assertEqual(provenance["revision"], "abc123")
-        self.assertGreater(provenance["model_bytes"], len(b"weights"))
-        with self.assertRaisesRegex(RuntimeError, "does not match"):
-            _model_provenance(root, "different/model")
+            self.assertEqual(provenance["revision"], "abc123")
+            self.assertGreater(provenance["model_bytes"], len(b"weights"))
+            with self.assertRaisesRegex(RuntimeError, "does not match"):
+                _model_provenance(root, "different/model")
 
     def test_the_winner_respects_the_runtime_budget(self) -> None:
         directory = tempfile.TemporaryDirectory()
@@ -371,6 +397,10 @@ class SummaryTest(unittest.TestCase):
             "baseline_wall_seconds": 100.0,
             "baseline_peak_rss_bytes": 1,
             "cache_sha256": "digest",
+            "baseline_metrics": {"hit_rate_at_10": 0.50, "mrr": 0.3},
+            "pool_recall_by_depth": {"30": {
+                "session_pool_recall": 0.7, "turn_pool_recall": 0.5,
+            }},
         }), encoding="utf-8")
         report = root / "model.json"
         report.write_text(json.dumps({
@@ -423,7 +453,7 @@ class SummaryTest(unittest.TestCase):
             runtime_budget_seconds = 400.0
             p95_budget_ms = 1500.0
 
-        summary = summarize(_Arguments())
+        summary = self.summarize_declared_reports(_Arguments())
 
         # Depth 200 fits the aggregate budget but violates the independent
         # per-turn tail-latency gate.
@@ -436,11 +466,12 @@ class SummaryTest(unittest.TestCase):
 
         mismatched = root / "mismatched.json"
         mismatched_report = json.loads(report.read_text(encoding="utf-8"))
+        mismatched_report["identity"] = "second-model"
         mismatched_report["cache_sha256"] = "different"
         mismatched.write_text(json.dumps(mismatched_report), encoding="utf-8")
         _Arguments.reports = [str(report), str(mismatched)]
         with self.assertRaisesRegex(RuntimeError, "identical cache/depth manifest"):
-            summarize(_Arguments())
+            self.summarize_declared_reports(_Arguments())
 
     def test_the_winner_prioritizes_depth_after_quality_floors(self) -> None:
         directory = tempfile.TemporaryDirectory()
@@ -453,6 +484,13 @@ class SummaryTest(unittest.TestCase):
             "baseline_wall_seconds": 100.0,
             "baseline_peak_rss_bytes": 1,
             "cache_sha256": "digest",
+            "baseline_metrics": {
+                "hit_rate_at_10": 0.50, "mrr": 0.3, "mttc": 6.0,
+                "efficiency": 0.5, "recommended_technical_score": 0.44,
+            },
+            "pool_recall_by_depth": {"30": {
+                "session_pool_recall": 0.7, "turn_pool_recall": 0.5,
+            }},
         }), encoding="utf-8")
         baseline = {
             "identity": "none (fused-30 baseline)", "depth": 30,
@@ -491,7 +529,7 @@ class SummaryTest(unittest.TestCase):
             runtime_budget_seconds = 900.0
             p95_budget_ms = 1500.0
 
-        summary = summarize(_Arguments())
+        summary = self.summarize_declared_reports(_Arguments())
 
         self.assertEqual(summary["selected"]["depth"], 100)
 
@@ -504,6 +542,13 @@ class SummaryTest(unittest.TestCase):
             "session_count": 160, "turn_count": 1000,
             "baseline_wall_seconds": 100.0, "baseline_peak_rss_bytes": 1,
             "cache_sha256": "digest",
+            "baseline_metrics": {
+                "hit_rate_at_10": 0.60, "mrr": 0.4,
+                "recommended_technical_score": 0.60,
+            },
+            "pool_recall_by_depth": {"30": {
+                "session_pool_recall": 0.7, "turn_pool_recall": 0.5,
+            }},
         }), encoding="utf-8")
         baseline = {
             "identity": "none", "depth": 30, "reranked": False,
@@ -536,7 +581,7 @@ class SummaryTest(unittest.TestCase):
             runtime_budget_seconds = 900.0
             p95_budget_ms = 1500.0
 
-        summary = summarize(_Arguments())
+        summary = self.summarize_declared_reports(_Arguments())
 
         self.assertIsNone(summary["selected"])
         self.assertEqual(summary["decision"], "no_reranker")

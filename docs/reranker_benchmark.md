@@ -91,6 +91,8 @@ The run used Python 3.11.9 on an Apple M2 MacBook Air with 8 CPU cores and 16 GB
 memory. Every stage forces `CUDA_VISIBLE_DEVICES=""`, `HF_HUB_OFFLINE=1`, and
 `TRANSFORMERS_OFFLINE=1`; cache construction additionally rejects socket
 connections. Missing or mismatched local model provenance is a hard failure.
+Scoring and summarization require each candidate below exactly once at its frozen
+revision; omitting, duplicating, or substituting a candidate rejects the run.
 
 | Model | Immutable revision | Package | Peak RSS |
 | --- | --- | ---: | ---: |
