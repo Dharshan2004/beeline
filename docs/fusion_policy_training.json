@@ -1,0 +1,2719 @@
+{
+  "baselines": {
+    "current_fixed": {
+      "depth": 50,
+      "metrics": {
+        "efficiency": 0.49625,
+        "hit_rate_at_10": 0.6375,
+        "mrr": 0.405035,
+        "mttc": 6.0375,
+        "recommended_technical_score": 0.539511,
+        "session_count": 160
+      },
+      "pool_recall": {
+        "session_pool_recall": 0.775,
+        "turn_pool_recall": 0.187943
+      },
+      "recall_to_hit_conversion": 0.822581,
+      "reranked": true,
+      "scenario_metrics": {
+        "boundary": {
+          "metrics": {
+            "efficiency": 0.475,
+            "hit_rate_at_10": 0.625,
+            "mrr": 0.479167,
+            "mttc": 6.25,
+            "recommended_technical_score": 0.55125,
+            "session_count": 8
+          },
+          "pool_recall": {
+            "session_pool_recall": 0.625,
+            "turn_pool_recall": 0.148936
+          }
+        },
+        "browsing": {
+          "metrics": {
+            "efficiency": 0.585938,
+            "hit_rate_at_10": 0.78125,
+            "mrr": 0.482688,
+            "mttc": 5.140625,
+            "recommended_technical_score": 0.652619,
+            "session_count": 64
+          },
+          "pool_recall": {
+            "session_pool_recall": 0.890625,
+            "turn_pool_recall": 0.234921
+          }
+        },
+        "buying": {
+          "metrics": {
+            "efficiency": 0.510938,
+            "hit_rate_at_10": 0.59375,
+            "mrr": 0.36219,
+            "mttc": 5.890625,
+            "recommended_technical_score": 0.50772,
+            "session_count": 64
+          },
+          "pool_recall": {
+            "session_pool_recall": 0.78125,
+            "turn_pool_recall": 0.185185
+          }
+        },
+        "intent_override": {
+          "metrics": {
+            "efficiency": 0.225,
+            "hit_rate_at_10": 0.375,
+            "mrr": 0.2875,
+            "mttc": 8.75,
+            "recommended_technical_score": 0.31875,
+            "session_count": 24
+          },
+          "pool_recall": {
+            "session_pool_recall": 0.5,
+            "turn_pool_recall": 0.097744
+          }
+        }
+      },
+      "weights": {
+        "bm25": 0.55,
+        "dense": 0.3,
+        "structured": 0.15
+      }
+    },
+    "fused_30": {
+      "depth": 30,
+      "metrics": {
+        "efficiency": 0.42375,
+        "hit_rate_at_10": 0.54375,
+        "mrr": 0.368237,
+        "mttc": 6.7625,
+        "recommended_technical_score": 0.467096,
+        "session_count": 160
+      },
+      "policy": "fixed-hybrid-v1",
+      "pool_recall": {
+        "session_pool_recall": 0.725,
+        "turn_pool_recall": 0.165787
+      },
+      "provenance": {
+        "cache_sha256": "0496583548e19d4cb3b314acaa156b8bc1740027859dad4ae1bd2832216910da",
+        "source_report_sha256": "c50d146341c231c38ed0e09d3f1d8788d28bb5674d13480d46d87ccfb2b05d40",
+        "turn_count": 1009
+      },
+      "recall_to_hit_conversion": 0.75,
+      "reranked": false,
+      "scenario_metrics": {
+        "boundary": {
+          "hit_rate_at_10": 0.5,
+          "mrr": 0.34375,
+          "mttc": 7.125,
+          "sample_count": 8
+        },
+        "browsing": {
+          "hit_rate_at_10": 0.65625,
+          "mrr": 0.43954,
+          "mttc": 6.0625,
+          "sample_count": 64
+        },
+        "buying": {
+          "hit_rate_at_10": 0.515625,
+          "mrr": 0.347458,
+          "mttc": 6.546875,
+          "sample_count": 64
+        },
+        "intent_override": {
+          "hit_rate_at_10": 0.333333,
+          "mrr": 0.241667,
+          "mttc": 9.083333,
+          "sample_count": 24
+        }
+      },
+      "weights": {
+        "bm25": 0.55,
+        "dense": 0.3,
+        "structured": 0.15
+      }
+    },
+    "rrf": {
+      "depth": 50,
+      "metrics": {
+        "efficiency": 0.4425,
+        "hit_rate_at_10": 0.55625,
+        "mrr": 0.363703,
+        "mttc": 6.575,
+        "recommended_technical_score": 0.475736,
+        "session_count": 160
+      },
+      "policy": "fixed-rrf-v1",
+      "pool_recall": {
+        "session_pool_recall": 0.66875,
+        "turn_pool_recall": 0.166667
+      },
+      "recall_to_hit_conversion": 0.831776,
+      "reranked": true,
+      "scenario_metrics": {
+        "boundary": {
+          "metrics": {
+            "efficiency": 0.475,
+            "hit_rate_at_10": 0.625,
+            "mrr": 0.479167,
+            "mttc": 6.25,
+            "recommended_technical_score": 0.55125,
+            "session_count": 8
+          },
+          "pool_recall": {
+            "session_pool_recall": 0.625,
+            "turn_pool_recall": 0.12766
+          }
+        },
+        "browsing": {
+          "metrics": {
+            "efficiency": 0.50625,
+            "hit_rate_at_10": 0.65625,
+            "mrr": 0.409803,
+            "mttc": 5.9375,
+            "recommended_technical_score": 0.552316,
+            "session_count": 64
+          },
+          "pool_recall": {
+            "session_pool_recall": 0.765625,
+            "turn_pool_recall": 0.203175
+          }
+        },
+        "buying": {
+          "metrics": {
+            "efficiency": 0.465625,
+            "hit_rate_at_10": 0.53125,
+            "mrr": 0.33409,
+            "mttc": 6.34375,
+            "recommended_technical_score": 0.458977,
+            "session_count": 64
+          },
+          "pool_recall": {
+            "session_pool_recall": 0.6875,
+            "turn_pool_recall": 0.176638
+          }
+        },
+        "intent_override": {
+          "metrics": {
+            "efficiency": 0.2,
+            "hit_rate_at_10": 0.333333,
+            "mrr": 0.28125,
+            "mttc": 9.0,
+            "recommended_technical_score": 0.291041,
+            "session_count": 24
+          },
+          "pool_recall": {
+            "session_pool_recall": 0.375,
+            "turn_pool_recall": 0.067669
+          }
+        }
+      }
+    },
+    "single_bm25": {
+      "depth": 50,
+      "metrics": {
+        "efficiency": 0.508125,
+        "hit_rate_at_10": 0.65,
+        "mrr": 0.403276,
+        "mttc": 5.91875,
+        "recommended_technical_score": 0.547608,
+        "session_count": 160
+      },
+      "policy": "single-bm25-v1",
+      "pool_recall": {
+        "session_pool_recall": 0.7875,
+        "turn_pool_recall": 0.205674
+      },
+      "recall_to_hit_conversion": 0.825397,
+      "reranked": true,
+      "scenario_metrics": {
+        "boundary": {
+          "metrics": {
+            "efficiency": 0.475,
+            "hit_rate_at_10": 0.625,
+            "mrr": 0.479167,
+            "mttc": 6.25,
+            "recommended_technical_score": 0.55125,
+            "session_count": 8
+          },
+          "pool_recall": {
+            "session_pool_recall": 0.625,
+            "turn_pool_recall": 0.12766
+          }
+        },
+        "browsing": {
+          "metrics": {
+            "efficiency": 0.592187,
+            "hit_rate_at_10": 0.78125,
+            "mrr": 0.466226,
+            "mttc": 5.078125,
+            "recommended_technical_score": 0.64893,
+            "session_count": 64
+          },
+          "pool_recall": {
+            "session_pool_recall": 0.875,
+            "turn_pool_recall": 0.238095
+          }
+        },
+        "buying": {
+          "metrics": {
+            "efficiency": 0.515625,
+            "hit_rate_at_10": 0.59375,
+            "mrr": 0.366964,
+            "mttc": 5.84375,
+            "recommended_technical_score": 0.510089,
+            "session_count": 64
+          },
+          "pool_recall": {
+            "session_pool_recall": 0.796875,
+            "turn_pool_recall": 0.205128
+          }
+        },
+        "intent_override": {
+          "metrics": {
+            "efficiency": 0.275,
+            "hit_rate_at_10": 0.458333,
+            "mrr": 0.306944,
+            "mttc": 8.25,
+            "recommended_technical_score": 0.37625,
+            "session_count": 24
+          },
+          "pool_recall": {
+            "session_pool_recall": 0.583333,
+            "turn_pool_recall": 0.157895
+          }
+        }
+      }
+    },
+    "single_dense": {
+      "depth": 50,
+      "metrics": {
+        "efficiency": 0.2825,
+        "hit_rate_at_10": 0.3375,
+        "mrr": 0.218956,
+        "mttc": 8.175,
+        "recommended_technical_score": 0.290937,
+        "session_count": 160
+      },
+      "policy": "single-dense-v1",
+      "pool_recall": {
+        "session_pool_recall": 0.4125,
+        "turn_pool_recall": 0.093381
+      },
+      "recall_to_hit_conversion": 0.818182,
+      "reranked": true,
+      "scenario_metrics": {
+        "boundary": {
+          "metrics": {
+            "efficiency": 0.2,
+            "hit_rate_at_10": 0.25,
+            "mrr": 0.166667,
+            "mttc": 9.0,
+            "recommended_technical_score": 0.215,
+            "session_count": 8
+          },
+          "pool_recall": {
+            "session_pool_recall": 0.25,
+            "turn_pool_recall": 0.06383
+          }
+        },
+        "browsing": {
+          "metrics": {
+            "efficiency": 0.273438,
+            "hit_rate_at_10": 0.34375,
+            "mrr": 0.227015,
+            "mttc": 8.265625,
+            "recommended_technical_score": 0.294667,
+            "session_count": 64
+          },
+          "pool_recall": {
+            "session_pool_recall": 0.421875,
+            "turn_pool_recall": 0.101587
+          }
+        },
+        "buying": {
+          "metrics": {
+            "efficiency": 0.359375,
+            "hit_rate_at_10": 0.390625,
+            "mrr": 0.233135,
+            "mttc": 7.40625,
+            "recommended_technical_score": 0.337128,
+            "session_count": 64
+          },
+          "pool_recall": {
+            "session_pool_recall": 0.5,
+            "turn_pool_recall": 0.096866
+          }
+        },
+        "intent_override": {
+          "metrics": {
+            "efficiency": 0.129167,
+            "hit_rate_at_10": 0.208333,
+            "mrr": 0.177083,
+            "mttc": 9.708333,
+            "recommended_technical_score": 0.183125,
+            "session_count": 24
+          },
+          "pool_recall": {
+            "session_pool_recall": 0.208333,
+            "turn_pool_recall": 0.075188
+          }
+        }
+      }
+    },
+    "single_structured": {
+      "depth": 50,
+      "metrics": {
+        "efficiency": 0.034375,
+        "hit_rate_at_10": 0.0375,
+        "mrr": 0.025521,
+        "mttc": 10.65625,
+        "recommended_technical_score": 0.033281,
+        "session_count": 160
+      },
+      "policy": "single-structured-v1",
+      "pool_recall": {
+        "session_pool_recall": 0.0375,
+        "turn_pool_recall": 0.024823
+      },
+      "recall_to_hit_conversion": 1.0,
+      "reranked": true,
+      "scenario_metrics": {
+        "boundary": {
+          "metrics": {
+            "efficiency": 0.0,
+            "hit_rate_at_10": 0.0,
+            "mrr": 0.0,
+            "mttc": 11.0,
+            "recommended_technical_score": 0.0,
+            "session_count": 8
+          },
+          "pool_recall": {
+            "session_pool_recall": 0.0,
+            "turn_pool_recall": 0.0
+          }
+        },
+        "browsing": {
+          "metrics": {
+            "efficiency": 0.010937,
+            "hit_rate_at_10": 0.015625,
+            "mrr": 0.015625,
+            "mttc": 10.890625,
+            "recommended_technical_score": 0.014687,
+            "session_count": 64
+          },
+          "pool_recall": {
+            "session_pool_recall": 0.015625,
+            "turn_pool_recall": 0.009524
+          }
+        },
+        "buying": {
+          "metrics": {
+            "efficiency": 0.075,
+            "hit_rate_at_10": 0.078125,
+            "mrr": 0.048177,
+            "mttc": 10.25,
+            "recommended_technical_score": 0.068516,
+            "session_count": 64
+          },
+          "pool_recall": {
+            "session_pool_recall": 0.078125,
+            "turn_pool_recall": 0.051282
+          }
+        },
+        "intent_override": {
+          "metrics": {
+            "efficiency": 0.0,
+            "hit_rate_at_10": 0.0,
+            "mrr": 0.0,
+            "mttc": 11.0,
+            "recommended_technical_score": 0.0,
+            "session_count": 24
+          },
+          "pool_recall": {
+            "session_pool_recall": 0.0,
+            "turn_pool_recall": 0.0
+          }
+        }
+      }
+    }
+  },
+  "dataset": {
+    "holdout_opened": false,
+    "scenario_counts": {
+      "boundary": 8,
+      "browsing": 64,
+      "buying": 64,
+      "intent_override": 24
+    },
+    "session_count": 160,
+    "turn_count": 908
+  },
+  "pool_recall_tolerance": 0.0,
+  "provenance": {
+    "artifact_sha256": "712378b277e1bb3fa7543828f101312725dab727f0bf1c59756ed2d253c4cd31",
+    "artifact_version": "fusion-training-v1",
+    "configuration_sha256": "dc2f02b4af6bf8455eb5b826a6e2774808ad0ddcd4774edec9eefb3793aa4835",
+    "identities_sha256": "2c577a75c345dc30f21b933694d47237c33a1769cf95482770176631d1677e1f",
+    "public_set_sha256": "857259f7a438e6188ac63e18995b6ff4489bfcfc4a716a798b9a2aa0ee8f7579",
+    "split_version": "public-split-v1"
+  },
+  "report_version": "fusion-weight-search-v1",
+  "search": {
+    "coarse_candidate_count": 66,
+    "coarse_candidates": [
+      {
+        "hit_rate_at_10": 0.35625,
+        "mrr": 0.218653,
+        "recommended_technical_score": 0.303471,
+        "session_pool_recall": 0.43125,
+        "turn_pool_recall": 0.109929,
+        "weights": {
+          "bm25": 0.0,
+          "dense": 1.0,
+          "structured": 0.0
+        }
+      },
+      {
+        "hit_rate_at_10": 0.53125,
+        "mrr": 0.340588,
+        "recommended_technical_score": 0.452176,
+        "session_pool_recall": 0.6625,
+        "turn_pool_recall": 0.173759,
+        "weights": {
+          "bm25": 0.1,
+          "dense": 0.9,
+          "structured": 0.0
+        }
+      },
+      {
+        "hit_rate_at_10": 0.61875,
+        "mrr": 0.395211,
+        "recommended_technical_score": 0.525563,
+        "session_pool_recall": 0.75,
+        "turn_pool_recall": 0.195035,
+        "weights": {
+          "bm25": 0.2,
+          "dense": 0.8,
+          "structured": 0.0
+        }
+      },
+      {
+        "hit_rate_at_10": 0.63125,
+        "mrr": 0.391248,
+        "recommended_technical_score": 0.532124,
+        "session_pool_recall": 0.76875,
+        "turn_pool_recall": 0.200946,
+        "weights": {
+          "bm25": 0.3,
+          "dense": 0.7,
+          "structured": 0.0
+        }
+      },
+      {
+        "hit_rate_at_10": 0.63125,
+        "mrr": 0.39621,
+        "recommended_technical_score": 0.533113,
+        "session_pool_recall": 0.775,
+        "turn_pool_recall": 0.202128,
+        "weights": {
+          "bm25": 0.4,
+          "dense": 0.6,
+          "structured": 0.0
+        }
+      },
+      {
+        "hit_rate_at_10": 0.64375,
+        "mrr": 0.401332,
+        "recommended_technical_score": 0.542525,
+        "session_pool_recall": 0.7875,
+        "turn_pool_recall": 0.204492,
+        "weights": {
+          "bm25": 0.5,
+          "dense": 0.5,
+          "structured": 0.0
+        }
+      },
+      {
+        "hit_rate_at_10": 0.6625,
+        "mrr": 0.410871,
+        "recommended_technical_score": 0.556886,
+        "session_pool_recall": 0.8125,
+        "turn_pool_recall": 0.20331,
+        "weights": {
+          "bm25": 0.6,
+          "dense": 0.4,
+          "structured": 0.0
+        }
+      },
+      {
+        "hit_rate_at_10": 0.65625,
+        "mrr": 0.40785,
+        "recommended_technical_score": 0.55223,
+        "session_pool_recall": 0.81875,
+        "turn_pool_recall": 0.204492,
+        "weights": {
+          "bm25": 0.7,
+          "dense": 0.3,
+          "structured": 0.0
+        }
+      },
+      {
+        "hit_rate_at_10": 0.66875,
+        "mrr": 0.404266,
+        "recommended_technical_score": 0.560155,
+        "session_pool_recall": 0.80625,
+        "turn_pool_recall": 0.208038,
+        "weights": {
+          "bm25": 0.8,
+          "dense": 0.2,
+          "structured": 0.0
+        }
+      },
+      {
+        "hit_rate_at_10": 0.6625,
+        "mrr": 0.404412,
+        "recommended_technical_score": 0.555949,
+        "session_pool_recall": 0.8,
+        "turn_pool_recall": 0.20922,
+        "weights": {
+          "bm25": 0.9,
+          "dense": 0.1,
+          "structured": 0.0
+        }
+      },
+      {
+        "hit_rate_at_10": 0.65,
+        "mrr": 0.403276,
+        "recommended_technical_score": 0.547608,
+        "session_pool_recall": 0.7875,
+        "turn_pool_recall": 0.205674,
+        "weights": {
+          "bm25": 1.0,
+          "dense": 0.0,
+          "structured": 0.0
+        }
+      },
+      {
+        "hit_rate_at_10": 0.35625,
+        "mrr": 0.224459,
+        "recommended_technical_score": 0.305213,
+        "session_pool_recall": 0.43125,
+        "turn_pool_recall": 0.109929,
+        "weights": {
+          "bm25": 0.0,
+          "dense": 0.9,
+          "structured": 0.1
+        }
+      },
+      {
+        "hit_rate_at_10": 0.36875,
+        "mrr": 0.232282,
+        "recommended_technical_score": 0.316435,
+        "session_pool_recall": 0.45625,
+        "turn_pool_recall": 0.105201,
+        "weights": {
+          "bm25": 0.1,
+          "dense": 0.8,
+          "structured": 0.1
+        }
+      },
+      {
+        "hit_rate_at_10": 0.56875,
+        "mrr": 0.369273,
+        "recommended_technical_score": 0.485782,
+        "session_pool_recall": 0.69375,
+        "turn_pool_recall": 0.161939,
+        "weights": {
+          "bm25": 0.2,
+          "dense": 0.7,
+          "structured": 0.1
+        }
+      },
+      {
+        "hit_rate_at_10": 0.6125,
+        "mrr": 0.385613,
+        "recommended_technical_score": 0.517934,
+        "session_pool_recall": 0.74375,
+        "turn_pool_recall": 0.184397,
+        "weights": {
+          "bm25": 0.3,
+          "dense": 0.6,
+          "structured": 0.1
+        }
+      },
+      {
+        "hit_rate_at_10": 0.625,
+        "mrr": 0.395861,
+        "recommended_technical_score": 0.529008,
+        "session_pool_recall": 0.775,
+        "turn_pool_recall": 0.195035,
+        "weights": {
+          "bm25": 0.4,
+          "dense": 0.5,
+          "structured": 0.1
+        }
+      },
+      {
+        "hit_rate_at_10": 0.64375,
+        "mrr": 0.402855,
+        "recommended_technical_score": 0.543107,
+        "session_pool_recall": 0.79375,
+        "turn_pool_recall": 0.199764,
+        "weights": {
+          "bm25": 0.5,
+          "dense": 0.4,
+          "structured": 0.1
+        }
+      },
+      {
+        "hit_rate_at_10": 0.65625,
+        "mrr": 0.409809,
+        "recommended_technical_score": 0.552693,
+        "session_pool_recall": 0.81875,
+        "turn_pool_recall": 0.198582,
+        "weights": {
+          "bm25": 0.6,
+          "dense": 0.3,
+          "structured": 0.1
+        }
+      },
+      {
+        "hit_rate_at_10": 0.66875,
+        "mrr": 0.404638,
+        "recommended_technical_score": 0.560266,
+        "session_pool_recall": 0.80625,
+        "turn_pool_recall": 0.202128,
+        "weights": {
+          "bm25": 0.7,
+          "dense": 0.2,
+          "structured": 0.1
+        }
+      },
+      {
+        "hit_rate_at_10": 0.6625,
+        "mrr": 0.404888,
+        "recommended_technical_score": 0.556091,
+        "session_pool_recall": 0.8,
+        "turn_pool_recall": 0.20331,
+        "weights": {
+          "bm25": 0.8,
+          "dense": 0.1,
+          "structured": 0.1
+        }
+      },
+      {
+        "hit_rate_at_10": 0.65,
+        "mrr": 0.404586,
+        "recommended_technical_score": 0.548001,
+        "session_pool_recall": 0.7875,
+        "turn_pool_recall": 0.198582,
+        "weights": {
+          "bm25": 0.9,
+          "dense": 0.0,
+          "structured": 0.1
+        }
+      },
+      {
+        "hit_rate_at_10": 0.3125,
+        "mrr": 0.207135,
+        "recommended_technical_score": 0.270265,
+        "session_pool_recall": 0.36875,
+        "turn_pool_recall": 0.096927,
+        "weights": {
+          "bm25": 0.0,
+          "dense": 0.8,
+          "structured": 0.2
+        }
+      },
+      {
+        "hit_rate_at_10": 0.3375,
+        "mrr": 0.217775,
+        "recommended_technical_score": 0.290583,
+        "session_pool_recall": 0.39375,
+        "turn_pool_recall": 0.093381,
+        "weights": {
+          "bm25": 0.1,
+          "dense": 0.7,
+          "structured": 0.2
+        }
+      },
+      {
+        "hit_rate_at_10": 0.38125,
+        "mrr": 0.249764,
+        "recommended_technical_score": 0.329304,
+        "session_pool_recall": 0.45,
+        "turn_pool_recall": 0.104019,
+        "weights": {
+          "bm25": 0.2,
+          "dense": 0.6,
+          "structured": 0.2
+        }
+      },
+      {
+        "hit_rate_at_10": 0.54375,
+        "mrr": 0.357557,
+        "recommended_technical_score": 0.466392,
+        "session_pool_recall": 0.64375,
+        "turn_pool_recall": 0.148936,
+        "weights": {
+          "bm25": 0.3,
+          "dense": 0.5,
+          "structured": 0.2
+        }
+      },
+      {
+        "hit_rate_at_10": 0.5875,
+        "mrr": 0.3691,
+        "recommended_technical_score": 0.498355,
+        "session_pool_recall": 0.7,
+        "turn_pool_recall": 0.159574,
+        "weights": {
+          "bm25": 0.4,
+          "dense": 0.4,
+          "structured": 0.2
+        }
+      },
+      {
+        "hit_rate_at_10": 0.58125,
+        "mrr": 0.367999,
+        "recommended_technical_score": 0.493525,
+        "session_pool_recall": 0.7125,
+        "turn_pool_recall": 0.164303,
+        "weights": {
+          "bm25": 0.5,
+          "dense": 0.3,
+          "structured": 0.2
+        }
+      },
+      {
+        "hit_rate_at_10": 0.6375,
+        "mrr": 0.386431,
+        "recommended_technical_score": 0.535679,
+        "session_pool_recall": 0.75,
+        "turn_pool_recall": 0.182033,
+        "weights": {
+          "bm25": 0.6,
+          "dense": 0.2,
+          "structured": 0.2
+        }
+      },
+      {
+        "hit_rate_at_10": 0.63125,
+        "mrr": 0.388681,
+        "recommended_technical_score": 0.533104,
+        "session_pool_recall": 0.7625,
+        "turn_pool_recall": 0.187943,
+        "weights": {
+          "bm25": 0.7,
+          "dense": 0.1,
+          "structured": 0.2
+        }
+      },
+      {
+        "hit_rate_at_10": 0.64375,
+        "mrr": 0.402743,
+        "recommended_technical_score": 0.544948,
+        "session_pool_recall": 0.775,
+        "turn_pool_recall": 0.187943,
+        "weights": {
+          "bm25": 0.8,
+          "dense": 0.0,
+          "structured": 0.2
+        }
+      },
+      {
+        "hit_rate_at_10": 0.2875,
+        "mrr": 0.187178,
+        "recommended_technical_score": 0.246778,
+        "session_pool_recall": 0.31875,
+        "turn_pool_recall": 0.083924,
+        "weights": {
+          "bm25": 0.0,
+          "dense": 0.7,
+          "structured": 0.3
+        }
+      },
+      {
+        "hit_rate_at_10": 0.30625,
+        "mrr": 0.197679,
+        "recommended_technical_score": 0.262679,
+        "session_pool_recall": 0.33125,
+        "turn_pool_recall": 0.078014,
+        "weights": {
+          "bm25": 0.1,
+          "dense": 0.6,
+          "structured": 0.3
+        }
+      },
+      {
+        "hit_rate_at_10": 0.325,
+        "mrr": 0.207852,
+        "recommended_technical_score": 0.277981,
+        "session_pool_recall": 0.35,
+        "turn_pool_recall": 0.078014,
+        "weights": {
+          "bm25": 0.2,
+          "dense": 0.5,
+          "structured": 0.3
+        }
+      },
+      {
+        "hit_rate_at_10": 0.36875,
+        "mrr": 0.238328,
+        "recommended_technical_score": 0.318248,
+        "session_pool_recall": 0.4125,
+        "turn_pool_recall": 0.093381,
+        "weights": {
+          "bm25": 0.3,
+          "dense": 0.4,
+          "structured": 0.3
+        }
+      },
+      {
+        "hit_rate_at_10": 0.49375,
+        "mrr": 0.330422,
+        "recommended_technical_score": 0.426252,
+        "session_pool_recall": 0.56875,
+        "turn_pool_recall": 0.131206,
+        "weights": {
+          "bm25": 0.4,
+          "dense": 0.3,
+          "structured": 0.3
+        }
+      },
+      {
+        "hit_rate_at_10": 0.5625,
+        "mrr": 0.374273,
+        "recommended_technical_score": 0.484157,
+        "session_pool_recall": 0.6625,
+        "turn_pool_recall": 0.148936,
+        "weights": {
+          "bm25": 0.5,
+          "dense": 0.2,
+          "structured": 0.3
+        }
+      },
+      {
+        "hit_rate_at_10": 0.59375,
+        "mrr": 0.387927,
+        "recommended_technical_score": 0.508003,
+        "session_pool_recall": 0.69375,
+        "turn_pool_recall": 0.154846,
+        "weights": {
+          "bm25": 0.6,
+          "dense": 0.1,
+          "structured": 0.3
+        }
+      },
+      {
+        "hit_rate_at_10": 0.5875,
+        "mrr": 0.3885,
+        "recommended_technical_score": 0.50405,
+        "session_pool_recall": 0.6875,
+        "turn_pool_recall": 0.154846,
+        "weights": {
+          "bm25": 0.7,
+          "dense": 0.0,
+          "structured": 0.3
+        }
+      },
+      {
+        "hit_rate_at_10": 0.2375,
+        "mrr": 0.162708,
+        "recommended_technical_score": 0.206687,
+        "session_pool_recall": 0.25625,
+        "turn_pool_recall": 0.068558,
+        "weights": {
+          "bm25": 0.0,
+          "dense": 0.6,
+          "structured": 0.4
+        }
+      },
+      {
+        "hit_rate_at_10": 0.2875,
+        "mrr": 0.199546,
+        "recommended_technical_score": 0.250739,
+        "session_pool_recall": 0.3,
+        "turn_pool_recall": 0.068558,
+        "weights": {
+          "bm25": 0.1,
+          "dense": 0.5,
+          "structured": 0.4
+        }
+      },
+      {
+        "hit_rate_at_10": 0.3,
+        "mrr": 0.205126,
+        "recommended_technical_score": 0.260288,
+        "session_pool_recall": 0.31875,
+        "turn_pool_recall": 0.072104,
+        "weights": {
+          "bm25": 0.2,
+          "dense": 0.4,
+          "structured": 0.4
+        }
+      },
+      {
+        "hit_rate_at_10": 0.3125,
+        "mrr": 0.216401,
+        "recommended_technical_score": 0.271795,
+        "session_pool_recall": 0.33125,
+        "turn_pool_recall": 0.07565,
+        "weights": {
+          "bm25": 0.3,
+          "dense": 0.3,
+          "structured": 0.4
+        }
+      },
+      {
+        "hit_rate_at_10": 0.31875,
+        "mrr": 0.233824,
+        "recommended_technical_score": 0.281272,
+        "session_pool_recall": 0.35625,
+        "turn_pool_recall": 0.08156,
+        "weights": {
+          "bm25": 0.4,
+          "dense": 0.2,
+          "structured": 0.4
+        }
+      },
+      {
+        "hit_rate_at_10": 0.475,
+        "mrr": 0.337279,
+        "recommended_technical_score": 0.416184,
+        "session_pool_recall": 0.51875,
+        "turn_pool_recall": 0.118203,
+        "weights": {
+          "bm25": 0.5,
+          "dense": 0.1,
+          "structured": 0.4
+        }
+      },
+      {
+        "hit_rate_at_10": 0.525,
+        "mrr": 0.367713,
+        "recommended_technical_score": 0.457439,
+        "session_pool_recall": 0.575,
+        "turn_pool_recall": 0.130024,
+        "weights": {
+          "bm25": 0.6,
+          "dense": 0.0,
+          "structured": 0.4
+        }
+      },
+      {
+        "hit_rate_at_10": 0.09375,
+        "mrr": 0.06901,
+        "recommended_technical_score": 0.083453,
+        "session_pool_recall": 0.125,
+        "turn_pool_recall": 0.042553,
+        "weights": {
+          "bm25": 0.0,
+          "dense": 0.5,
+          "structured": 0.5
+        }
+      },
+      {
+        "hit_rate_at_10": 0.125,
+        "mrr": 0.085945,
+        "recommended_technical_score": 0.108659,
+        "session_pool_recall": 0.15625,
+        "turn_pool_recall": 0.037825,
+        "weights": {
+          "bm25": 0.1,
+          "dense": 0.4,
+          "structured": 0.5
+        }
+      },
+      {
+        "hit_rate_at_10": 0.13125,
+        "mrr": 0.087272,
+        "recommended_technical_score": 0.112807,
+        "session_pool_recall": 0.16875,
+        "turn_pool_recall": 0.040189,
+        "weights": {
+          "bm25": 0.2,
+          "dense": 0.3,
+          "structured": 0.5
+        }
+      },
+      {
+        "hit_rate_at_10": 0.125,
+        "mrr": 0.086577,
+        "recommended_technical_score": 0.108223,
+        "session_pool_recall": 0.16875,
+        "turn_pool_recall": 0.040189,
+        "weights": {
+          "bm25": 0.3,
+          "dense": 0.2,
+          "structured": 0.5
+        }
+      },
+      {
+        "hit_rate_at_10": 0.1375,
+        "mrr": 0.087984,
+        "recommended_technical_score": 0.117395,
+        "session_pool_recall": 0.175,
+        "turn_pool_recall": 0.041371,
+        "weights": {
+          "bm25": 0.4,
+          "dense": 0.1,
+          "structured": 0.5
+        }
+      },
+      {
+        "hit_rate_at_10": 0.13125,
+        "mrr": 0.089807,
+        "recommended_technical_score": 0.113567,
+        "session_pool_recall": 0.15625,
+        "turn_pool_recall": 0.039007,
+        "weights": {
+          "bm25": 0.5,
+          "dense": 0.0,
+          "structured": 0.5
+        }
+      },
+      {
+        "hit_rate_at_10": 0.09375,
+        "mrr": 0.06901,
+        "recommended_technical_score": 0.083453,
+        "session_pool_recall": 0.125,
+        "turn_pool_recall": 0.042553,
+        "weights": {
+          "bm25": 0.0,
+          "dense": 0.4,
+          "structured": 0.6
+        }
+      },
+      {
+        "hit_rate_at_10": 0.13125,
+        "mrr": 0.088757,
+        "recommended_technical_score": 0.113252,
+        "session_pool_recall": 0.1625,
+        "turn_pool_recall": 0.039007,
+        "weights": {
+          "bm25": 0.1,
+          "dense": 0.3,
+          "structured": 0.6
+        }
+      },
+      {
+        "hit_rate_at_10": 0.13125,
+        "mrr": 0.087272,
+        "recommended_technical_score": 0.112807,
+        "session_pool_recall": 0.16875,
+        "turn_pool_recall": 0.040189,
+        "weights": {
+          "bm25": 0.2,
+          "dense": 0.2,
+          "structured": 0.6
+        }
+      },
+      {
+        "hit_rate_at_10": 0.13125,
+        "mrr": 0.087272,
+        "recommended_technical_score": 0.112807,
+        "session_pool_recall": 0.175,
+        "turn_pool_recall": 0.041371,
+        "weights": {
+          "bm25": 0.3,
+          "dense": 0.1,
+          "structured": 0.6
+        }
+      },
+      {
+        "hit_rate_at_10": 0.13125,
+        "mrr": 0.089807,
+        "recommended_technical_score": 0.113567,
+        "session_pool_recall": 0.15625,
+        "turn_pool_recall": 0.039007,
+        "weights": {
+          "bm25": 0.4,
+          "dense": 0.0,
+          "structured": 0.6
+        }
+      },
+      {
+        "hit_rate_at_10": 0.09375,
+        "mrr": 0.06901,
+        "recommended_technical_score": 0.083453,
+        "session_pool_recall": 0.125,
+        "turn_pool_recall": 0.042553,
+        "weights": {
+          "bm25": 0.0,
+          "dense": 0.3,
+          "structured": 0.7
+        }
+      },
+      {
+        "hit_rate_at_10": 0.13125,
+        "mrr": 0.087507,
+        "recommended_technical_score": 0.112877,
+        "session_pool_recall": 0.16875,
+        "turn_pool_recall": 0.040189,
+        "weights": {
+          "bm25": 0.1,
+          "dense": 0.2,
+          "structured": 0.7
+        }
+      },
+      {
+        "hit_rate_at_10": 0.125,
+        "mrr": 0.086577,
+        "recommended_technical_score": 0.108223,
+        "session_pool_recall": 0.175,
+        "turn_pool_recall": 0.041371,
+        "weights": {
+          "bm25": 0.2,
+          "dense": 0.1,
+          "structured": 0.7
+        }
+      },
+      {
+        "hit_rate_at_10": 0.13125,
+        "mrr": 0.089807,
+        "recommended_technical_score": 0.113567,
+        "session_pool_recall": 0.15625,
+        "turn_pool_recall": 0.039007,
+        "weights": {
+          "bm25": 0.3,
+          "dense": 0.0,
+          "structured": 0.7
+        }
+      },
+      {
+        "hit_rate_at_10": 0.09375,
+        "mrr": 0.06901,
+        "recommended_technical_score": 0.083453,
+        "session_pool_recall": 0.125,
+        "turn_pool_recall": 0.042553,
+        "weights": {
+          "bm25": 0.0,
+          "dense": 0.2,
+          "structured": 0.8
+        }
+      },
+      {
+        "hit_rate_at_10": 0.13125,
+        "mrr": 0.087272,
+        "recommended_technical_score": 0.112807,
+        "session_pool_recall": 0.16875,
+        "turn_pool_recall": 0.040189,
+        "weights": {
+          "bm25": 0.1,
+          "dense": 0.1,
+          "structured": 0.8
+        }
+      },
+      {
+        "hit_rate_at_10": 0.13125,
+        "mrr": 0.089807,
+        "recommended_technical_score": 0.113567,
+        "session_pool_recall": 0.15625,
+        "turn_pool_recall": 0.039007,
+        "weights": {
+          "bm25": 0.2,
+          "dense": 0.0,
+          "structured": 0.8
+        }
+      },
+      {
+        "hit_rate_at_10": 0.09375,
+        "mrr": 0.06901,
+        "recommended_technical_score": 0.083453,
+        "session_pool_recall": 0.125,
+        "turn_pool_recall": 0.042553,
+        "weights": {
+          "bm25": 0.0,
+          "dense": 0.1,
+          "structured": 0.9
+        }
+      },
+      {
+        "hit_rate_at_10": 0.13125,
+        "mrr": 0.089807,
+        "recommended_technical_score": 0.113567,
+        "session_pool_recall": 0.15625,
+        "turn_pool_recall": 0.039007,
+        "weights": {
+          "bm25": 0.1,
+          "dense": 0.0,
+          "structured": 0.9
+        }
+      },
+      {
+        "hit_rate_at_10": 0.05625,
+        "mrr": 0.034635,
+        "recommended_technical_score": 0.048766,
+        "session_pool_recall": 0.06875,
+        "turn_pool_recall": 0.031915,
+        "weights": {
+          "bm25": 0.0,
+          "dense": 0.0,
+          "structured": 1.0
+        }
+      }
+    ],
+    "coarse_step": 0.1,
+    "coarse_winner": {
+      "hit_rate_at_10": 0.65625,
+      "mrr": 0.409809,
+      "recommended_technical_score": 0.552693,
+      "session_pool_recall": 0.81875,
+      "turn_pool_recall": 0.198582,
+      "weights": {
+        "bm25": 0.6,
+        "dense": 0.3,
+        "structured": 0.1
+      }
+    },
+    "depth": 50,
+    "local_candidate_count": 91,
+    "local_candidates": [
+      {
+        "hit_rate_at_10": 0.6625,
+        "mrr": 0.410871,
+        "recommended_technical_score": 0.556886,
+        "session_pool_recall": 0.8125,
+        "turn_pool_recall": 0.20331,
+        "weights": {
+          "bm25": 0.6,
+          "dense": 0.4,
+          "structured": 0.0
+        }
+      },
+      {
+        "hit_rate_at_10": 0.65625,
+        "mrr": 0.407857,
+        "recommended_technical_score": 0.552107,
+        "session_pool_recall": 0.8125,
+        "turn_pool_recall": 0.202128,
+        "weights": {
+          "bm25": 0.62,
+          "dense": 0.38,
+          "structured": 0.0
+        }
+      },
+      {
+        "hit_rate_at_10": 0.65625,
+        "mrr": 0.407545,
+        "recommended_technical_score": 0.552013,
+        "session_pool_recall": 0.825,
+        "turn_pool_recall": 0.204492,
+        "weights": {
+          "bm25": 0.64,
+          "dense": 0.36,
+          "structured": 0.0
+        }
+      },
+      {
+        "hit_rate_at_10": 0.65625,
+        "mrr": 0.408065,
+        "recommended_technical_score": 0.552169,
+        "session_pool_recall": 0.825,
+        "turn_pool_recall": 0.20331,
+        "weights": {
+          "bm25": 0.66,
+          "dense": 0.34,
+          "structured": 0.0
+        }
+      },
+      {
+        "hit_rate_at_10": 0.65625,
+        "mrr": 0.407999,
+        "recommended_technical_score": 0.552275,
+        "session_pool_recall": 0.825,
+        "turn_pool_recall": 0.204492,
+        "weights": {
+          "bm25": 0.68,
+          "dense": 0.32,
+          "structured": 0.0
+        }
+      },
+      {
+        "hit_rate_at_10": 0.65625,
+        "mrr": 0.40785,
+        "recommended_technical_score": 0.55223,
+        "session_pool_recall": 0.81875,
+        "turn_pool_recall": 0.204492,
+        "weights": {
+          "bm25": 0.7,
+          "dense": 0.3,
+          "structured": 0.0
+        }
+      },
+      {
+        "hit_rate_at_10": 0.65625,
+        "mrr": 0.409177,
+        "recommended_technical_score": 0.552378,
+        "session_pool_recall": 0.80625,
+        "turn_pool_recall": 0.202128,
+        "weights": {
+          "bm25": 0.58,
+          "dense": 0.4,
+          "structured": 0.02
+        }
+      },
+      {
+        "hit_rate_at_10": 0.65625,
+        "mrr": 0.406825,
+        "recommended_technical_score": 0.551797,
+        "session_pool_recall": 0.8125,
+        "turn_pool_recall": 0.200946,
+        "weights": {
+          "bm25": 0.6,
+          "dense": 0.38,
+          "structured": 0.02
+        }
+      },
+      {
+        "hit_rate_at_10": 0.65625,
+        "mrr": 0.406937,
+        "recommended_technical_score": 0.551831,
+        "session_pool_recall": 0.825,
+        "turn_pool_recall": 0.20331,
+        "weights": {
+          "bm25": 0.62,
+          "dense": 0.36,
+          "structured": 0.02
+        }
+      },
+      {
+        "hit_rate_at_10": 0.65625,
+        "mrr": 0.406937,
+        "recommended_technical_score": 0.551831,
+        "session_pool_recall": 0.825,
+        "turn_pool_recall": 0.20331,
+        "weights": {
+          "bm25": 0.64,
+          "dense": 0.34,
+          "structured": 0.02
+        }
+      },
+      {
+        "hit_rate_at_10": 0.65625,
+        "mrr": 0.407242,
+        "recommended_technical_score": 0.552048,
+        "session_pool_recall": 0.825,
+        "turn_pool_recall": 0.204492,
+        "weights": {
+          "bm25": 0.66,
+          "dense": 0.32,
+          "structured": 0.02
+        }
+      },
+      {
+        "hit_rate_at_10": 0.65625,
+        "mrr": 0.407242,
+        "recommended_technical_score": 0.552048,
+        "session_pool_recall": 0.81875,
+        "turn_pool_recall": 0.204492,
+        "weights": {
+          "bm25": 0.68,
+          "dense": 0.3,
+          "structured": 0.02
+        }
+      },
+      {
+        "hit_rate_at_10": 0.6625,
+        "mrr": 0.402346,
+        "recommended_technical_score": 0.555329,
+        "session_pool_recall": 0.81875,
+        "turn_pool_recall": 0.206856,
+        "weights": {
+          "bm25": 0.7,
+          "dense": 0.28,
+          "structured": 0.02
+        }
+      },
+      {
+        "hit_rate_at_10": 0.65625,
+        "mrr": 0.409921,
+        "recommended_technical_score": 0.552601,
+        "session_pool_recall": 0.80625,
+        "turn_pool_recall": 0.205674,
+        "weights": {
+          "bm25": 0.56,
+          "dense": 0.4,
+          "structured": 0.04
+        }
+      },
+      {
+        "hit_rate_at_10": 0.65625,
+        "mrr": 0.40809,
+        "recommended_technical_score": 0.552177,
+        "session_pool_recall": 0.8125,
+        "turn_pool_recall": 0.200946,
+        "weights": {
+          "bm25": 0.58,
+          "dense": 0.38,
+          "structured": 0.04
+        }
+      },
+      {
+        "hit_rate_at_10": 0.65625,
+        "mrr": 0.40809,
+        "recommended_technical_score": 0.552177,
+        "session_pool_recall": 0.8125,
+        "turn_pool_recall": 0.200946,
+        "weights": {
+          "bm25": 0.6,
+          "dense": 0.36,
+          "structured": 0.04
+        }
+      },
+      {
+        "hit_rate_at_10": 0.65625,
+        "mrr": 0.407049,
+        "recommended_technical_score": 0.551865,
+        "session_pool_recall": 0.825,
+        "turn_pool_recall": 0.20331,
+        "weights": {
+          "bm25": 0.62,
+          "dense": 0.34,
+          "structured": 0.04
+        }
+      },
+      {
+        "hit_rate_at_10": 0.65625,
+        "mrr": 0.407205,
+        "recommended_technical_score": 0.552037,
+        "session_pool_recall": 0.81875,
+        "turn_pool_recall": 0.20331,
+        "weights": {
+          "bm25": 0.64,
+          "dense": 0.32,
+          "structured": 0.04
+        }
+      },
+      {
+        "hit_rate_at_10": 0.65625,
+        "mrr": 0.407354,
+        "recommended_technical_score": 0.552081,
+        "session_pool_recall": 0.81875,
+        "turn_pool_recall": 0.204492,
+        "weights": {
+          "bm25": 0.66,
+          "dense": 0.3,
+          "structured": 0.04
+        }
+      },
+      {
+        "hit_rate_at_10": 0.6625,
+        "mrr": 0.407666,
+        "recommended_technical_score": 0.55655,
+        "session_pool_recall": 0.81875,
+        "turn_pool_recall": 0.204492,
+        "weights": {
+          "bm25": 0.68,
+          "dense": 0.28,
+          "structured": 0.04
+        }
+      },
+      {
+        "hit_rate_at_10": 0.6625,
+        "mrr": 0.40252,
+        "recommended_technical_score": 0.555256,
+        "session_pool_recall": 0.81875,
+        "turn_pool_recall": 0.204492,
+        "weights": {
+          "bm25": 0.7,
+          "dense": 0.26,
+          "structured": 0.04
+        }
+      },
+      {
+        "hit_rate_at_10": 0.65625,
+        "mrr": 0.403628,
+        "recommended_technical_score": 0.551213,
+        "session_pool_recall": 0.80625,
+        "turn_pool_recall": 0.206856,
+        "weights": {
+          "bm25": 0.54,
+          "dense": 0.4,
+          "structured": 0.06
+        }
+      },
+      {
+        "hit_rate_at_10": 0.6625,
+        "mrr": 0.410337,
+        "recommended_technical_score": 0.556851,
+        "session_pool_recall": 0.8125,
+        "turn_pool_recall": 0.20331,
+        "weights": {
+          "bm25": 0.56,
+          "dense": 0.38,
+          "structured": 0.06
+        }
+      },
+      {
+        "hit_rate_at_10": 0.65625,
+        "mrr": 0.407778,
+        "recommended_technical_score": 0.552083,
+        "session_pool_recall": 0.8125,
+        "turn_pool_recall": 0.200946,
+        "weights": {
+          "bm25": 0.58,
+          "dense": 0.36,
+          "structured": 0.06
+        }
+      },
+      {
+        "hit_rate_at_10": 0.65625,
+        "mrr": 0.407778,
+        "recommended_technical_score": 0.552083,
+        "session_pool_recall": 0.825,
+        "turn_pool_recall": 0.20331,
+        "weights": {
+          "bm25": 0.6,
+          "dense": 0.34,
+          "structured": 0.06
+        }
+      },
+      {
+        "hit_rate_at_10": 0.65625,
+        "mrr": 0.40809,
+        "recommended_technical_score": 0.552177,
+        "session_pool_recall": 0.81875,
+        "turn_pool_recall": 0.202128,
+        "weights": {
+          "bm25": 0.62,
+          "dense": 0.32,
+          "structured": 0.06
+        }
+      },
+      {
+        "hit_rate_at_10": 0.65625,
+        "mrr": 0.408172,
+        "recommended_technical_score": 0.552327,
+        "session_pool_recall": 0.81875,
+        "turn_pool_recall": 0.20331,
+        "weights": {
+          "bm25": 0.64,
+          "dense": 0.3,
+          "structured": 0.06
+        }
+      },
+      {
+        "hit_rate_at_10": 0.65625,
+        "mrr": 0.408023,
+        "recommended_technical_score": 0.552282,
+        "session_pool_recall": 0.81875,
+        "turn_pool_recall": 0.204492,
+        "weights": {
+          "bm25": 0.66,
+          "dense": 0.28,
+          "structured": 0.06
+        }
+      },
+      {
+        "hit_rate_at_10": 0.6625,
+        "mrr": 0.403214,
+        "recommended_technical_score": 0.555589,
+        "session_pool_recall": 0.81875,
+        "turn_pool_recall": 0.205674,
+        "weights": {
+          "bm25": 0.68,
+          "dense": 0.26,
+          "structured": 0.06
+        }
+      },
+      {
+        "hit_rate_at_10": 0.6625,
+        "mrr": 0.403405,
+        "recommended_technical_score": 0.555522,
+        "session_pool_recall": 0.81875,
+        "turn_pool_recall": 0.204492,
+        "weights": {
+          "bm25": 0.7,
+          "dense": 0.24,
+          "structured": 0.06
+        }
+      },
+      {
+        "hit_rate_at_10": 0.65,
+        "mrr": 0.403896,
+        "recommended_technical_score": 0.547294,
+        "session_pool_recall": 0.8,
+        "turn_pool_recall": 0.20331,
+        "weights": {
+          "bm25": 0.52,
+          "dense": 0.4,
+          "structured": 0.08
+        }
+      },
+      {
+        "hit_rate_at_10": 0.65625,
+        "mrr": 0.409608,
+        "recommended_technical_score": 0.552507,
+        "session_pool_recall": 0.80625,
+        "turn_pool_recall": 0.200946,
+        "weights": {
+          "bm25": 0.54,
+          "dense": 0.38,
+          "structured": 0.08
+        }
+      },
+      {
+        "hit_rate_at_10": 0.65625,
+        "mrr": 0.408368,
+        "recommended_technical_score": 0.55226,
+        "session_pool_recall": 0.8125,
+        "turn_pool_recall": 0.199764,
+        "weights": {
+          "bm25": 0.56,
+          "dense": 0.36,
+          "structured": 0.08
+        }
+      },
+      {
+        "hit_rate_at_10": 0.65625,
+        "mrr": 0.407778,
+        "recommended_technical_score": 0.552083,
+        "session_pool_recall": 0.81875,
+        "turn_pool_recall": 0.200946,
+        "weights": {
+          "bm25": 0.58,
+          "dense": 0.34,
+          "structured": 0.08
+        }
+      },
+      {
+        "hit_rate_at_10": 0.65625,
+        "mrr": 0.408299,
+        "recommended_technical_score": 0.55224,
+        "session_pool_recall": 0.81875,
+        "turn_pool_recall": 0.200946,
+        "weights": {
+          "bm25": 0.6,
+          "dense": 0.32,
+          "structured": 0.08
+        }
+      },
+      {
+        "hit_rate_at_10": 0.65625,
+        "mrr": 0.408589,
+        "recommended_technical_score": 0.552452,
+        "session_pool_recall": 0.81875,
+        "turn_pool_recall": 0.202128,
+        "weights": {
+          "bm25": 0.62,
+          "dense": 0.3,
+          "structured": 0.08
+        }
+      },
+      {
+        "hit_rate_at_10": 0.65625,
+        "mrr": 0.40844,
+        "recommended_technical_score": 0.552407,
+        "session_pool_recall": 0.81875,
+        "turn_pool_recall": 0.204492,
+        "weights": {
+          "bm25": 0.64,
+          "dense": 0.28,
+          "structured": 0.08
+        }
+      },
+      {
+        "hit_rate_at_10": 0.6625,
+        "mrr": 0.403214,
+        "recommended_technical_score": 0.555589,
+        "session_pool_recall": 0.81875,
+        "turn_pool_recall": 0.205674,
+        "weights": {
+          "bm25": 0.66,
+          "dense": 0.26,
+          "structured": 0.08
+        }
+      },
+      {
+        "hit_rate_at_10": 0.6625,
+        "mrr": 0.403093,
+        "recommended_technical_score": 0.555428,
+        "session_pool_recall": 0.81875,
+        "turn_pool_recall": 0.204492,
+        "weights": {
+          "bm25": 0.68,
+          "dense": 0.24,
+          "structured": 0.08
+        }
+      },
+      {
+        "hit_rate_at_10": 0.6625,
+        "mrr": 0.403093,
+        "recommended_technical_score": 0.555428,
+        "session_pool_recall": 0.8125,
+        "turn_pool_recall": 0.20331,
+        "weights": {
+          "bm25": 0.7,
+          "dense": 0.22,
+          "structured": 0.08
+        }
+      },
+      {
+        "hit_rate_at_10": 0.64375,
+        "mrr": 0.402855,
+        "recommended_technical_score": 0.543107,
+        "session_pool_recall": 0.79375,
+        "turn_pool_recall": 0.199764,
+        "weights": {
+          "bm25": 0.5,
+          "dense": 0.4,
+          "structured": 0.1
+        }
+      },
+      {
+        "hit_rate_at_10": 0.65625,
+        "mrr": 0.405146,
+        "recommended_technical_score": 0.551544,
+        "session_pool_recall": 0.80625,
+        "turn_pool_recall": 0.202128,
+        "weights": {
+          "bm25": 0.52,
+          "dense": 0.38,
+          "structured": 0.1
+        }
+      },
+      {
+        "hit_rate_at_10": 0.6625,
+        "mrr": 0.412178,
+        "recommended_technical_score": 0.557153,
+        "session_pool_recall": 0.8125,
+        "turn_pool_recall": 0.1974,
+        "weights": {
+          "bm25": 0.54,
+          "dense": 0.36,
+          "structured": 0.1
+        }
+      },
+      {
+        "hit_rate_at_10": 0.65625,
+        "mrr": 0.409504,
+        "recommended_technical_score": 0.552476,
+        "session_pool_recall": 0.8125,
+        "turn_pool_recall": 0.196217,
+        "weights": {
+          "bm25": 0.56,
+          "dense": 0.34,
+          "structured": 0.1
+        }
+      },
+      {
+        "hit_rate_at_10": 0.65625,
+        "mrr": 0.409653,
+        "recommended_technical_score": 0.552521,
+        "session_pool_recall": 0.81875,
+        "turn_pool_recall": 0.1974,
+        "weights": {
+          "bm25": 0.58,
+          "dense": 0.32,
+          "structured": 0.1
+        }
+      },
+      {
+        "hit_rate_at_10": 0.65625,
+        "mrr": 0.409809,
+        "recommended_technical_score": 0.552693,
+        "session_pool_recall": 0.81875,
+        "turn_pool_recall": 0.198582,
+        "weights": {
+          "bm25": 0.6,
+          "dense": 0.3,
+          "structured": 0.1
+        }
+      },
+      {
+        "hit_rate_at_10": 0.65625,
+        "mrr": 0.410193,
+        "recommended_technical_score": 0.552808,
+        "session_pool_recall": 0.81875,
+        "turn_pool_recall": 0.202128,
+        "weights": {
+          "bm25": 0.62,
+          "dense": 0.28,
+          "structured": 0.1
+        }
+      },
+      {
+        "hit_rate_at_10": 0.6625,
+        "mrr": 0.40494,
+        "recommended_technical_score": 0.555982,
+        "session_pool_recall": 0.81875,
+        "turn_pool_recall": 0.20331,
+        "weights": {
+          "bm25": 0.64,
+          "dense": 0.26,
+          "structured": 0.1
+        }
+      },
+      {
+        "hit_rate_at_10": 0.6625,
+        "mrr": 0.403648,
+        "recommended_technical_score": 0.555594,
+        "session_pool_recall": 0.8125,
+        "turn_pool_recall": 0.202128,
+        "weights": {
+          "bm25": 0.66,
+          "dense": 0.24,
+          "structured": 0.1
+        }
+      },
+      {
+        "hit_rate_at_10": 0.6625,
+        "mrr": 0.403926,
+        "recommended_technical_score": 0.555678,
+        "session_pool_recall": 0.8125,
+        "turn_pool_recall": 0.202128,
+        "weights": {
+          "bm25": 0.68,
+          "dense": 0.22,
+          "structured": 0.1
+        }
+      },
+      {
+        "hit_rate_at_10": 0.66875,
+        "mrr": 0.404638,
+        "recommended_technical_score": 0.560266,
+        "session_pool_recall": 0.80625,
+        "turn_pool_recall": 0.202128,
+        "weights": {
+          "bm25": 0.7,
+          "dense": 0.2,
+          "structured": 0.1
+        }
+      },
+      {
+        "hit_rate_at_10": 0.6375,
+        "mrr": 0.404913,
+        "recommended_technical_score": 0.539849,
+        "session_pool_recall": 0.79375,
+        "turn_pool_recall": 0.198582,
+        "weights": {
+          "bm25": 0.5,
+          "dense": 0.38,
+          "structured": 0.12
+        }
+      },
+      {
+        "hit_rate_at_10": 0.65,
+        "mrr": 0.412872,
+        "recommended_technical_score": 0.549487,
+        "session_pool_recall": 0.80625,
+        "turn_pool_recall": 0.196217,
+        "weights": {
+          "bm25": 0.52,
+          "dense": 0.36,
+          "structured": 0.12
+        }
+      },
+      {
+        "hit_rate_at_10": 0.65,
+        "mrr": 0.411173,
+        "recommended_technical_score": 0.549102,
+        "session_pool_recall": 0.8125,
+        "turn_pool_recall": 0.195035,
+        "weights": {
+          "bm25": 0.54,
+          "dense": 0.34,
+          "structured": 0.12
+        }
+      },
+      {
+        "hit_rate_at_10": 0.65,
+        "mrr": 0.411104,
+        "recommended_technical_score": 0.549081,
+        "session_pool_recall": 0.825,
+        "turn_pool_recall": 0.1974,
+        "weights": {
+          "bm25": 0.56,
+          "dense": 0.32,
+          "structured": 0.12
+        }
+      },
+      {
+        "hit_rate_at_10": 0.65,
+        "mrr": 0.41119,
+        "recommended_technical_score": 0.549107,
+        "session_pool_recall": 0.81875,
+        "turn_pool_recall": 0.196217,
+        "weights": {
+          "bm25": 0.58,
+          "dense": 0.3,
+          "structured": 0.12
+        }
+      },
+      {
+        "hit_rate_at_10": 0.65625,
+        "mrr": 0.410603,
+        "recommended_technical_score": 0.552931,
+        "session_pool_recall": 0.8125,
+        "turn_pool_recall": 0.1974,
+        "weights": {
+          "bm25": 0.6,
+          "dense": 0.28,
+          "structured": 0.12
+        }
+      },
+      {
+        "hit_rate_at_10": 0.6625,
+        "mrr": 0.410037,
+        "recommended_technical_score": 0.557136,
+        "session_pool_recall": 0.8125,
+        "turn_pool_recall": 0.198582,
+        "weights": {
+          "bm25": 0.62,
+          "dense": 0.26,
+          "structured": 0.12
+        }
+      },
+      {
+        "hit_rate_at_10": 0.6625,
+        "mrr": 0.40995,
+        "recommended_technical_score": 0.556985,
+        "session_pool_recall": 0.8125,
+        "turn_pool_recall": 0.1974,
+        "weights": {
+          "bm25": 0.64,
+          "dense": 0.24,
+          "structured": 0.12
+        }
+      },
+      {
+        "hit_rate_at_10": 0.65625,
+        "mrr": 0.404499,
+        "recommended_technical_score": 0.55185,
+        "session_pool_recall": 0.8,
+        "turn_pool_recall": 0.196217,
+        "weights": {
+          "bm25": 0.66,
+          "dense": 0.22,
+          "structured": 0.12
+        }
+      },
+      {
+        "hit_rate_at_10": 0.65625,
+        "mrr": 0.404499,
+        "recommended_technical_score": 0.55185,
+        "session_pool_recall": 0.79375,
+        "turn_pool_recall": 0.195035,
+        "weights": {
+          "bm25": 0.68,
+          "dense": 0.2,
+          "structured": 0.12
+        }
+      },
+      {
+        "hit_rate_at_10": 0.625,
+        "mrr": 0.398886,
+        "recommended_technical_score": 0.530166,
+        "session_pool_recall": 0.775,
+        "turn_pool_recall": 0.195035,
+        "weights": {
+          "bm25": 0.5,
+          "dense": 0.36,
+          "structured": 0.14
+        }
+      },
+      {
+        "hit_rate_at_10": 0.6375,
+        "mrr": 0.410962,
+        "recommended_technical_score": 0.541289,
+        "session_pool_recall": 0.79375,
+        "turn_pool_recall": 0.191489,
+        "weights": {
+          "bm25": 0.52,
+          "dense": 0.34,
+          "structured": 0.14
+        }
+      },
+      {
+        "hit_rate_at_10": 0.6375,
+        "mrr": 0.411483,
+        "recommended_technical_score": 0.541445,
+        "session_pool_recall": 0.79375,
+        "turn_pool_recall": 0.191489,
+        "weights": {
+          "bm25": 0.54,
+          "dense": 0.32,
+          "structured": 0.14
+        }
+      },
+      {
+        "hit_rate_at_10": 0.6375,
+        "mrr": 0.41067,
+        "recommended_technical_score": 0.541201,
+        "session_pool_recall": 0.79375,
+        "turn_pool_recall": 0.191489,
+        "weights": {
+          "bm25": 0.56,
+          "dense": 0.3,
+          "structured": 0.14
+        }
+      },
+      {
+        "hit_rate_at_10": 0.65,
+        "mrr": 0.412339,
+        "recommended_technical_score": 0.549702,
+        "session_pool_recall": 0.79375,
+        "turn_pool_recall": 0.192671,
+        "weights": {
+          "bm25": 0.58,
+          "dense": 0.28,
+          "structured": 0.14
+        }
+      },
+      {
+        "hit_rate_at_10": 0.65,
+        "mrr": 0.411148,
+        "recommended_technical_score": 0.549344,
+        "session_pool_recall": 0.79375,
+        "turn_pool_recall": 0.192671,
+        "weights": {
+          "bm25": 0.6,
+          "dense": 0.26,
+          "structured": 0.14
+        }
+      },
+      {
+        "hit_rate_at_10": 0.6625,
+        "mrr": 0.413544,
+        "recommended_technical_score": 0.558313,
+        "session_pool_recall": 0.8,
+        "turn_pool_recall": 0.195035,
+        "weights": {
+          "bm25": 0.62,
+          "dense": 0.24,
+          "structured": 0.14
+        }
+      },
+      {
+        "hit_rate_at_10": 0.6625,
+        "mrr": 0.408207,
+        "recommended_technical_score": 0.556962,
+        "session_pool_recall": 0.8,
+        "turn_pool_recall": 0.195035,
+        "weights": {
+          "bm25": 0.64,
+          "dense": 0.22,
+          "structured": 0.14
+        }
+      },
+      {
+        "hit_rate_at_10": 0.6625,
+        "mrr": 0.40904,
+        "recommended_technical_score": 0.557212,
+        "session_pool_recall": 0.79375,
+        "turn_pool_recall": 0.193853,
+        "weights": {
+          "bm25": 0.66,
+          "dense": 0.2,
+          "structured": 0.14
+        }
+      },
+      {
+        "hit_rate_at_10": 0.63125,
+        "mrr": 0.405365,
+        "recommended_technical_score": 0.535609,
+        "session_pool_recall": 0.76875,
+        "turn_pool_recall": 0.184397,
+        "weights": {
+          "bm25": 0.5,
+          "dense": 0.34,
+          "structured": 0.16
+        }
+      },
+      {
+        "hit_rate_at_10": 0.63125,
+        "mrr": 0.403673,
+        "recommended_technical_score": 0.535227,
+        "session_pool_recall": 0.76875,
+        "turn_pool_recall": 0.186761,
+        "weights": {
+          "bm25": 0.52,
+          "dense": 0.32,
+          "structured": 0.16
+        }
+      },
+      {
+        "hit_rate_at_10": 0.63125,
+        "mrr": 0.403673,
+        "recommended_technical_score": 0.535227,
+        "session_pool_recall": 0.76875,
+        "turn_pool_recall": 0.186761,
+        "weights": {
+          "bm25": 0.54,
+          "dense": 0.3,
+          "structured": 0.16
+        }
+      },
+      {
+        "hit_rate_at_10": 0.63125,
+        "mrr": 0.403968,
+        "recommended_technical_score": 0.53544,
+        "session_pool_recall": 0.76875,
+        "turn_pool_recall": 0.187943,
+        "weights": {
+          "bm25": 0.56,
+          "dense": 0.28,
+          "structured": 0.16
+        }
+      },
+      {
+        "hit_rate_at_10": 0.6375,
+        "mrr": 0.399444,
+        "recommended_technical_score": 0.538208,
+        "session_pool_recall": 0.775,
+        "turn_pool_recall": 0.189125,
+        "weights": {
+          "bm25": 0.58,
+          "dense": 0.26,
+          "structured": 0.16
+        }
+      },
+      {
+        "hit_rate_at_10": 0.65,
+        "mrr": 0.406431,
+        "recommended_technical_score": 0.548679,
+        "session_pool_recall": 0.7875,
+        "turn_pool_recall": 0.191489,
+        "weights": {
+          "bm25": 0.6,
+          "dense": 0.24,
+          "structured": 0.16
+        }
+      },
+      {
+        "hit_rate_at_10": 0.65,
+        "mrr": 0.40256,
+        "recommended_technical_score": 0.547768,
+        "session_pool_recall": 0.7875,
+        "turn_pool_recall": 0.191489,
+        "weights": {
+          "bm25": 0.62,
+          "dense": 0.22,
+          "structured": 0.16
+        }
+      },
+      {
+        "hit_rate_at_10": 0.65,
+        "mrr": 0.402187,
+        "recommended_technical_score": 0.547656,
+        "session_pool_recall": 0.7875,
+        "turn_pool_recall": 0.191489,
+        "weights": {
+          "bm25": 0.64,
+          "dense": 0.2,
+          "structured": 0.16
+        }
+      },
+      {
+        "hit_rate_at_10": 0.60625,
+        "mrr": 0.368604,
+        "recommended_technical_score": 0.509456,
+        "session_pool_recall": 0.74375,
+        "turn_pool_recall": 0.172577,
+        "weights": {
+          "bm25": 0.5,
+          "dense": 0.32,
+          "structured": 0.18
+        }
+      },
+      {
+        "hit_rate_at_10": 0.6125,
+        "mrr": 0.374784,
+        "recommended_technical_score": 0.51506,
+        "session_pool_recall": 0.75625,
+        "turn_pool_recall": 0.174941,
+        "weights": {
+          "bm25": 0.52,
+          "dense": 0.3,
+          "structured": 0.18
+        }
+      },
+      {
+        "hit_rate_at_10": 0.6375,
+        "mrr": 0.391034,
+        "recommended_technical_score": 0.535935,
+        "session_pool_recall": 0.75625,
+        "turn_pool_recall": 0.182033,
+        "weights": {
+          "bm25": 0.54,
+          "dense": 0.28,
+          "structured": 0.18
+        }
+      },
+      {
+        "hit_rate_at_10": 0.63125,
+        "mrr": 0.396225,
+        "recommended_technical_score": 0.533492,
+        "session_pool_recall": 0.7625,
+        "turn_pool_recall": 0.184397,
+        "weights": {
+          "bm25": 0.56,
+          "dense": 0.26,
+          "structured": 0.18
+        }
+      },
+      {
+        "hit_rate_at_10": 0.6375,
+        "mrr": 0.39158,
+        "recommended_technical_score": 0.536849,
+        "session_pool_recall": 0.7625,
+        "turn_pool_recall": 0.185579,
+        "weights": {
+          "bm25": 0.58,
+          "dense": 0.24,
+          "structured": 0.18
+        }
+      },
+      {
+        "hit_rate_at_10": 0.6375,
+        "mrr": 0.386233,
+        "recommended_technical_score": 0.535995,
+        "session_pool_recall": 0.76875,
+        "turn_pool_recall": 0.189125,
+        "weights": {
+          "bm25": 0.6,
+          "dense": 0.22,
+          "structured": 0.18
+        }
+      },
+      {
+        "hit_rate_at_10": 0.6375,
+        "mrr": 0.388802,
+        "recommended_technical_score": 0.536516,
+        "session_pool_recall": 0.76875,
+        "turn_pool_recall": 0.189125,
+        "weights": {
+          "bm25": 0.62,
+          "dense": 0.2,
+          "structured": 0.18
+        }
+      },
+      {
+        "hit_rate_at_10": 0.58125,
+        "mrr": 0.367999,
+        "recommended_technical_score": 0.493525,
+        "session_pool_recall": 0.7125,
+        "turn_pool_recall": 0.164303,
+        "weights": {
+          "bm25": 0.5,
+          "dense": 0.3,
+          "structured": 0.2
+        }
+      },
+      {
+        "hit_rate_at_10": 0.6,
+        "mrr": 0.368242,
+        "recommended_technical_score": 0.505973,
+        "session_pool_recall": 0.73125,
+        "turn_pool_recall": 0.169031,
+        "weights": {
+          "bm25": 0.52,
+          "dense": 0.28,
+          "structured": 0.2
+        }
+      },
+      {
+        "hit_rate_at_10": 0.6,
+        "mrr": 0.368544,
+        "recommended_technical_score": 0.506438,
+        "session_pool_recall": 0.73125,
+        "turn_pool_recall": 0.170213,
+        "weights": {
+          "bm25": 0.54,
+          "dense": 0.26,
+          "structured": 0.2
+        }
+      },
+      {
+        "hit_rate_at_10": 0.60625,
+        "mrr": 0.369263,
+        "recommended_technical_score": 0.510404,
+        "session_pool_recall": 0.7375,
+        "turn_pool_recall": 0.172577,
+        "weights": {
+          "bm25": 0.56,
+          "dense": 0.24,
+          "structured": 0.2
+        }
+      },
+      {
+        "hit_rate_at_10": 0.625,
+        "mrr": 0.376746,
+        "recommended_technical_score": 0.524774,
+        "session_pool_recall": 0.74375,
+        "turn_pool_recall": 0.176123,
+        "weights": {
+          "bm25": 0.58,
+          "dense": 0.22,
+          "structured": 0.2
+        }
+      },
+      {
+        "hit_rate_at_10": 0.6375,
+        "mrr": 0.386431,
+        "recommended_technical_score": 0.535679,
+        "session_pool_recall": 0.75,
+        "turn_pool_recall": 0.182033,
+        "weights": {
+          "bm25": 0.6,
+          "dense": 0.2,
+          "structured": 0.2
+        }
+      }
+    ],
+    "local_radius_per_weight": 0.1,
+    "local_step": 0.02,
+    "local_winner": {
+      "hit_rate_at_10": 0.65625,
+      "mrr": 0.407999,
+      "recommended_technical_score": 0.552275,
+      "session_pool_recall": 0.825,
+      "turn_pool_recall": 0.204492,
+      "weights": {
+        "bm25": 0.68,
+        "dense": 0.32,
+        "structured": 0.0
+      }
+    }
+  },
+  "selection_rule": [
+    "session_pool_recall_at_selected_depth",
+    "recommended_technical_score",
+    "hit_rate_at_10",
+    "mrr",
+    "turn_pool_recall",
+    "closest_to_current_weights",
+    "deterministic_weight_tuple"
+  ],
+  "winner": {
+    "depth": 50,
+    "metrics": {
+      "efficiency": 0.50875,
+      "hit_rate_at_10": 0.65625,
+      "mrr": 0.407999,
+      "mttc": 5.9125,
+      "recommended_technical_score": 0.552275,
+      "session_count": 160
+    },
+    "pool_recall": {
+      "session_pool_recall": 0.825,
+      "turn_pool_recall": 0.204492
+    },
+    "recall_to_hit_conversion": 0.795455,
+    "reranked": true,
+    "scenario_metrics": {
+      "boundary": {
+        "metrics": {
+          "efficiency": 0.475,
+          "hit_rate_at_10": 0.625,
+          "mrr": 0.479167,
+          "mttc": 6.25,
+          "recommended_technical_score": 0.55125,
+          "session_count": 8
+        },
+        "pool_recall": {
+          "session_pool_recall": 0.625,
+          "turn_pool_recall": 0.148936
+        }
+      },
+      "browsing": {
+        "metrics": {
+          "efficiency": 0.589063,
+          "hit_rate_at_10": 0.78125,
+          "mrr": 0.461886,
+          "mttc": 5.109375,
+          "recommended_technical_score": 0.647003,
+          "session_count": 64
+        },
+        "pool_recall": {
+          "session_pool_recall": 0.90625,
+          "turn_pool_recall": 0.244444
+        }
+      },
+      "buying": {
+        "metrics": {
+          "efficiency": 0.510938,
+          "hit_rate_at_10": 0.59375,
+          "mrr": 0.378683,
+          "mttc": 5.890625,
+          "recommended_technical_score": 0.512668,
+          "session_count": 64
+        },
+        "pool_recall": {
+          "session_pool_recall": 0.828125,
+          "turn_pool_recall": 0.19943
+        }
+      },
+      "intent_override": {
+        "metrics": {
+          "efficiency": 0.3,
+          "hit_rate_at_10": 0.5,
+          "mrr": 0.31875,
+          "mttc": 8.0,
+          "recommended_technical_score": 0.405625,
+          "session_count": 24
+        },
+        "pool_recall": {
+          "session_pool_recall": 0.666667,
+          "turn_pool_recall": 0.142857
+        }
+      }
+    },
+    "weights": {
+      "bm25": 0.68,
+      "dense": 0.32,
+      "structured": 0.0
+    }
+  },
+  "winner_depth_comparison": {
+    "depth_30": {
+      "depth": 30,
+      "metrics": {
+        "efficiency": 0.498125,
+        "hit_rate_at_10": 0.6375,
+        "mrr": 0.40502,
+        "mttc": 6.01875,
+        "recommended_technical_score": 0.539881,
+        "session_count": 160
+      },
+      "pool_recall": {
+        "session_pool_recall": 0.7375,
+        "turn_pool_recall": 0.178487
+      },
+      "recall_to_hit_conversion": 0.864407,
+      "reranked": true,
+      "scenario_metrics": {
+        "boundary": {
+          "metrics": {
+            "efficiency": 0.475,
+            "hit_rate_at_10": 0.625,
+            "mrr": 0.479167,
+            "mttc": 6.25,
+            "recommended_technical_score": 0.55125,
+            "session_count": 8
+          },
+          "pool_recall": {
+            "session_pool_recall": 0.625,
+            "turn_pool_recall": 0.148936
+          }
+        },
+        "browsing": {
+          "metrics": {
+            "efficiency": 0.603125,
+            "hit_rate_at_10": 0.796875,
+            "mrr": 0.48662,
+            "mttc": 4.96875,
+            "recommended_technical_score": 0.665048,
+            "session_count": 64
+          },
+          "pool_recall": {
+            "session_pool_recall": 0.84375,
+            "turn_pool_recall": 0.225397
+          }
+        },
+        "buying": {
+          "metrics": {
+            "efficiency": 0.489063,
+            "hit_rate_at_10": 0.5625,
+            "mrr": 0.350149,
+            "mttc": 6.109375,
+            "recommended_technical_score": 0.484107,
+            "session_count": 64
+          },
+          "pool_recall": {
+            "session_pool_recall": 0.734375,
+            "turn_pool_recall": 0.17094
+          }
+        },
+        "intent_override": {
+          "metrics": {
+            "efficiency": 0.25,
+            "hit_rate_at_10": 0.416667,
+            "mrr": 0.309028,
+            "mttc": 8.5,
+            "recommended_technical_score": 0.351042,
+            "session_count": 24
+          },
+          "pool_recall": {
+            "session_pool_recall": 0.5,
+            "turn_pool_recall": 0.097744
+          }
+        }
+      },
+      "weights": {
+        "bm25": 0.68,
+        "dense": 0.32,
+        "structured": 0.0
+      }
+    },
+    "depth_50": {
+      "depth": 50,
+      "metrics": {
+        "efficiency": 0.50875,
+        "hit_rate_at_10": 0.65625,
+        "mrr": 0.407999,
+        "mttc": 5.9125,
+        "recommended_technical_score": 0.552275,
+        "session_count": 160
+      },
+      "pool_recall": {
+        "session_pool_recall": 0.825,
+        "turn_pool_recall": 0.204492
+      },
+      "recall_to_hit_conversion": 0.795455,
+      "reranked": true,
+      "scenario_metrics": {
+        "boundary": {
+          "metrics": {
+            "efficiency": 0.475,
+            "hit_rate_at_10": 0.625,
+            "mrr": 0.479167,
+            "mttc": 6.25,
+            "recommended_technical_score": 0.55125,
+            "session_count": 8
+          },
+          "pool_recall": {
+            "session_pool_recall": 0.625,
+            "turn_pool_recall": 0.148936
+          }
+        },
+        "browsing": {
+          "metrics": {
+            "efficiency": 0.589063,
+            "hit_rate_at_10": 0.78125,
+            "mrr": 0.461886,
+            "mttc": 5.109375,
+            "recommended_technical_score": 0.647003,
+            "session_count": 64
+          },
+          "pool_recall": {
+            "session_pool_recall": 0.90625,
+            "turn_pool_recall": 0.244444
+          }
+        },
+        "buying": {
+          "metrics": {
+            "efficiency": 0.510938,
+            "hit_rate_at_10": 0.59375,
+            "mrr": 0.378683,
+            "mttc": 5.890625,
+            "recommended_technical_score": 0.512668,
+            "session_count": 64
+          },
+          "pool_recall": {
+            "session_pool_recall": 0.828125,
+            "turn_pool_recall": 0.19943
+          }
+        },
+        "intent_override": {
+          "metrics": {
+            "efficiency": 0.3,
+            "hit_rate_at_10": 0.5,
+            "mrr": 0.31875,
+            "mttc": 8.0,
+            "recommended_technical_score": 0.405625,
+            "session_count": 24
+          },
+          "pool_recall": {
+            "session_pool_recall": 0.666667,
+            "turn_pool_recall": 0.142857
+          }
+        }
+      },
+      "weights": {
+        "bm25": 0.68,
+        "dense": 0.32,
+        "structured": 0.0
+      }
+    },
+    "full_union": {
+      "depth": 300,
+      "metrics": {
+        "efficiency": 0.49375,
+        "hit_rate_at_10": 0.63125,
+        "mrr": 0.38244,
+        "mttc": 6.0625,
+        "recommended_technical_score": 0.529107,
+        "session_count": 160
+      },
+      "pool_recall": {
+        "session_pool_recall": 0.9,
+        "turn_pool_recall": 0.322695
+      },
+      "recall_to_hit_conversion": 0.701389,
+      "reranked": true,
+      "scenario_metrics": {
+        "boundary": {
+          "metrics": {
+            "efficiency": 0.5625,
+            "hit_rate_at_10": 0.75,
+            "mrr": 0.497024,
+            "mttc": 5.375,
+            "recommended_technical_score": 0.636607,
+            "session_count": 8
+          },
+          "pool_recall": {
+            "session_pool_recall": 0.75,
+            "turn_pool_recall": 0.191489
+          }
+        },
+        "browsing": {
+          "metrics": {
+            "efficiency": 0.551562,
+            "hit_rate_at_10": 0.71875,
+            "mrr": 0.428354,
+            "mttc": 5.484375,
+            "recommended_technical_score": 0.598194,
+            "session_count": 64
+          },
+          "pool_recall": {
+            "session_pool_recall": 0.96875,
+            "turn_pool_recall": 0.368254
+          }
+        },
+        "buying": {
+          "metrics": {
+            "efficiency": 0.5,
+            "hit_rate_at_10": 0.578125,
+            "mrr": 0.351538,
+            "mttc": 6.0,
+            "recommended_technical_score": 0.494524,
+            "session_count": 64
+          },
+          "pool_recall": {
+            "session_pool_recall": 0.9375,
+            "turn_pool_recall": 0.327635
+          }
+        },
+        "intent_override": {
+          "metrics": {
+            "efficiency": 0.3,
+            "hit_rate_at_10": 0.5,
+            "mrr": 0.304216,
+            "mttc": 8.0,
+            "recommended_technical_score": 0.401265,
+            "session_count": 24
+          },
+          "pool_recall": {
+            "session_pool_recall": 0.666667,
+            "turn_pool_recall": 0.24812
+          }
+        }
+      },
+      "weights": {
+        "bm25": 0.68,
+        "dense": 0.32,
+        "structured": 0.0
+      }
+    },
+    "full_union_size": {
+      "maximum": 299,
+      "mean": 232.20815,
+      "minimum": 51
+    }
+  }
+}

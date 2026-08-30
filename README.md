@@ -265,6 +265,27 @@ seconds on the recorded build. Missing fields, locked-holdout IDs,
 wrong session proportions or identities, altered bytes, stale split/policy/model
 identities, and inconsistent target labels are rejected before training.
 
+## Fusion Weight Training
+
+Slice 10 searches global non-negative, sum-to-one route weights entirely from
+the replayable Slice 9 artifact:
+
+```bash
+.venv/bin/python -m tools.train_fusion_policy \
+  benchmarks/fusion_training.jsonl \
+  --output docs/fusion_policy_training.json
+```
+
+The deterministic 66-point coarse simplex plus 91-point local refinement chose
+`structured=0.00`, `bm25=0.68`, and `dense=0.32` at Candidate Pool depth 50.
+Across all 160 development sessions it raises pool recall from 0.7750 to 0.8250
+and TechnicalScore from 0.539511 to 0.552275. The report includes official and
+scenario metrics, the current fused-30 control, selected-depth-30 and
+complete-union comparisons, and
+single-route/RRF controls. This is a training result, not yet the live policy;
+Slice 11 must validate the weight region across folds before activation. See
+`docs/fusion_policy_training.md` for the selection rule and interpretation.
+
 `tools/dataset_split.py` computes the development/holdout partition used by every
 development benchmark. The locked 40-session holdout is opened once, in the final
 human-reviewed slice; Slice 07 measures all 160 development sessions and only
