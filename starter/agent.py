@@ -5,7 +5,7 @@ from pathlib import Path
 from typing import Protocol, Sequence
 
 from retrieval.dense_route import DenseRetrievalRoute
-from retrieval.fusion import FusionPolicy, build_fusion_policy
+from retrieval.fusion import FusionPolicy, build_fusion_policy, normalized_route_scores
 from retrieval.manifest import file_sha256
 from retrieval.reranker import (
     DEFAULT_RERANKER_IDENTITY,
@@ -377,9 +377,29 @@ class Agent:
         except Exception:  # noqa: BLE001 - optional reranking must fail open
             fused_candidates = fused_fallback
         if self.trace_pool_depths:
+            normalized_routes = normalized_route_scores(route_scores)
             self._candidate_traces[session_id].append({
                 "turn": turn,
                 "query": dense_query,
+                "planning": {
+                    "source": outcome.source,
+                    "state_revision": state.revision,
+                    "retrieval_tools": list(outcome.retrieval_tools),
+                },
+                "route_candidates": {
+                    route_name: [
+                        {
+                            "parent_asin": parent_asin,
+                            "raw_score": float(raw_score),
+                            "normalized_score": normalized_routes[route_name].get(
+                                parent_asin,
+                                0.0,
+                            ),
+                        }
+                        for parent_asin, raw_score in route_scores.get(route_name, ())
+                    ]
+                    for route_name in normalized_routes
+                },
                 "pools": {
                     str(depth): self.fusion_policy.rank(
                         route_scores,

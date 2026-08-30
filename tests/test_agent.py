@@ -367,6 +367,9 @@ class AgentContractTest(unittest.TestCase):
 
         trace = agent.get_candidate_traces()["session"][0]
         self.assertEqual(set(trace["pools"]), {"1", "2", "3"})
+        self.assertEqual(set(trace["route_candidates"]), {"structured", "bm25", "dense"})
+        self.assertEqual(trace["planning"]["source"], "fallback")
+        self.assertEqual(trace["planning"]["state_revision"], 1)
         self.assertEqual(len(trace["pools"]["1"]), 1)
         self.assertEqual(len(trace["pools"]["2"]), 2)
         self.assertEqual(len(trace["pools"]["3"]), 3)

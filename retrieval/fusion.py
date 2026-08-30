@@ -62,6 +62,16 @@ def _normalized_scores(candidates: Sequence[tuple[str, float]]) -> dict[str, flo
     }
 
 
+def normalized_route_scores(
+    route_scores: Mapping[str, Sequence[tuple[str, float]]],
+) -> dict[str, dict[str, float]]:
+    """Expose the exact per-route normalization used by fixed fusion."""
+    return {
+        route_name: _normalized_scores(route_scores.get(route_name, ()))
+        for route_name in ROUTE_NAMES
+    }
+
+
 @dataclass(frozen=True)
 class FixedFusionPolicy:
     """Versioned weighted fusion over independently scored Retrieval Routes."""
@@ -97,10 +107,7 @@ class FixedFusionPolicy:
         candidate_limit: int | None = None,
     ) -> list[str]:
         limit = _resolved_limit(self.candidate_limit, candidate_limit)
-        normalized_routes = {
-            route_name: _normalized_scores(route_scores.get(route_name, ()))
-            for route_name in ROUTE_NAMES
-        }
+        normalized_routes = normalized_route_scores(route_scores)
         fused: dict[str, float] = {}
         for route_name in ROUTE_NAMES:
             weight = self.weights[route_name]

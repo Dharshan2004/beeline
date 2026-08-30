@@ -236,6 +236,35 @@ Policy, candidate depths, feature states, timeout, and declared cost thresholds.
 Later slices may extend this versioned runtime manifest, but scored reports must
 continue carrying all fields that apply to their build.
 
+## Replayable Fusion-Training Dataset
+
+Slice 09 freezes the 160-session development trajectory into a deterministic
+training artifact containing session/scenario metadata, planning source,
+Constraint State revision, selected Retrieval Routes, raw and normalized route
+scores, the exact depth-50 Candidate Pool, local reranker scores for the complete
+up-to-300 base-route union, target labels, and the final response ordering. Build
+and replay it with:
+
+```bash
+.venv/bin/python -m tools.build_fusion_dataset build \
+  --output benchmarks/fusion_training.jsonl \
+  --report docs/fusion_training_dataset.json
+.venv/bin/python -m tools.build_fusion_dataset replay \
+  benchmarks/fusion_training.jsonl
+```
+
+The 41 MB JSONL and its adjacent manifest remain ignored under `benchmarks/`;
+regenerate them locally rather than committing a large derived asset. The
+checked-in `docs/fusion_training_dataset.json` records the artifact,
+configuration, session-ID, catalog, dense-index, embedding-model, and reranker
+checksums. The frozen artifact contains 160 sessions and 908 turns with scenario
+counts 8 boundary / 64 browsing / 64 buying / 24 Intent Override. Model-free
+replay reconstructs fixed fusion and reranking from cached scores and reproduces
+HitRate@10 0.637500, MRR 0.405035, and TechnicalScore 0.539511 in under two
+seconds on the recorded build. Missing fields, locked-holdout IDs,
+wrong session proportions or identities, altered bytes, stale split/policy/model
+identities, and inconsistent target labels are rejected before training.
+
 `tools/dataset_split.py` computes the development/holdout partition used by every
 development benchmark. The locked 40-session holdout is opened once, in the final
 human-reviewed slice; Slice 07 measures all 160 development sessions and only
