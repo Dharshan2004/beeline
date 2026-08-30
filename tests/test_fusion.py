@@ -24,10 +24,26 @@ class FixedFusionPolicyTest(unittest.TestCase):
 
         self.assertEqual(ranked, ["A", "B", "C"])
 
+    def test_every_route_independently_admits_candidates(self) -> None:
+        policy = FixedFusionPolicy(
+            weights={"structured": 0.4, "bm25": 0.3, "dense": 0.3},
+        )
+
+        ranked = policy.rank({
+            "structured": [("STRUCTURED", 1.0)],
+            "bm25": [("BM25-A", 2.0), ("BM25-B", 1.0)],
+            "dense": [("DENSE", 1.0)],
+        }, candidate_limit=4)
+
+        self.assertEqual(set(ranked), {"STRUCTURED", "BM25-A", "BM25-B", "DENSE"})
+
     def test_a_per_call_depth_deepens_the_pool_without_reordering_it(self) -> None:
         policy = FixedFusionPolicy()
         fixtures = {
-            "structured": [],
+            # B010 is just outside the shallow BM25 membership boundary but has
+            # structured evidence strong enough to expose a depth-dependent
+            # reorder if fusion selects membership before ranking the union.
+            "structured": [("B010", 1.0)],
             "bm25": [(f"B{index:03d}", float(100 - index)) for index in range(60)],
             "dense": [],
         }
@@ -123,7 +139,7 @@ class FixedFusionPolicyTest(unittest.TestCase):
         self.assertEqual(ranked[0], "A00")
         self.assertEqual(ranked[-1], "A29")
 
-    def test_structured_preference_cannot_evict_an_admitted_base_candidate(self) -> None:
+    def test_structured_preference_cannot_remove_another_routes_candidate(self) -> None:
         base_ids = [f"BASE{index:02d}" for index in range(30)]
         ranked = FixedFusionPolicy().rank({
             "structured": [
@@ -135,9 +151,10 @@ class FixedFusionPolicyTest(unittest.TestCase):
                 for index, identifier in enumerate(base_ids)
             ],
             "dense": [],
-        })
+        }, candidate_limit=40)
 
-        self.assertEqual(set(ranked), set(base_ids))
+        self.assertTrue(set(base_ids).issubset(ranked))
+        self.assertEqual(len(ranked), 40)
 
     def test_baseline_cli_uses_the_official_evaluation_function(self) -> None:
         with tempfile.TemporaryDirectory() as directory:

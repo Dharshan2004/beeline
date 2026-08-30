@@ -5,9 +5,12 @@ import tempfile
 import time
 import unittest
 from pathlib import Path
+from unittest.mock import patch
 
 from retrieval.reranker import (
     DEFAULT_RERANKER_DIR,
+    DEFAULT_RERANKER_IDENTITY,
+    FROZEN_RERANK_DEPTH,
     RERANKER_CANDIDATES,
     CrossEncoderReranker,
     RerankDeadlineExceeded,
@@ -16,7 +19,9 @@ from retrieval.reranker import (
     order_by_scores,
 )
 from tools.benchmark_reranker import (
+    _model_provenance,
     baseline_rows,
+    build_cache,
     pool_recall,
     session_metrics,
     subset_records,
@@ -256,7 +261,12 @@ class BenchmarkMetricsTest(unittest.TestCase):
                 "turn": 1,
                 "query": "q1",
                 "target": "T1",
-                "pool": ["A", "B", "T1"],
+                "pools": {
+                    "1": ["A"],
+                    "2": ["A", "B"],
+                    "3": ["A", "B", "T1"],
+                    "30": ["A", "B", "T1"],
+                },
                 "response_pool": ["A", "B", "T1"],
             },
             {
@@ -265,7 +275,12 @@ class BenchmarkMetricsTest(unittest.TestCase):
                 "turn": 1,
                 "query": "q2",
                 "target": "T2",
-                "pool": ["A", "B"],
+                "pools": {
+                    "1": ["A"],
+                    "2": ["A", "B"],
+                    "3": ["A", "B"],
+                    "30": ["A", "B"],
+                },
                 "response_pool": ["A", "B"],
             },
             {
@@ -274,7 +289,12 @@ class BenchmarkMetricsTest(unittest.TestCase):
                 "turn": 2,
                 "query": "q3",
                 "target": "T2",
-                "pool": ["A", "T2"],
+                "pools": {
+                    "1": ["A"],
+                    "2": ["A", "T2"],
+                    "3": ["A", "T2"],
+                    "30": ["A", "T2"],
+                },
                 "response_pool": ["A", "T2"],
             },
         ]
@@ -307,6 +327,34 @@ class BenchmarkMetricsTest(unittest.TestCase):
         # Ranks 2 and 1 across the two sessions.
         self.assertEqual(metrics["mrr"], round((0.5 + 1.0) / 2, 6))
 
+    def test_intent_override_target_is_eligible_only_after_the_override(self) -> None:
+        records = [
+            {
+                "sample_id": "override",
+                "scenario_type": "intent_override",
+                "turn": 1,
+                "target": "TARGET",
+                "hit_eligible": False,
+            },
+            {
+                "sample_id": "override",
+                "scenario_type": "intent_override",
+                "turn": 3,
+                "target": "TARGET",
+                "hit_eligible": True,
+            },
+        ]
+        ranked = {
+            ("override", 1): ["TARGET", "A"],
+            ("override", 3): ["A", "TARGET"],
+        }
+
+        metrics = session_metrics(records, ranked)
+
+        self.assertEqual(metrics["hit_rate_at_10"], 1.0)
+        self.assertEqual(metrics["mrr"], 0.5)
+        self.assertEqual(metrics["mttc"], 3.0)
+
     def test_a_session_that_never_hits_contributes_zero(self) -> None:
         ranked = {
             ("public_0001", 1): ["A"],
@@ -336,7 +384,49 @@ class BenchmarkMetricsTest(unittest.TestCase):
         self.assertEqual(row["turn_latency_p95_ms"], 0.0)
 
 
+class BenchmarkCacheTest(unittest.TestCase):
+    def test_cache_refuses_to_measure_without_the_dense_route(self) -> None:
+        class DisabledDenseAgent:
+            def __init__(self, *_args, **_kwargs) -> None:
+                pass
+
+            def get_dense_route_metrics(self) -> dict:
+                return {"status": "disabled", "disabled_reason": "missing index"}
+
+        class _Arguments:
+            dataset = "unused.jsonl"
+            catalog = "unused.jsonl"
+            output = "unused.jsonl"
+            sessions = 0
+
+        with (
+            patch("tools.benchmark_reranker.load_jsonl", return_value=[]),
+            patch("tools.benchmark_reranker.development_samples", return_value=[]),
+            patch("tools.benchmark_reranker.catalog_index", return_value=(set(), {}, {})),
+            patch("tools.benchmark_reranker.Agent", DisabledDenseAgent),
+        ):
+            with self.assertRaisesRegex(RuntimeError, "requires the dense Retrieval Route"):
+                build_cache(_Arguments())
+
+
 class SummaryTest(unittest.TestCase):
+    def test_model_provenance_requires_the_declared_immutable_revision(self) -> None:
+        directory = tempfile.TemporaryDirectory()
+        self.addCleanup(directory.cleanup)
+        root = Path(directory.name)
+        (root / "weights.bin").write_bytes(b"weights")
+        (root / "FETCHED.json").write_text(json.dumps({
+            "identity": "candidate/model",
+            "revision": "abc123",
+        }), encoding="utf-8")
+
+        provenance = _model_provenance(root, "candidate/model")
+
+        self.assertEqual(provenance["revision"], "abc123")
+        self.assertGreater(provenance["model_bytes"], len(b"weights"))
+        with self.assertRaisesRegex(RuntimeError, "does not match"):
+            _model_provenance(root, "different/model")
+
     def test_the_winner_respects_the_runtime_budget(self) -> None:
         directory = tempfile.TemporaryDirectory()
         self.addCleanup(directory.cleanup)
@@ -384,8 +474,8 @@ class SummaryTest(unittest.TestCase):
                     "session_pool_recall": 0.9, "turn_pool_recall": 0.8,
                     "hit_rate_at_10": 0.70, "mrr": 0.5, "session_count": 160,
                     "recall_to_hit_conversion": 0.78,
-                    "turn_latency_p50_ms": 4000.0, "turn_latency_p95_ms": 8000.0,
-                    "turn_latency_mean_ms": 4000.0, "added_seconds_total": 5000.0,
+                    "turn_latency_p50_ms": 10.0, "turn_latency_p95_ms": 8000.0,
+                    "turn_latency_mean_ms": 10.0, "added_seconds_total": 50.0,
                 },
             ],
         }), encoding="utf-8")
@@ -395,11 +485,12 @@ class SummaryTest(unittest.TestCase):
             cache_meta = str(meta)
             full_run_sessions = 200
             runtime_budget_seconds = 400.0
+            p95_budget_ms = 1500.0
 
         summary = summarize(_Arguments())
 
-        # Depth 200 scores better, but at 4 s per turn it projects far past the
-        # budget once every turn of a full 200-session run is charged for it.
+        # Depth 200 fits the aggregate budget but violates the independent
+        # per-turn tail-latency gate.
         self.assertEqual(summary["selected"]["depth"], 50)
         self.assertEqual(summary["pool_recall_ceiling"], 0.9)
         self.assertEqual(
@@ -407,9 +498,109 @@ class SummaryTest(unittest.TestCase):
             round(0.9 - 0.8, 6),
         )
 
+    def test_the_winner_prioritizes_depth_after_quality_floors(self) -> None:
+        directory = tempfile.TemporaryDirectory()
+        self.addCleanup(directory.cleanup)
+        root = Path(directory.name)
+        meta = root / "cache.jsonl.meta.json"
+        meta.write_text(json.dumps({
+            "session_count": 160,
+            "turn_count": 1000,
+            "baseline_wall_seconds": 100.0,
+            "baseline_peak_rss_bytes": 1,
+        }), encoding="utf-8")
+        baseline = {
+            "identity": "none (fused-30 baseline)", "depth": 30,
+            "reranked": False, "session_pool_recall": 0.7,
+            "turn_pool_recall": 0.5, "hit_rate_at_10": 0.50,
+            "mrr": 0.3, "mttc": 6.0, "efficiency": 0.5,
+            "recommended_technical_score": 0.44, "session_count": 160,
+            "recall_to_hit_conversion": 0.71, "turn_latency_p50_ms": 0.0,
+            "turn_latency_p95_ms": 0.0, "turn_latency_mean_ms": 0.0,
+            "added_seconds_total": 0.0,
+        }
+        shallow = {
+            **baseline, "identity": "model", "depth": 50, "reranked": True,
+            "session_pool_recall": 0.8, "hit_rate_at_10": 0.70,
+            "mrr": 0.6, "recommended_technical_score": 0.70,
+            "turn_latency_p50_ms": 10.0, "turn_latency_p95_ms": 20.0,
+            "turn_latency_mean_ms": 10.0,
+        }
+        deep = {
+            **shallow, "depth": 100, "session_pool_recall": 0.9,
+            "hit_rate_at_10": 0.60, "mrr": 0.5,
+            "recommended_technical_score": 0.60,
+        }
+        report = root / "model.json"
+        report.write_text(json.dumps({
+            "identity": "model", "model_bytes": 10, "peak_rss_bytes": 20,
+            "baseline_row": baseline, "rows": [shallow, deep],
+        }), encoding="utf-8")
+
+        class _Arguments:
+            reports = [str(report)]
+            cache_meta = str(meta)
+            full_run_sessions = 200
+            runtime_budget_seconds = 900.0
+            p95_budget_ms = 1500.0
+
+        summary = summarize(_Arguments())
+
+        self.assertEqual(summary["selected"]["depth"], 100)
+
+    def test_no_winner_does_not_relax_the_quality_floor(self) -> None:
+        directory = tempfile.TemporaryDirectory()
+        self.addCleanup(directory.cleanup)
+        root = Path(directory.name)
+        meta = root / "cache.jsonl.meta.json"
+        meta.write_text(json.dumps({
+            "session_count": 160, "turn_count": 1000,
+            "baseline_wall_seconds": 100.0, "baseline_peak_rss_bytes": 1,
+        }), encoding="utf-8")
+        baseline = {
+            "identity": "none", "depth": 30, "reranked": False,
+            "session_pool_recall": 0.7, "turn_pool_recall": 0.5,
+            "hit_rate_at_10": 0.60, "mrr": 0.4,
+            "recommended_technical_score": 0.60, "session_count": 160,
+            "recall_to_hit_conversion": 0.8, "turn_latency_p50_ms": 0.0,
+            "turn_latency_p95_ms": 0.0, "turn_latency_mean_ms": 0.0,
+            "added_seconds_total": 0.0,
+        }
+        regressing = {
+            **baseline, "identity": "model", "depth": 300, "reranked": True,
+            "session_pool_recall": 0.95, "hit_rate_at_10": 0.59,
+            "recommended_technical_score": 0.61,
+            "turn_latency_p50_ms": 10.0, "turn_latency_p95_ms": 20.0,
+            "turn_latency_mean_ms": 10.0,
+        }
+        report = root / "model.json"
+        report.write_text(json.dumps({
+            "identity": "model", "model_bytes": 10, "peak_rss_bytes": 20,
+            "baseline_row": baseline, "rows": [regressing],
+        }), encoding="utf-8")
+
+        class _Arguments:
+            reports = [str(report)]
+            cache_meta = str(meta)
+            full_run_sessions = 200
+            runtime_budget_seconds = 900.0
+            p95_budget_ms = 1500.0
+
+        summary = summarize(_Arguments())
+
+        self.assertIsNone(summary["selected"])
+        self.assertEqual(summary["decision"], "no_reranker")
+
     def test_the_candidate_models_are_declared_for_reproduction(self) -> None:
         self.assertIn("cross-encoder/ms-marco-MiniLM-L-2-v2", RERANKER_CANDIDATES)
         self.assertGreaterEqual(len(RERANKER_CANDIDATES), 2)
+
+    def test_the_benchmark_winner_is_frozen_for_slice_8(self) -> None:
+        self.assertEqual(
+            DEFAULT_RERANKER_IDENTITY,
+            "cross-encoder/ms-marco-MiniLM-L-6-v2",
+        )
+        self.assertEqual(FROZEN_RERANK_DEPTH, 50)
 
 
 if __name__ == "__main__":

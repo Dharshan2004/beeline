@@ -14,8 +14,9 @@ RERANKER_CANDIDATES: dict[str, str] = {
     "cross-encoder/ms-marco-MiniLM-L-6-v2": "cross-encoder__ms-marco-MiniLM-L-6-v2",
 }
 
-DEFAULT_RERANKER_IDENTITY = "cross-encoder/ms-marco-MiniLM-L-2-v2"
+DEFAULT_RERANKER_IDENTITY = "cross-encoder/ms-marco-MiniLM-L-6-v2"
 DEFAULT_RERANKER_DIR = Path("models") / RERANKER_CANDIDATES[DEFAULT_RERANKER_IDENTITY]
+FROZEN_RERANK_DEPTH = 50
 
 # A query plus one product rendering. Cross-encoder cost is dominated by
 # sequence length, and 128 tokens already covers title, store, categories, and

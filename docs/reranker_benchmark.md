@@ -1,191 +1,167 @@
 # Reranker and Deep Candidate Pool Benchmark
 
-Slice 07 is a decision gate. It selects two things that later slices are not
-allowed to revisit casually:
+Slice 07 freezes `cross-encoder/ms-marco-MiniLM-L-6-v2` at Candidate Pool
+depth **50** for Slice 08. The decision was made on all 160 development
+sessions. The locked 40-session holdout was not loaded, including for timing.
 
-1. which compact cross-encoder the packaged agent bundles, and
-2. the deepest Candidate Pool that cross-encoder may rerank on a scored turn.
+The selected replay result improves HitRate@10 from 0.543750 to 0.600000 and
+TechnicalScore from 0.467096 to 0.507240. Its measured rerank latency is
+435.5 ms p50 and 548.9 ms p95, and its normalized 200-session wall-clock
+projection is 800.4 seconds. The next depth, 100, improves quality further but
+projects to 1,366.7 seconds and therefore fails the frozen 900-second gate.
 
-Both are chosen against a documented quality-versus-runtime rule, on the
-development split only. The locked 40-session holdout is not opened here.
+## Decision rule
 
-## Why the depth question exists
+A configuration is admissible only when all of these predeclared conditions
+hold:
 
-Slice 06 fuses three Retrieval Routes and truncates to 30 candidates. The
-candidate-boundary analysis in the engineering journal reported that the fused
-top 30 makes the Target Product reachable in roughly 0.77 of sessions, while the
-deeper base-route union of roughly 100–200 candidates reaches roughly 0.93.
-Reranking cannot recover a product fusion already discarded, so the pool depth
-sets a hard ceiling on everything downstream.
+- normalized 200-session wall time is at most 900 seconds;
+- measured p95 added rerank latency is at most 1.5 seconds per turn;
+- HitRate@10 does not regress from the fused-30 baseline; and
+- replay TechnicalScore strictly improves over that baseline.
 
-The counterweight is runtime. A cross-encoder scores every (query, product) pair
-independently, so its cost is linear in pool depth and is paid on every turn of
-every session. The dense-enabled no-reranker run already costs a few minutes for
-200 sessions before any reranking.
+The deepest admissible pool wins. At that depth, candidates are ordered by
+TechnicalScore, MRR, lower p95 latency, and smaller package. If none qualifies,
+one predeclared smaller-model contingency may run without relaxing the gates;
+otherwise the system stays at fused-30 with no reranker.
 
-## What is compared
+This depth-first rule preserves candidate reachability for later Fusion Policy
+work. It is intentionally different from choosing the single highest replay
+score regardless of runtime.
 
-Three bundled cross-encoders, all CPU-only and all loaded from disk:
+## Candidate Pool contract
 
-| Identity | Layers | Hidden | Packaged size |
-| --- | ---: | ---: | ---: |
-| `cross-encoder/ms-marco-TinyBERT-L-2-v2` | 2 | 128 | 35 MB |
-| `cross-encoder/ms-marco-MiniLM-L-2-v2` | 2 | 384 | 121 MB |
-| `cross-encoder/ms-marco-MiniLM-L-6-v2` | 6 | 384 | 175 MB |
+Structured, BM25, and dense retrieval independently admit at most 100
+candidates. Their deduplicated union is therefore bounded at 300. Tied route
+scores are capped deterministically by canonical parent-ASIN order. The
+benchmark records independently generated exact pools at depths 30, 50, 100,
+150, 200, 250, and 300 and verifies that each shallower pool is a prefix of the
+deepest pool before reusing cross-encoder scores.
 
-against candidate depths 30, 50, 100, 150, and 200, plus the shipped fused-30
-baseline with no reranking at all.
+The observed union contained 51–299 products per turn, with mean 227.29 and
+median 229. Session-level reachability was:
 
-Each route contributes at most 100 candidates, so the base-route union is at most
-200 products. Depth 200 is therefore the whole union rather than an arbitrary
-cutoff, and pool recall at 200 is the recall ceiling that any shallower depth
-gives up.
+| Depth | Pool recall |
+| ---: | ---: |
+| 30 | 0.72500 |
+| 50 | 0.77500 |
+| 100 | 0.80000 |
+| 150 | 0.83750 |
+| 200 | 0.88125 |
+| 250 | 0.89375 |
+| 300 | 0.90000 |
 
-## Method: one cache, every configuration
+Freezing depth 50 gives up 0.125 session-level pool recall relative to the
+observed depth-300 ceiling. That loss is explicit evidence for later pool-aware
+fusion work, not a claim that the deeper pool lacks value.
 
-A benchmark that re-runs the conversation per configuration would compare
-different Candidate Pools and different conversations at the same time. This
-benchmark instead runs in three stages.
+## Method
 
-**Stage 1 — cache.** The shipped fused-30 configuration is replayed once through
-the official evaluator on the 160 development sessions. For every scored turn the
-Agent records the reranker query, the fused ordering over the base-route union at
-depth 200, the fused top 30 actually used for the response, and the Target
-Product label. Tracing does not change the response, so the cached trajectory is
-exactly the trajectory the shipped agent produced.
+The benchmark uses three stages so models never see different trajectories or
+labels.
 
-**Stage 2 — score.** Each model scores the cached deep pools in a fresh process.
-A deeper pool is a prefix extension of a shallower one, so scoring the pool in
-segments that end on each depth boundary yields both the ordering and the
-measured latency for every depth from one pass. Every model and every depth sees
-byte-identical Candidate Pools and labels.
+1. **Cache:** replay the planning-aware shipped Agent once through the official
+   evaluator on all 160 development sessions. Record the exact pools, fused-30
+   response pool, reranker query, target, scenario, turn, and conversion
+   eligibility. Intent Override targets are ineligible before the replacement
+   Product Intent commits.
+2. **Score:** in a fresh CPU-only process for each model, score every cached pool
+   with fixed padding, batch size 32, sequence length 128, and eight torch
+   threads. No conversation or retrieval step is rerun between candidates.
+3. **Summarize:** merge the reports, enforce both runtime and quality gates, and
+   project the measured 160-session baseline and added per-turn work linearly to
+   200 sessions.
 
-**Stage 3 — summarize.** Per-model reports are merged, projected onto one full
-200-session evaluator run, and passed through the selection rule.
+The cache covers 1,009 scored turns. Its dense route remained available for all
+1,009 queries and returned 100 candidates on the final query. Cache construction
+fails if dense readiness is not `available`, if fused-30 differs from the exact
+depth-30 pool, or if a scoring pool violates the prefix invariant.
 
-```bash
-python -m tools.benchmark_reranker cache \
-    --output benchmarks/rerank_cache.jsonl
+The replay trajectory is frozen, so post-rerank metrics compare configurations
+fairly but cannot model a reranker's effect on later customer answers. Slice 08
+must validate the chosen configuration end to end through the official Agent.
 
-for identity in ms-marco-TinyBERT-L-2-v2 ms-marco-MiniLM-L-2-v2 ms-marco-MiniLM-L-6-v2; do
-  python -m tools.benchmark_reranker score \
-      --identity "cross-encoder/${identity}" \
-      --sessions 40 \
-      --output "benchmarks/rerank_${identity}.json"
-done
+## Execution controls and model provenance
 
-python -m tools.benchmark_reranker summarize benchmarks/rerank_ms-marco-*.json \
-    --output docs/reranker_benchmark.json
-```
+The run used Python 3.11.9 on an Apple M2 MacBook Air with 8 CPU cores and 16 GB
+memory. Every stage forces `CUDA_VISIBLE_DEVICES=""`, `HF_HUB_OFFLINE=1`, and
+`TRANSFORMERS_OFFLINE=1`; cache construction additionally rejects socket
+connections. Missing or mismatched local model provenance is a hard failure.
 
-Fetch the three cross-encoders once, before benchmarking, with the same
-development-only script used for the embedding model:
+| Model | Immutable revision | Package | Peak RSS |
+| --- | --- | ---: | ---: |
+| `ms-marco-TinyBERT-L-2-v2` | `81d1926f67cb8eee2c2be17ca9f793c7c3bd20cc` | 18,504,352 B | 722,173,952 B |
+| `ms-marco-MiniLM-L-2-v2` | `1b5cd67b15209f24824c50370e0397743aa9b787` | 63,423,160 B | 863,977,472 B |
+| `ms-marco-MiniLM-L-6-v2` | `233902d25c440f23af6f7d6e94d2946bac0bee0a` | 91,821,988 B | 775,372,800 B |
 
-```bash
-python -m tools.fetch_model \
-    --identity cross-encoder/ms-marco-MiniLM-L-2-v2 \
-    --destination models/cross-encoder__ms-marco-MiniLM-L-2-v2
-```
-
-## Execution environment
-
-Every stage sets `CUDA_VISIBLE_DEVICES=""`, `HF_HUB_OFFLINE=1`, and
-`TRANSFORMERS_OFFLINE=1` before torch or transformers are imported, so the
-benchmark is CPU-only and a missing local model is a hard failure rather than a
-silent download. Sequences are padded to a fixed length rather than to the
-longest item in a batch, so a product's score does not depend on which products
-shared its batch.
-
-## Metrics and what they mean
-
-Quality is reported at two separable levels, because they fail differently.
-
-- **Pool recall** is the probability the Target Product is inside the pool at a
-  given depth. It is the ceiling; no reranker can exceed it.
-- **Replay Hit Rate@10 and MRR** score the cached replay the way the evaluator
-  scores a live run: a session converts on the earliest cached turn whose
-  reranked top ten contains the Target Product.
-- **Recall-to-hit conversion** is Hit Rate@10 divided by pool recall: of the
-  sessions where the product was reachable, the fraction actually surfaced.
-
-Replay metrics are an offline proxy. The trajectory is frozen by the cache, so
-reranking cannot change which questions the simulated customer answers next.
-The end-to-end figures that count are produced by Slice 08 running the real
-evaluator; the replay numbers exist to compare configurations cheaply and fairly.
-
-Runtime is reported as p50, p95, and mean added latency per turn, projected added
-seconds and projected wall clock for a full 200-session run, peak resident set
-size, and packaged model size.
-
-## Selection rule
-
-The competition specification publishes no numeric wall-clock limit. It states
-only that timeouts may count as a miss and that latency is a reported feasibility
-measure. The rule below is therefore a self-imposed budget, fixed before the
-results were read, and frozen for Slices 08–17:
-
-> A configuration is admissible when its projected wall clock for one full
-> 200-session evaluator run is at most **900 seconds** and its p95 added per-turn
-> latency is at most **1.5 seconds**. Among admissible configurations, select the
-> highest replay Hit Rate@10; break ties by lower projected wall clock, then by
-> smaller packaged model.
-
-900 seconds keeps a complete public-set run under fifteen minutes, so the release
-gate stays cheap enough to run repeatedly, and it leaves roughly 3.5x headroom
-over the dense-enabled no-reranker baseline. The per-turn bound is the part that
-protects against a timeout being scored as a miss, and it is enforced at runtime
-by the reranker's per-turn deadline rather than only in this report.
-
-If no reranked configuration fits, the report freezes the largest feasible
-deterministic depth and states the pool recall given up by that truncation.
-
-## Preliminary sizing measurement
-
-Before the full benchmark, per-turn scoring cost was measured directly on this
-CPU with a fixed query and a representative product rendering, eight torch
-threads, batch size 32, and sequence length 128. It is a micro-benchmark on
-synthetic input, not the benchmark result, and it exists to size the run:
-
-| Model | Depth 100 | Pairs/s | Depth 200 (projected) |
-| --- | ---: | ---: | ---: |
-| `ms-marco-TinyBERT-L-2-v2` | 118 ms | 847 | 236 ms |
-| `ms-marco-MiniLM-L-2-v2` | 494 ms | 203 | 987 ms |
-| `ms-marco-MiniLM-L-6-v2` | 1395 ms | 72 | 2790 ms |
-
-Charged against roughly 1,300 scored turns in a 200-session run, that projects
-to +307 s for TinyBERT at depth 200, +642 s for MiniLM-L-2 at depth 100, and
-+3,600 s for MiniLM-L-6 at depth 200. Deep reranking with the largest model is
-therefore already implausible, and the benchmark's job is to find where quality
-stops paying for the depth it costs.
-
-An earlier version of this measurement was taken while seven dense-index builds
-were saturating the machine and reported figures 4x to 17x worse. It is recorded
-here because it is exactly the kind of number that would have frozen the wrong
-depth: a contended benchmark host silently rules out configurations that are
-comfortably affordable on an idle one.
+The dense-enabled fused-30 cache took 191.71 seconds for 160 development
+sessions, or 239.6 seconds when normalized to 200. The 200-session value is a
+projection, not a run over development plus holdout.
 
 ## Results
 
-**Not yet run.** The cache stage requires a dense-enabled agent, and the dense
-artifact must be rebuilt for the pinned `all-MiniLM-L6-v2` embedder before the
-baseline in stage 1 measures the intended three-route system. The artifact is
-deliberately untracked, so it is a local build step, not a repository asset:
+The table shows the baseline and the rows that determine the decision. The
+machine-readable artifact contains all 22 baseline/model/depth rows.
 
-```bash
-python -m retrieval.build_dense_index --catalog data/catalog.jsonl --verify-load
-```
+| Configuration | Depth | Pool recall | HR@10 | MRR | TechnicalScore | p95 ms | Projected wall s | Decision |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | --- |
+| fused, no reranker | 30 | 0.72500 | 0.54375 | 0.368237 | 0.467096 | 0.0 | 239.6 | baseline |
+| TinyBERT-L2 | 50 | 0.77500 | 0.56250 | 0.308276 | 0.463608 | 49.5 | 289.1 | quality floor failed |
+| MiniLM-L2 | 30 | 0.72500 | 0.57500 | 0.324950 | 0.476860 | 116.2 | 355.0 | admissible, shallower |
+| MiniLM-L2 | 50 | 0.77500 | 0.56250 | 0.309328 | 0.463298 | 198.4 | 434.9 | quality floor failed |
+| MiniLM-L6 | 30 | 0.72500 | 0.60625 | 0.392250 | 0.516425 | 318.6 | 569.6 | admissible, shallower |
+| **MiniLM-L6** | **50** | **0.77500** | **0.60000** | **0.376215** | **0.507240** | **548.9** | **800.4** | **selected** |
+| MiniLM-L6 | 100 | 0.80000 | 0.61875 | 0.373383 | 0.519015 | 1092.6 | 1366.7 | wall gate failed |
+| MiniLM-L6 | 150 | 0.83750 | 0.63125 | 0.378269 | 0.528231 | 1625.9 | 1919.4 | both runtime gates failed |
 
-Verify `Agent.get_dense_route_metrics()` reports `status: available` with the
-readiness preflight in `README.md` before running stage 1. A run whose dense
-route silently disabled itself measures a two-route system and must not be
-reported here.
+TinyBERT fits the runtime envelope at every tested depth but never beats the
+baseline TechnicalScore. MiniLM-L2 qualifies only at depth 30. MiniLM-L6 has the
+strongest quality and qualifies at depths 30 and 50; depth 50 wins because the
+frozen rule prioritizes the deepest admissible pool.
 
-Until this section carries measured numbers, the reranker identity and depth
-constants in `retrieval/reranker.py` and `starter/agent.py` are provisional
-defaults chosen from the sizing measurement above, not a selection.
+Slice 07 records the decision but does not activate live reranking. Slice 08 is
+responsible for running this depth-50 model in the persistent cancellable worker,
+enforcing the absolute 1.5-second deadline, and preserving the fused ordering on
+startup failure, crash, malformed output, or timeout.
 
 ## Reproduction
 
-The machine-readable summary of the run reported above is checked in as
-`docs/reranker_benchmark.json`. Raw caches and per-model reports are written to
-`benchmarks/`, which is deliberately untracked.
+Fetch the exact revisions outside the scoring path:
+
+```bash
+python -m tools.fetch_model --identity cross-encoder/ms-marco-TinyBERT-L-2-v2 \
+  --destination models/cross-encoder__ms-marco-TinyBERT-L-2-v2 \
+  --revision 81d1926f67cb8eee2c2be17ca9f793c7c3bd20cc
+python -m tools.fetch_model --identity cross-encoder/ms-marco-MiniLM-L-2-v2 \
+  --destination models/cross-encoder__ms-marco-MiniLM-L-2-v2 \
+  --revision 1b5cd67b15209f24824c50370e0397743aa9b787
+python -m tools.fetch_model --identity cross-encoder/ms-marco-MiniLM-L-6-v2 \
+  --destination models/cross-encoder__ms-marco-MiniLM-L-6-v2 \
+  --revision 233902d25c440f23af6f7d6e94d2946bac0bee0a
+```
+
+Then run all 160 development sessions and all declared depths:
+
+```bash
+.venv/bin/python -m tools.benchmark_reranker cache \
+  --output benchmarks/rerank_cache.jsonl
+
+.venv/bin/python -m tools.benchmark_reranker score \
+  --identity cross-encoder/ms-marco-TinyBERT-L-2-v2 \
+  --output benchmarks/rerank_TinyBERT-L-2.json
+.venv/bin/python -m tools.benchmark_reranker score \
+  --identity cross-encoder/ms-marco-MiniLM-L-2-v2 \
+  --output benchmarks/rerank_MiniLM-L-2.json
+.venv/bin/python -m tools.benchmark_reranker score \
+  --identity cross-encoder/ms-marco-MiniLM-L-6-v2 \
+  --output benchmarks/rerank_MiniLM-L-6.json
+
+.venv/bin/python -m tools.benchmark_reranker summarize \
+  benchmarks/rerank_TinyBERT-L-2.json \
+  benchmarks/rerank_MiniLM-L-2.json \
+  benchmarks/rerank_MiniLM-L-6.json \
+  --output docs/reranker_benchmark.json
+```
+
+Raw caches and per-model reports remain ignored under `benchmarks/`. The full
+selection evidence is checked in as `docs/reranker_benchmark.json`.

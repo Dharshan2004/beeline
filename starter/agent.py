@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from copy import deepcopy
 from pathlib import Path
-from typing import Protocol
+from typing import Protocol, Sequence
 
 from retrieval.dense_route import DenseRetrievalRoute
 from retrieval.fusion import FusionPolicy, build_fusion_policy
@@ -41,7 +41,7 @@ class Agent:
         fusion_policy: FusionPolicy | str = "fixed",
         planning_provider: PlanningProvider | None = None,
         candidate_pool_depth: int | None = None,
-        trace_pool_depth: int | None = None,
+        trace_pool_depths: Sequence[int] | None = None,
     ) -> None:
         self.catalog_path = Path(catalog_path)
         self.retrieval = CatalogRetrieval(self.catalog_path)
@@ -53,9 +53,9 @@ class Agent:
             if isinstance(fusion_policy, str)
             else fusion_policy
         )
-        # The depth the response is drawn from, and an optional deeper pool
-        # recorded for offline benchmarking. Tracing never changes the response,
-        # so a cached benchmark run replays the shipped trajectory exactly.
+        # The depth the response is drawn from, and optional exact pools recorded
+        # for offline benchmarking. Tracing never changes the response, so a
+        # cached benchmark run replays the shipped trajectory exactly.
         self.candidate_pool_depth = (
             self.fusion_policy.candidate_limit
             if candidate_pool_depth is None
@@ -63,7 +63,9 @@ class Agent:
         )
         if self.candidate_pool_depth <= 0:
             raise ValueError("candidate_pool_depth must be positive")
-        self.trace_pool_depth = trace_pool_depth
+        self.trace_pool_depths = tuple(sorted(set(trace_pool_depths or ())))
+        if any(depth <= 0 for depth in self.trace_pool_depths):
+            raise ValueError("trace_pool_depths must contain only positive depths")
         self._candidate_traces: dict[str, list[dict]] = {}
         self._sessions: dict[str, ConstraintState] = {}
         self._last_asked_attributes: dict[str, str | None] = {}
@@ -115,7 +117,7 @@ class Agent:
     def get_candidate_traces(self) -> dict[str, list[dict]]:
         """Return the recorded deep Candidate Pools, keyed by session identifier.
 
-        Empty unless the Agent was constructed with a ``trace_pool_depth``. The
+        Empty unless the Agent was constructed with ``trace_pool_depths``. The
         insertion order matches the order sessions were reset.
         """
         return deepcopy(self._candidate_traces)
@@ -276,14 +278,17 @@ class Agent:
                 state.constraints,
                 self.candidate_pool_depth,
             )
-        if self.trace_pool_depth is not None:
+        if self.trace_pool_depths:
             self._candidate_traces[session_id].append({
                 "turn": turn,
                 "query": dense_query,
-                "pool": self.fusion_policy.rank(
-                    route_scores,
-                    candidate_limit=self.trace_pool_depth,
-                ),
+                "pools": {
+                    str(depth): self.fusion_policy.rank(
+                        route_scores,
+                        candidate_limit=depth,
+                    )
+                    for depth in self.trace_pool_depths
+                },
                 "response_pool": list(fused_candidates),
             })
         recommendation_limit = max(0, min(top_k, 10))

@@ -29,17 +29,25 @@ import argparse
 import json
 import math
 import os
+import platform
+import socket
 import statistics
 import time
 from pathlib import Path
 from typing import Sequence
+from unittest.mock import patch
 
 # Enforced before torch or transformers can be imported by anything below.
-os.environ.setdefault("CUDA_VISIBLE_DEVICES", "")
-os.environ.setdefault("HF_HUB_OFFLINE", "1")
-os.environ.setdefault("TRANSFORMERS_OFFLINE", "1")
+os.environ["CUDA_VISIBLE_DEVICES"] = ""
+os.environ["HF_HUB_OFFLINE"] = "1"
+os.environ["TRANSFORMERS_OFFLINE"] = "1"
 
-from evaluator.local_evaluator import catalog_index, evaluate, load_jsonl
+from evaluator.local_evaluator import (
+    catalog_index,
+    evaluate,
+    load_jsonl,
+    materialize_hidden_fields,
+)
 from retrieval.product_text import product_text
 from retrieval.reranker import (
     DEFAULT_BATCH_SIZE,
@@ -58,11 +66,9 @@ from tools.dataset_split import (
 )
 
 
-# The base-route union is bounded by two routes of 100 candidates each, so 200
-# is the whole union rather than an arbitrary ceiling: pool recall at 200 is the
-# recall ceiling that any shallower depth gives up.
-MAX_POOL_DEPTH = 200
-DEFAULT_DEPTHS = (30, 50, 100, 150, 200)
+# Structured, BM25, and dense retrieval each admit at most 100 candidates.
+MAX_POOL_DEPTH = 300
+DEFAULT_DEPTHS = (30, 50, 100, 150, 200, 250, 300)
 FUSED_BASELINE_DEPTH = 30
 SUBSET_SEED = 20260830
 TOP_K = 10
@@ -79,17 +85,48 @@ def _directory_size_bytes(path: Path) -> int:
     return sum(item.stat().st_size for item in path.rglob("*") if item.is_file())
 
 
+def _model_provenance(model_dir: Path, identity: str) -> dict:
+    """Return the immutable fetch identity used to reproduce a local model."""
+    fetched_path = model_dir / "FETCHED.json"
+    if not fetched_path.is_file():
+        raise RuntimeError(f"missing model provenance: {fetched_path}")
+    fetched = json.loads(fetched_path.read_text(encoding="utf-8"))
+    if fetched.get("identity") != identity or not fetched.get("revision"):
+        raise RuntimeError(
+            f"model provenance does not match {identity}: {fetched_path}"
+        )
+    return {
+        "identity": identity,
+        "revision": fetched["revision"],
+        "model_dir": str(model_dir),
+        "model_bytes": _directory_size_bytes(model_dir),
+    }
+
+
 def build_cache(arguments: argparse.Namespace) -> dict:
     """Replay the shipped configuration once and record every scored turn."""
     samples = development_samples(load_jsonl(arguments.dataset))
     if arguments.sessions:
         samples = stratified_subset(samples, arguments.sessions, seed=SUBSET_SEED)
     catalog_ids, categories, products = catalog_index(arguments.catalog)
-    agent = Agent(arguments.catalog, trace_pool_depth=MAX_POOL_DEPTH)
+    with patch.object(
+        socket.socket,
+        "connect",
+        side_effect=RuntimeError("network is disabled during reranker benchmarking"),
+    ):
+        agent = Agent(arguments.catalog, trace_pool_depths=DEFAULT_DEPTHS)
+        dense_metrics = agent.get_dense_route_metrics()
+        if dense_metrics.get("status") != "available":
+            raise RuntimeError(
+                "Slice 7 requires the dense Retrieval Route; readiness was "
+                f"{dense_metrics.get('status')!r}: "
+                f"{dense_metrics.get('disabled_reason') or 'no reason reported'}"
+            )
 
-    started = time.perf_counter()
-    result = evaluate(agent, samples, catalog_ids, categories, products)
-    wall_seconds = time.perf_counter() - started
+        started = time.perf_counter()
+        result = evaluate(agent, samples, catalog_ids, categories, products)
+        wall_seconds = time.perf_counter() - started
+        dense_metrics = agent.get_dense_route_metrics()
 
     traces = agent.get_candidate_traces()
     session_ids = list(traces)
@@ -107,15 +144,27 @@ def build_cache(arguments: argparse.Namespace) -> dict:
         if str(session["sample_id"]) != str(sample["sample_id"]):
             raise RuntimeError("evaluator session order does not match the samples")
         target = str(sample["ground_truth"]["parent_asin"])
+        _intent_card, behavior = materialize_hidden_fields(sample, products)
+        override = behavior.get("override") or {}
+        override_turn = int(override.get("turn", 1))
         for entry in traces[session_id]:
-            union_sizes.append(len(entry["pool"]))
+            pools = entry["pools"]
+            if entry["response_pool"] != pools[str(FUSED_BASELINE_DEPTH)]:
+                raise RuntimeError(
+                    "the fused-30 response and cached depth-30 pool disagree"
+                )
+            union_sizes.append(len(pools[str(MAX_POOL_DEPTH)]))
             records.append({
                 "sample_id": str(sample["sample_id"]),
                 "scenario_type": str(sample["scenario_type"]),
                 "turn": int(entry["turn"]),
                 "query": entry["query"],
                 "target": target,
-                "pool": entry["pool"],
+                "hit_eligible": (
+                    sample["scenario_type"] != "intent_override"
+                    or int(entry["turn"]) >= override_turn
+                ),
+                "pools": pools,
                 "response_pool": entry["response_pool"],
             })
 
@@ -145,7 +194,7 @@ def build_cache(arguments: argparse.Namespace) -> dict:
             key: value for key, value in result.items() if key != "sessions"
         },
         "retrieval_configuration": agent.get_retrieval_configuration(),
-        "dense_route_metrics": agent.get_dense_route_metrics(),
+        "dense_route_metrics": dense_metrics,
         "cache_path": str(output),
     }
     Path(str(output) + ".meta.json").write_text(
@@ -199,40 +248,79 @@ def session_metrics(
     by_session: dict[str, list[dict]] = {}
     for record in records:
         by_session.setdefault(record["sample_id"], []).append(record)
-    hits = 0
-    reciprocal_ranks: list[float] = []
+    session_rows: list[dict] = []
     for sample_id, turns in by_session.items():
         best_rank: int | None = None
+        first_hit_turn: int | None = None
         for record in sorted(turns, key=lambda item: item["turn"]):
+            if not record.get("hit_eligible", True):
+                continue
             ranked = ranked_top_k[(sample_id, record["turn"])]
             if record["target"] in ranked:
                 best_rank = ranked.index(record["target"]) + 1
+                first_hit_turn = int(record["turn"])
                 break
-        if best_rank is None:
-            reciprocal_ranks.append(0.0)
-        else:
-            hits += 1
-            reciprocal_ranks.append(1.0 / best_rank)
-    session_count = len(by_session)
+        session_rows.append({
+            "hit": best_rank is not None,
+            "first_hit_turn": first_hit_turn,
+            "reciprocal_rank": 0.0 if best_rank is None else 1.0 / best_rank,
+        })
+    session_count = len(session_rows)
+    hit_rate = (
+        sum(int(row["hit"]) for row in session_rows) / session_count
+        if session_count else 0.0
+    )
+    reciprocal_ranks = [row["reciprocal_rank"] for row in session_rows]
+    mttc = (
+        statistics.fmean(
+            row["first_hit_turn"] if row["first_hit_turn"] is not None else 11
+            for row in session_rows
+        )
+        if session_rows else None
+    )
+    efficiency = (
+        max(0.0, min(1.0, (11.0 - mttc) / 10.0))
+        if mttc is not None else 0.0
+    )
+    mrr = statistics.fmean(reciprocal_ranks) if reciprocal_ranks else 0.0
     return {
         "session_count": session_count,
-        "hit_rate_at_10": round(hits / session_count, 6) if session_count else 0.0,
-        "mrr": round(statistics.fmean(reciprocal_ranks), 6) if reciprocal_ranks else 0.0,
+        "hit_rate_at_10": round(hit_rate, 6),
+        "mrr": round(mrr, 6),
+        "mttc": None if mttc is None else round(mttc, 6),
+        "efficiency": round(efficiency, 6),
+        "recommended_technical_score": round(
+            0.50 * hit_rate + 0.30 * mrr + 0.20 * efficiency,
+            6,
+        ),
     }
+
+
+def _pool_at_depth(record: dict, depth: int) -> list[str]:
+    try:
+        return list(record["pools"][str(depth)])
+    except KeyError as error:
+        raise ValueError(f"cache record has no exact pool for depth {depth}") from error
 
 
 def pool_recall(records: Sequence[dict], depth: int) -> dict:
     """Session-level and turn-level probability that the pool contains the target."""
+    eligible_records = [record for record in records if record.get("hit_eligible", True)]
     turn_hits = sum(
-        record["target"] in record["pool"][:depth] for record in records
+        record["target"] in _pool_at_depth(record, depth)
+        for record in eligible_records
     )
     by_session: dict[str, bool] = {}
     for record in records:
-        found = record["target"] in record["pool"][:depth]
+        if not record.get("hit_eligible", True):
+            continue
+        found = record["target"] in _pool_at_depth(record, depth)
         by_session[record["sample_id"]] = by_session.get(record["sample_id"], False) or found
     session_count = len(by_session)
     return {
-        "turn_pool_recall": round(turn_hits / len(records), 6) if records else 0.0,
+        "turn_pool_recall": (
+            round(turn_hits / len(eligible_records), 6) if eligible_records else 0.0
+        ),
         "session_pool_recall": (
             round(sum(by_session.values()) / session_count, 6) if session_count else 0.0
         ),
@@ -243,7 +331,7 @@ def baseline_rows(records: Sequence[dict]) -> dict:
     """The shipped fused-30 configuration, with no reranking at all."""
     ranked = {
         (record["sample_id"], record["turn"]):
-            record["response_pool"][:FUSED_BASELINE_DEPTH][:TOP_K]
+            _pool_at_depth(record, FUSED_BASELINE_DEPTH)[:TOP_K]
         for record in records
     }
     recall = pool_recall(records, FUSED_BASELINE_DEPTH)
@@ -266,23 +354,23 @@ def baseline_rows(records: Sequence[dict]) -> dict:
 
 
 def score_cache(arguments: argparse.Namespace) -> dict:
-    """Score every cached turn once at the deepest depth, then derive all depths.
-
-    A deeper pool is a prefix extension of a shallower one, so scoring the deep
-    pool in segments that end on each depth boundary yields both the ordering
-    and the measured latency for every depth from a single pass. No model sees a
-    different Candidate Pool than any other.
-    """
+    """Score exact cached pools, reusing work after proving prefix extension."""
     depths = sorted(set(arguments.depths))
     if depths[-1] > MAX_POOL_DEPTH:
         raise ValueError(f"depths must not exceed {MAX_POOL_DEPTH}")
     records = load_cache(Path(arguments.cache))
     if arguments.sessions:
         records = subset_records(records, arguments.sessions)
+    if not records:
+        raise ValueError("the reranker cache contains no scored turns")
     model_dir = Path(arguments.model_dir or Path("models") / RERANKER_CANDIDATES[arguments.identity])
 
     documents: dict[str, str] = {}
-    wanted = {parent_asin for record in records for parent_asin in record["pool"][:depths[-1]]}
+    wanted = {
+        parent_asin
+        for record in records
+        for parent_asin in _pool_at_depth(record, depths[-1])
+    }
     with Path(arguments.catalog).open(encoding="utf-8") as handle:
         for line in handle:
             product = json.loads(line)
@@ -299,7 +387,16 @@ def score_cache(arguments: argparse.Namespace) -> dict:
     )
     # One warm-up turn: the first forward pass pays a one-off allocation cost
     # that would otherwise land in the p95 figure.
-    reranker.score(records[0]["query"], [documents.get(records[0]["pool"][0], "")])
+    warmup_record = next(
+        (record for record in records if _pool_at_depth(record, depths[-1])),
+        None,
+    )
+    if warmup_record is not None:
+        first_identifier = _pool_at_depth(warmup_record, depths[-1])[0]
+        reranker.score(
+            warmup_record["query"],
+            [documents.get(first_identifier, "")],
+        )
 
     ranked_by_depth: dict[int, dict[tuple[str, int], list[str]]] = {
         depth: {} for depth in depths
@@ -307,20 +404,24 @@ def score_cache(arguments: argparse.Namespace) -> dict:
     latency_by_depth: dict[int, list[float]] = {depth: [] for depth in depths}
     started_all = time.perf_counter()
     for index, record in enumerate(records, start=1):
-        pool = record["pool"][: depths[-1]]
-        texts = [documents.get(parent_asin, "") for parent_asin in pool]
+        deepest_pool = _pool_at_depth(record, depths[-1])
+        texts = [documents.get(parent_asin, "") for parent_asin in deepest_pool]
         scores: list[float] = []
         elapsed = 0.0
         for depth in depths:
-            segment = texts[len(scores) : depth]
+            exact_pool = _pool_at_depth(record, depth)
+            if deepest_pool[: len(exact_pool)] != exact_pool:
+                raise RuntimeError(
+                    f"exact depth-{depth} pool is not a prefix of depth-{depths[-1]}"
+                )
+            segment = texts[len(scores) : len(exact_pool)]
             if segment:
                 started = time.perf_counter()
                 scores.extend(reranker.score(record["query"], segment))
                 elapsed += time.perf_counter() - started
-            available = pool[: len(scores)]
             latency_by_depth[depth].append(elapsed * 1000)
             ranked_by_depth[depth][(record["sample_id"], record["turn"])] = order_by_scores(
-                available, scores[: len(available)]
+                exact_pool, scores[: len(exact_pool)]
             )[:TOP_K]
         if arguments.progress and index % arguments.progress == 0:
             done = time.perf_counter() - started_all
@@ -351,11 +452,13 @@ def score_cache(arguments: argparse.Namespace) -> dict:
             "added_seconds_total": round(sum(latencies) / 1000, 1),
         })
 
+    provenance = _model_provenance(model_dir, arguments.identity)
     return {
         "stage": "score",
         "identity": arguments.identity,
         "model_dir": str(model_dir),
-        "model_bytes": _directory_size_bytes(model_dir),
+        "model_bytes": provenance["model_bytes"],
+        "model_revision": provenance["revision"],
         "max_sequence_length": arguments.max_sequence_length,
         "batch_size": arguments.batch_size,
         "torch_threads": arguments.torch_threads,
@@ -377,6 +480,27 @@ def summarize(arguments: argparse.Namespace) -> dict:
         json.loads(Path(path).read_text(encoding="utf-8"))
         for path in arguments.reports
     ]
+    models = []
+    for report in sorted(reports, key=lambda item: item["identity"]):
+        if "model_dir" not in report:
+            # Synthetic unit-test reports need not create a model directory.
+            models.append({
+                "identity": report["identity"],
+                "revision": report.get("model_revision"),
+                "model_dir": None,
+                "model_bytes": report["model_bytes"],
+            })
+            continue
+        provenance = _model_provenance(Path(report["model_dir"]), report["identity"])
+        if report.get("model_revision") not in (None, provenance["revision"]):
+            raise RuntimeError(
+                f"report revision does not match local provenance for {report['identity']}"
+            )
+        if report["model_bytes"] != provenance["model_bytes"]:
+            raise RuntimeError(
+                f"report size does not match local model for {report['identity']}"
+            )
+        models.append(provenance)
     metadata = json.loads(Path(arguments.cache_meta).read_text(encoding="utf-8"))
     cached_sessions = int(metadata["session_count"])
     cached_turns = int(metadata["turn_count"])
@@ -398,7 +522,10 @@ def summarize(arguments: argparse.Namespace) -> dict:
             "peak_rss_bytes": peak_rss,
             "projected_added_seconds": round(added, 1),
             "projected_wall_seconds": round(projected, 1),
-            "within_budget": projected <= arguments.runtime_budget_seconds,
+            "within_budget": (
+                projected <= arguments.runtime_budget_seconds
+                and row["turn_latency_p95_ms"] <= arguments.p95_budget_ms
+            ),
         }
 
     rows = [_row(
@@ -410,15 +537,36 @@ def summarize(arguments: argparse.Namespace) -> dict:
         for row in report["rows"]:
             rows.append(_row(row, report["model_bytes"], report["peak_rss_bytes"]))
 
-    feasible = [row for row in rows if row["within_budget"] and row["reranked"]]
-    # The documented selection rule: among configurations that fit the runtime
-    # budget, take the highest replay Hit Rate@10; break ties by the lower
-    # projected wall clock, then by the smaller packaged model.
+    baseline = rows[0]
+    baseline_technical_score = baseline.get(
+        "recommended_technical_score",
+        0.50 * baseline["hit_rate_at_10"]
+        + 0.30 * baseline["mrr"]
+        + 0.20 * baseline.get("efficiency", 0.0),
+    )
+    feasible = [
+        row for row in rows
+        if (
+            row["within_budget"]
+            and row["reranked"]
+            and row["hit_rate_at_10"] >= baseline["hit_rate_at_10"]
+            and row.get(
+                "recommended_technical_score",
+                0.50 * row["hit_rate_at_10"]
+                + 0.30 * row["mrr"]
+                + 0.20 * row.get("efficiency", 0.0),
+            ) > baseline_technical_score
+        )
+    ]
+    # Preserve the deepest quality-improving pool that passes both runtime
+    # gates. Later Fusion Policy work cannot recover candidates excluded here.
     winner = max(
         feasible,
         key=lambda row: (
-            row["hit_rate_at_10"],
-            -row["projected_wall_seconds"],
+            row["depth"],
+            row.get("recommended_technical_score", 0.0),
+            row["mrr"],
+            -row["turn_latency_p95_ms"],
             -row["model_bytes"],
         ),
         default=None,
@@ -427,13 +575,22 @@ def summarize(arguments: argparse.Namespace) -> dict:
     return {
         "stage": "summary",
         "runtime_budget_seconds": arguments.runtime_budget_seconds,
+        "p95_budget_ms": arguments.p95_budget_ms,
         "full_run_sessions": full_sessions,
+        "environment": {
+            "machine": platform.machine(),
+            "platform": platform.platform(),
+            "python": platform.python_version(),
+            "torch_threads": reports[0].get("torch_threads"),
+        },
         "projected_baseline_seconds": round(projected_baseline, 1),
         "benchmark_session_count": rows[0]["session_count"],
         "cache_metadata": metadata,
         "cache_pool_recall": metadata.get("pool_recall_by_depth"),
+        "models": models,
         "rows": rows,
         "selected": winner,
+        "decision": "reranker_selected" if winner is not None else "no_reranker",
         "pool_recall_ceiling": ceiling,
         "pool_recall_lost_to_truncation": (
             None if winner is None
@@ -490,6 +647,12 @@ def parse_arguments() -> argparse.Namespace:
         type=float,
         default=900.0,
         help="evaluator wall-clock limit a configuration must stay within",
+    )
+    summary.add_argument(
+        "--p95-budget-ms",
+        type=float,
+        default=1500.0,
+        help="maximum admissible p95 added rerank latency per turn",
     )
     return parser.parse_args()
 
