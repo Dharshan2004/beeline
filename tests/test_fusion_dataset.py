@@ -8,6 +8,7 @@ from pathlib import Path
 from unittest.mock import patch
 
 from tools.build_fusion_dataset import (
+    ARTIFACT_VERSION,
     FusionDatasetError,
     FROZEN_CATALOG_SHA256,
     FROZEN_DENSE_STORE_SHA256,
@@ -19,9 +20,17 @@ from tools.build_fusion_dataset import (
     validate_current_identities,
     write_artifact,
 )
+from starter.planning import PLANNING_PROMPT_SHA256, PLANNING_PROMPT_VERSION
+from starter.replacement_evidence import (
+    REPLACEMENT_EVIDENCE_SHA256,
+    REPLACEMENT_EVIDENCE_VERSION,
+)
 
 
 class FusionTrainingDatasetTest(unittest.TestCase):
+    def test_artifact_uses_planning_contract_v2(self) -> None:
+        self.assertEqual(ARTIFACT_VERSION, "fusion-training-v2")
+
     def records(self) -> list[dict]:
         return [
             {
@@ -176,6 +185,14 @@ class FusionTrainingDatasetTest(unittest.TestCase):
         revision = "233902d25c440f23af6f7d6e94d2946bac0bee0a"
         configuration = {
             "catalog": {"sha256": FROZEN_CATALOG_SHA256},
+            "planning": {
+                "prompt_version": PLANNING_PROMPT_VERSION,
+                "prompt_sha256": PLANNING_PROMPT_SHA256,
+                "replacement_evidence_version": REPLACEMENT_EVIDENCE_VERSION,
+                "replacement_evidence_sha256": REPLACEMENT_EVIDENCE_SHA256,
+                "provider": None,
+                "connected_model_version": None,
+            },
             "fusion_and_retrieval": {
                 "policy_version": "fixed-hybrid-v1",
                 "fused_candidate_depth": 50,
@@ -213,6 +230,12 @@ class FusionTrainingDatasetTest(unittest.TestCase):
                 "configuration",
                 lambda value: value["fusion_and_retrieval"]["weights"].update(
                     dense=0.29
+                ),
+            ),
+            (
+                "configuration",
+                lambda value: value["planning"].update(
+                    replacement_evidence_sha256="stale"
                 ),
             ),
             (

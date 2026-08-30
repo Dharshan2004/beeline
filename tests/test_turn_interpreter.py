@@ -16,6 +16,7 @@ SUPPORTED_VALUES = {
     "category": {"shoe", "slipper"},
     "material": {"cotton", "leather"},
     "color": {"blue", "red"},
+    "feature": {"waterproof"},
 }
 
 
@@ -88,6 +89,37 @@ class TurnInterpreterTest(unittest.TestCase):
             [("category", ("slipper",))],
         )
 
+    def test_attribute_correction_does_not_replace_product_intent(self) -> None:
+        state = ConstraintState()
+        state.apply(
+            interpret_turn(
+                "I need leather shoes.",
+                turn=1,
+                state=state,
+                supported_values=SUPPORTED_VALUES,
+            ),
+            SUPPORTED_VALUES,
+        )
+        original_intent = state.active_product_intent_id
+
+        plan = interpret_turn(
+            "Actually, I need waterproof.",
+            turn=2,
+            state=state,
+            supported_values=SUPPORTED_VALUES,
+        )
+        state.apply(plan, SUPPORTED_VALUES)
+
+        self.assertFalse(any(
+            isinstance(item, ReplaceProductIntent)
+            for item in plan.mutations
+        ))
+        self.assertEqual(state.active_product_intent_id, original_intent)
+        self.assertEqual(
+            [item.normalized_value for item in state.constraints if item.status == "active"],
+            ["shoe", "leather", "waterproof"],
+        )
+
     def test_different_category_without_replacement_language_is_ambiguous(self) -> None:
         state = ConstraintState()
         state.apply(
@@ -139,6 +171,95 @@ class TurnInterpreterTest(unittest.TestCase):
             [(item.normalized_value, item.status) for item in state.constraints],
             [("blue", "superseded"), ("cotton", "active")],
         )
+
+    def test_preference_override_targets_unique_same_attribute_constraint(self) -> None:
+        state = ConstraintState()
+        state.apply(
+            interpret_turn(
+                "I prefer leather, but I prefer blue.",
+                turn=1,
+                state=state,
+                supported_values=SUPPORTED_VALUES,
+            ),
+            SUPPORTED_VALUES,
+        )
+        material_id = next(
+            item.constraint_id
+            for item in state.constraints
+            if item.attribute == "material"
+        )
+
+        plan = interpret_turn(
+            "Actually, ignore my previous preference. I need cotton.",
+            turn=2,
+            state=state,
+            supported_values=SUPPORTED_VALUES,
+        )
+
+        replacement = next(
+            item for item in plan.mutations if isinstance(item, ReplaceConstraint)
+        )
+        self.assertEqual(replacement.constraint_id, material_id)
+        state.apply(plan, SUPPORTED_VALUES)
+        self.assertEqual(
+            [
+                (item.normalized_value, item.status)
+                for item in state.constraints
+            ],
+            [
+                ("leather", "superseded"),
+                ("blue", "active"),
+                ("cotton", "active"),
+            ],
+        )
+
+    def test_attribute_withdrawal_does_not_license_product_intent_replacement(self) -> None:
+        state = ConstraintState()
+        state.apply(
+            interpret_turn(
+                "I need blue shoes.",
+                turn=1,
+                state=state,
+                supported_values=SUPPORTED_VALUES,
+            ),
+            SUPPORTED_VALUES,
+        )
+
+        plan = interpret_turn(
+            "I no longer want blue; show me slippers.",
+            turn=2,
+            state=state,
+            supported_values=SUPPORTED_VALUES,
+        )
+
+        self.assertFalse(any(
+            isinstance(item, ReplaceProductIntent)
+            for item in plan.mutations
+        ))
+
+    def test_relation_to_attribute_does_not_license_product_intent_replacement(self) -> None:
+        state = ConstraintState()
+        state.apply(
+            interpret_turn(
+                "I need cotton shoes.",
+                turn=1,
+                state=state,
+                supported_values=SUPPORTED_VALUES,
+            ),
+            SUPPORTED_VALUES,
+        )
+
+        plan = interpret_turn(
+            "I want slippers instead of cotton.",
+            turn=2,
+            state=state,
+            supported_values=SUPPORTED_VALUES,
+        )
+
+        self.assertFalse(any(
+            isinstance(item, ReplaceProductIntent)
+            for item in plan.mutations
+        ))
 
     def test_multiple_values_preserve_explicit_any_or_all_meaning(self) -> None:
         cases = (

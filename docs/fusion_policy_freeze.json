@@ -5915,9 +5915,11 @@
     "normalizer": "per-route-min-max-v1",
     "planning": {
       "connected_model_version": null,
-      "prompt_sha256": "5f48763e134016e0bfc2046039407b9adb9f62ce474b90f2175bc85825424f5b",
-      "prompt_version": "shopping-turn-planner-v1",
-      "provider": null
+      "prompt_sha256": "3006accb659a14cb5feaf6fa6e03b13e9044bd7ffade16e0a73fc663554c35bd",
+      "prompt_version": "shopping-turn-planner-v2",
+      "provider": null,
+      "replacement_evidence_sha256": "b2fb42142bd8cf5e8fd7a20881a5fd8d89f0c915c5109566c74037f76fc95d4d",
+      "replacement_evidence_version": "explicit-replacement-evidence-v1"
     },
     "policy_version": "pool-aware-global-v2",
     "rerank_deadline_seconds": 1.5,
@@ -5967,17 +5969,17 @@
     "recall_to_hit_gap": 0.166667
   },
   "provenance": {
-    "artifact_configuration_sha256": "dc2f02b4af6bf8455eb5b826a6e2774808ad0ddcd4774edec9eefb3793aa4835",
+    "artifact_configuration_sha256": "3d8894b693cfc3f087a116abe668652016182715fc77e1af895d24f9b71a4935",
     "artifact_identities_sha256": "2c577a75c345dc30f21b933694d47237c33a1769cf95482770176631d1677e1f",
-    "artifact_report_sha256": "d754cd25bcc1f673732cee678ab2a7d5aa369ef0cfba52b6b31bf0af26b5c8e8",
+    "artifact_report_sha256": "61dfeae10895f0f95338bf19d03835343da0946687ec4616f326a576a76efce2",
     "artifact_sha256": "712378b277e1bb3fa7543828f101312725dab727f0bf1c59756ed2d253c4cd31",
-    "runtime_report_sha256": "1054e6bc0f9264a76340dc59a063936f3cee413e6019bae3b188ccf2cd46015b",
-    "training_report_sha256": "72938ba34ab39630e0dd79e46ec2b7838fccd60572b5c32ff967a406402774a8"
+    "runtime_report_sha256": "bee8bf6d36d24d6979e07e1b14f76596688c8d4b4a3bbe7a3346d2fcd4a3e4fc",
+    "training_report_sha256": "f62a554d3eaad9e263714416cbe76da4671179751ce9e961cee5a84a9683ccfe"
   },
   "runtime_evidence": {
     "passed": true,
-    "projected_wall_seconds_200_sessions": 545.437,
-    "rerank_latency_p95_seconds": 0.31475950000458397,
+    "projected_wall_seconds_200_sessions": 568.298,
+    "rerank_latency_p95_seconds": 0.3483509580255486,
     "rerank_query_count": 892,
     "turn_count": 892
   },
@@ -6453,5 +6455,5 @@
     },
     "within_pool_recall_tolerance": true
   },
-  "validation_version": "fusion-policy-freeze-v1"
+  "validation_version": "fusion-policy-freeze-v2"
 }

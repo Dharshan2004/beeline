@@ -345,7 +345,15 @@ class AgentContractTest(unittest.TestCase):
         self.assertIn("dense_index_and_model", configuration)
         self.assertEqual(
             configuration["planning"]["prompt_version"],
-            "shopping-turn-planner-v1",
+            "shopping-turn-planner-v2",
+        )
+        self.assertEqual(
+            configuration["planning"]["replacement_evidence_version"],
+            "explicit-replacement-evidence-v1",
+        )
+        self.assertEqual(
+            len(configuration["planning"]["replacement_evidence_sha256"]),
+            64,
         )
         self.assertIn("fusion_and_retrieval", configuration)
         self.assertEqual(configuration["feature_flags"]["local_reranking"], False)

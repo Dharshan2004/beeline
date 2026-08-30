@@ -1,7 +1,7 @@
 {
   "artifact_path": "benchmarks/fusion_training.jsonl",
   "artifact_sha256": "712378b277e1bb3fa7543828f101312725dab727f0bf1c59756ed2d253c4cd31",
-  "artifact_version": "fusion-training-v1",
+  "artifact_version": "fusion-training-v2",
   "configuration": {
     "catalog": {
       "path": "data/catalog.jsonl",
@@ -77,9 +77,11 @@
     },
     "fusion_and_retrieval": {
       "fused_candidate_depth": 50,
+      "normalizer": "per-route-min-max-v1",
       "policy_version": "fixed-hybrid-v1",
       "rerank_deadline_seconds": 1.5,
       "rerank_depth": 50,
+      "reranker_directory_sha256": null,
       "reranker_enabled": true,
       "reranker_identity": "cross-encoder/ms-marco-MiniLM-L-6-v2",
       "reranker_revision": "233902d25c440f23af6f7d6e94d2946bac0bee0a",
@@ -93,19 +95,23 @@
     },
     "planning": {
       "connected_model_version": null,
-      "prompt_version": "shopping-turn-planner-v1",
-      "provider": null
+      "prompt_sha256": "3006accb659a14cb5feaf6fa6e03b13e9044bd7ffade16e0a73fc663554c35bd",
+      "prompt_version": "shopping-turn-planner-v2",
+      "provider": null,
+      "replacement_evidence_sha256": "b2fb42142bd8cf5e8fd7a20881a5fd8d89f0c915c5109566c74037f76fc95d4d",
+      "replacement_evidence_version": "explicit-replacement-evidence-v1"
     },
     "reranker": {
       "deadline_seconds": 1.5,
       "depth": 50,
+      "directory_sha256": null,
       "identity": "cross-encoder/ms-marco-MiniLM-L-6-v2",
       "revision": "233902d25c440f23af6f7d6e94d2946bac0bee0a",
       "status": "available"
     },
     "version": "shopping-agent-runtime-v1"
   },
-  "configuration_sha256": "dc2f02b4af6bf8455eb5b826a6e2774808ad0ddcd4774edec9eefb3793aa4835",
+  "configuration_sha256": "3d8894b693cfc3f087a116abe668652016182715fc77e1af895d24f9b71a4935",
   "identities": {
     "catalog_sha256": "da979b05a68af864cb0dcf9ee6a81c010c7e66a57978ad286c7a2e005fc69a67",
     "dense_index_and_model": {

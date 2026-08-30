@@ -21,6 +21,11 @@ from retrieval.reranker import (
     order_by_scores,
 )
 from starter.agent import Agent
+from starter.planning import PLANNING_PROMPT_SHA256, PLANNING_PROMPT_VERSION
+from starter.replacement_evidence import (
+    REPLACEMENT_EVIDENCE_SHA256,
+    REPLACEMENT_EVIDENCE_VERSION,
+)
 from tools.benchmark_reranker import _network_disabled, session_metrics
 from tools.dataset_split import (
     FROZEN_HOLDOUT_SAMPLE_IDS,
@@ -30,7 +35,7 @@ from tools.dataset_split import (
 )
 
 
-ARTIFACT_VERSION = "fusion-training-v1"
+ARTIFACT_VERSION = "fusion-training-v2"
 MAX_TRAINING_POOL_DEPTH = 300
 DEVELOPMENT_SCENARIO_COUNTS = {
     "boundary": 8,
@@ -215,6 +220,7 @@ def validate_current_identities(configuration: dict, identities: dict) -> None:
     dense_manifest = dense_identity.get("manifest") or {}
     embedding_model = dense_manifest.get("embedding_model") or {}
     vector_store = dense_manifest.get("vector_store") or {}
+    planning_identity = configuration.get("planning", {})
     if (
         reranker_identity.get("identity") != DEFAULT_RERANKER_IDENTITY
         or reranker_identity.get("revision")
@@ -232,6 +238,15 @@ def validate_current_identities(configuration: dict, identities: dict) -> None:
         != {"structured": 0.15, "bm25": 0.55, "dense": 0.3}
     ):
         raise FusionDatasetError("Fusion Policy configuration is stale")
+    if planning_identity != {
+        "prompt_version": PLANNING_PROMPT_VERSION,
+        "prompt_sha256": PLANNING_PROMPT_SHA256,
+        "replacement_evidence_version": REPLACEMENT_EVIDENCE_VERSION,
+        "replacement_evidence_sha256": REPLACEMENT_EVIDENCE_SHA256,
+        "provider": None,
+        "connected_model_version": None,
+    }:
+        raise FusionDatasetError("planning identity is stale or incomplete")
     if (
         catalog_identity.get("sha256") != FROZEN_CATALOG_SHA256
         or identities.get("catalog_sha256") != FROZEN_CATALOG_SHA256
@@ -476,15 +491,6 @@ def build_dataset(arguments: argparse.Namespace) -> dict:
         try:
             result = evaluate(agent, samples, catalog_ids, categories, products)
             runtime_configuration = agent.get_runtime_configuration()
-            # Artifact v1 predates the explicit normalizer/prompt digests. Keep
-            # its historical configuration bytes reproducible after Slice 11
-            # exposes those identities in the live runtime manifest.
-            runtime_configuration["fusion_and_retrieval"].pop("normalizer", None)
-            runtime_configuration["fusion_and_retrieval"].pop(
-                "reranker_directory_sha256", None
-            )
-            runtime_configuration["planning"].pop("prompt_sha256", None)
-            runtime_configuration["reranker"].pop("directory_sha256", None)
             traces = agent.get_candidate_traces()
         finally:
             agent.close()

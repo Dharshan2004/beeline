@@ -24,11 +24,11 @@ Reproduce the official live Agent/evaluator benchmark with:
 ```
 
 The freeze report SHA-256 is
-`63c452259b7db19c69d80147b3b0cbc998113f710ec7cdb0b9bf82725d1f42cc`.
+`89af5ea0ea1359d233f0982fc6775b3cb65d7fc44f9a736353b005b97ded3db1`.
 It binds the training report, fusion artifact and identities, live runtime
 report, catalog, dense index, embedding model, reranker, planner prompt, and
 all selected depths and weights. The live report SHA-256 is
-`1054e6bc0f9264a76340dc59a063936f3cee413e6019bae3b188ccf2cd46015b`.
+`bee8bf6d36d24d6979e07e1b14f76596688c8d4b4a3bbe7a3346d2fcd4a3e4fc`.
 
 ## Fold design and gates
 
@@ -85,11 +85,13 @@ a 0.166667 reachability-to-hit gap.
 
 The complete live run exactly reproduces cached quality metrics and pool recall.
 It completes 892 reranked turns with no failure or fallback. Rerank p95 latency
-is 0.314760 seconds and the normalized 200-session wall projection is 545.437
+is 0.348351 seconds and the normalized 200-session wall projection is 568.298
 seconds, below the fixed 1.5-second and 900-second gates.
 
 The frozen configuration records route depth 100, rerank depth 50, per-route
 min-max normalization, the MiniLM embedding and reranker revisions and artifact
 checksums, catalog and Qdrant checksums, the 1.5-second timeout, and planner
-prompt version plus prompt/schema checksum
-`5f48763e134016e0bfc2046039407b9adb9f62ce474b90f2175bc85825424f5b`.
+planning contract version plus prompt/schema checksum
+`3006accb659a14cb5feaf6fa6e03b13e9044bd7ffade16e0a73fc663554c35bd`,
+and Explicit Replacement Evidence classifier version plus checksum
+`b2fb42142bd8cf5e8fd7a20881a5fd8d89f0c915c5109566c74037f76fc95d4d`.

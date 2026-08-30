@@ -6,6 +6,7 @@ from pathlib import Path
 import unittest
 
 from tools.validate_fusion_policy import (
+    VALIDATION_VERSION,
     plateau_neighbor_count,
     scenario_hit_guardrail,
     scenario_stratified_folds,
@@ -17,6 +18,9 @@ from tools.validate_fusion_policy import (
 
 
 class ValidateFusionPolicyTest(unittest.TestCase):
+    def test_freeze_uses_planning_contract_v2_provenance(self) -> None:
+        self.assertEqual(VALIDATION_VERSION, "fusion-policy-freeze-v2")
+
     def test_scenario_folds_are_deterministic_disjoint_and_representative(self) -> None:
         records = [
             {
@@ -147,6 +151,9 @@ class ValidateFusionPolicyTest(unittest.TestCase):
             lambda value: value["configuration"]["fusion_and_retrieval"].update(normalizer="stale"),
             lambda value: value["configuration"]["catalog"].update(sha256="stale"),
             lambda value: value["configuration"]["planning"].update(prompt_sha256="stale"),
+            lambda value: value["configuration"]["planning"].update(
+                replacement_evidence_sha256="stale"
+            ),
             lambda value: value["configuration"]["dense_index_and_model"]["manifest"]["embedding_model"].update(fingerprint_sha256="stale"),
             lambda value: value["configuration"]["dense_index_and_model"]["manifest"]["vector_store"].update(directory_sha256="stale"),
             lambda value: value["configuration"]["fusion_and_retrieval"].update(reranker_directory_sha256="stale"),

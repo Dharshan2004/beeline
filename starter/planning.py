@@ -16,14 +16,17 @@ from starter.constraint_state import (
     ReplaceProductIntent,
     TurnPlan,
 )
+from starter.replacement_evidence import (
+    ReplacementEvidenceError,
+    validate_replacement_evidence,
+)
 
 
-RetrievalTool = Literal["structured", "bm25", "dense", "local_rerank"]
+RetrievalTool = Literal["structured", "bm25", "dense"]
 APPROVED_RETRIEVAL_TOOLS: tuple[RetrievalTool, ...] = (
     "structured",
     "bm25",
     "dense",
-    "local_rerank",
 )
 DEFAULT_RETRIEVAL_TOOLS: tuple[RetrievalTool, ...] = (
     "structured",
@@ -32,13 +35,18 @@ DEFAULT_RETRIEVAL_TOOLS: tuple[RetrievalTool, ...] = (
 )
 MAX_PLANNING_ATTEMPTS = 2
 RECENT_HISTORY_LIMIT = 4
-PLANNING_PROMPT_VERSION = "shopping-turn-planner-v1"
+PLANNING_PROMPT_VERSION = "shopping-turn-planner-v2"
 PLANNING_INSTRUCTIONS = """You are the semantic planner for a Shopping Agent.
 Return exactly one complete Turn Plan that matches the supplied JSON Schema.
 Use the supplied Constraint State revision and source turn unchanged. Propose only
 explicit state transitions supported by the customer message and current state.
+Replace one Constraint for an explicit attribute correction. Replace Product Intent
+only when the latest message explicitly replaces a product type or withdraws the
+whole prior intent and establishes a distinct supported successor; a different
+product mention or "actually" alone is insufficient.
 Use only supplied attributes, normalized values, Constraint identifiers, Product
-Intent identifiers, and approved retrieval tools. Never request shell, web,
+Intent identifiers, and approved Candidate Pool-producing Retrieval Routes.
+Local reranking is fixed downstream and is not a selectable tool. Never request shell, web,
 arbitrary code, or catalog mutation capabilities. Local Constraint State is
 authoritative; recent history is context, not permission to replay old mutations.
 Return null clarification when no useful supported attribute should be asked.
@@ -373,9 +381,11 @@ def _decode_mutation(value: object):
 def decode_plan(
     payload: object,
     *,
+    user_message: str,
     turn: int,
     state: ConstraintState,
     supported_values: Mapping[str, set[str]],
+    grounding_mutations: tuple[object, ...] | None = None,
 ) -> DecodedPlan:
     value = _mapping(payload, "Turn Plan")
     _exact_keys(
@@ -445,6 +455,15 @@ def decode_plan(
         source_turn=source_turn,
         mutations=mutations,
     )
+    try:
+        validate_replacement_evidence(
+            user_message,
+            state,
+            mutations,
+            grounding_mutations=grounding_mutations,
+        )
+    except ReplacementEvidenceError as error:
+        raise PlanningStateError(str(error)) from error
     draft = deepcopy(state)
     try:
         draft.apply(turn_plan, supported_values)
@@ -511,6 +530,7 @@ class PlanningLoop:
         completion_tokens = 0
         errors: list[str] = []
         fallback_reason = "provider_error"
+        grounding_plan = fallback_plan()
         for attempt in range(1, self.max_attempts + 1):
             request = PlanningRequest(
                 session_id=session_id,
@@ -537,9 +557,11 @@ class PlanningLoop:
                 completion_tokens += response.completion_tokens
                 decoded = decode_plan(
                     response.output,
+                    user_message=user_message,
                     turn=turn,
                     state=state,
                     supported_values=supported_values,
+                    grounding_mutations=grounding_plan.mutations,
                 )
                 return PlanningOutcome(
                     turn_plan=decoded.turn_plan,
@@ -572,7 +594,7 @@ class PlanningLoop:
                 errors.append(self._safe_error(error))
 
         return self._fallback(
-            fallback_plan,
+            lambda: grounding_plan,
             state,
             supported_values,
             reason=fallback_reason,

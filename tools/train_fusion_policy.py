@@ -20,7 +20,7 @@ from tools.benchmark_reranker import session_metrics
 from tools.build_fusion_dataset import MAX_TRAINING_POOL_DEPTH, load_artifact
 
 
-REPORT_VERSION = "fusion-weight-search-v1"
+REPORT_VERSION = "fusion-weight-search-v2"
 CURRENT_WEIGHTS = dict(LEGACY_FIXED_WEIGHTS)
 DEFAULT_DEPTH = 50
 TOP_K = 10

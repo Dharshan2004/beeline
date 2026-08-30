@@ -45,8 +45,12 @@ The Shopping Agent's current view of whether the customer is ready to narrow tow
 _Avoid_: Permanent intent class, traffic bucket
 
 **Intent Override**:
-A customer correction that explicitly replaces or withdraws an earlier Constraint or Product Intent. Mentioning a different product or value does not by itself establish an Intent Override.
+A customer correction that uses Explicit Replacement Evidence to replace or withdraw an earlier Constraint or Product Intent. Mentioning a different product or value does not by itself establish an Intent Override.
 _Avoid_: Preference update, changed slot
+
+**Explicit Replacement Evidence**:
+Language in the latest customer turn that directly identifies something active as obsolete and identifies its successor. Attribute-level evidence replaces only the affected Constraint; replacing the Product Intent requires product-type replacement or explicit withdrawal of the whole prior intent.
+_Avoid_: Model confidence, category change
 
 **Boundary Response**:
 A customer response stating that a requested attribute has no useful preference and should not be asked again.
@@ -75,6 +79,10 @@ _Avoid_: BM25-dense union, fused top 30
 **Retrieval Route**:
 A distinct method for producing or narrowing a Candidate Pool from the current customer evidence.
 _Avoid_: Search engine, retriever
+
+**Reranking**:
+Reordering an existing Candidate Pool without admitting new products or removing eligible products. Reranking is not a Retrieval Route.
+_Avoid_: Retrieval Route, candidate generation
 
 **Fusion Policy**:
 The versioned rule that combines evidence from multiple Retrieval Routes into one product ordering.

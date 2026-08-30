@@ -16,6 +16,10 @@ from retrieval.fusion import (
     ROUTE_NAMES,
 )
 from starter.planning import PLANNING_PROMPT_SHA256
+from starter.replacement_evidence import (
+    REPLACEMENT_EVIDENCE_SHA256,
+    REPLACEMENT_EVIDENCE_VERSION,
+)
 from tools.build_fusion_dataset import load_artifact
 from tools.train_fusion_policy import (
     CURRENT_WEIGHTS,
@@ -25,7 +29,7 @@ from tools.train_fusion_policy import (
 )
 
 
-VALIDATION_VERSION = "fusion-policy-freeze-v1"
+VALIDATION_VERSION = "fusion-policy-freeze-v2"
 FROZEN_POLICY_VERSION = "pool-aware-global-v2"
 FOLD_COUNT = 4
 FOLD_SEED = 20260830
@@ -505,6 +509,8 @@ def validate_and_freeze(
         "planning": {
             **source_configuration["planning"],
             "prompt_sha256": PLANNING_PROMPT_SHA256,
+            "replacement_evidence_version": REPLACEMENT_EVIDENCE_VERSION,
+            "replacement_evidence_sha256": REPLACEMENT_EVIDENCE_SHA256,
         },
     }
     runtime_evidence = validate_live_evidence(

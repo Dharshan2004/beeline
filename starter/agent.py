@@ -27,6 +27,10 @@ from starter.planning import (
     PLANNING_PROMPT_SHA256,
     PLANNING_PROMPT_VERSION,
 )
+from starter.replacement_evidence import (
+    REPLACEMENT_EVIDENCE_SHA256,
+    REPLACEMENT_EVIDENCE_VERSION,
+)
 from starter.retrieval import CatalogRetrieval
 from starter.turn_interpreter import interpret_turn
 
@@ -204,6 +208,8 @@ class Agent:
             "planning": {
                 "prompt_version": PLANNING_PROMPT_VERSION,
                 "prompt_sha256": PLANNING_PROMPT_SHA256,
+                "replacement_evidence_version": REPLACEMENT_EVIDENCE_VERSION,
+                "replacement_evidence_sha256": REPLACEMENT_EVIDENCE_SHA256,
                 "provider": type(provider).__name__ if provider is not None else None,
                 "connected_model_version": (
                     getattr(provider, "model", None) if provider is not None else None

@@ -79,9 +79,9 @@
         "policy_version": "fixed-hybrid-v1",
         "rerank_deadline_seconds": 1.5,
         "rerank_depth": 50,
+        "reranker_directory_sha256": null,
         "reranker_enabled": false,
         "reranker_identity": "cross-encoder/ms-marco-MiniLM-L-6-v2",
-        "reranker_directory_sha256": null,
         "reranker_revision": "233902d25c440f23af6f7d6e94d2946bac0bee0a",
         "reranker_status": "disabled",
         "route_depth": 100,
@@ -93,15 +93,17 @@
       },
       "planning": {
         "connected_model_version": null,
-        "prompt_sha256": "5f48763e134016e0bfc2046039407b9adb9f62ce474b90f2175bc85825424f5b",
-        "prompt_version": "shopping-turn-planner-v1",
-        "provider": null
+        "prompt_sha256": "3006accb659a14cb5feaf6fa6e03b13e9044bd7ffade16e0a73fc663554c35bd",
+        "prompt_version": "shopping-turn-planner-v2",
+        "provider": null,
+        "replacement_evidence_sha256": "b2fb42142bd8cf5e8fd7a20881a5fd8d89f0c915c5109566c74037f76fc95d4d",
+        "replacement_evidence_version": "explicit-replacement-evidence-v1"
       },
       "reranker": {
         "deadline_seconds": 1.5,
         "depth": 50,
-        "identity": "cross-encoder/ms-marco-MiniLM-L-6-v2",
         "directory_sha256": null,
+        "identity": "cross-encoder/ms-marco-MiniLM-L-6-v2",
         "revision": "233902d25c440f23af6f7d6e94d2946bac0bee0a",
         "status": "disabled"
       },
@@ -148,14 +150,14 @@
       }
     },
     "runtime": {
-      "projected_wall_seconds_200_sessions": 228.687,
+      "projected_wall_seconds_200_sessions": 242.531,
       "turn_latency": {
-        "mean_seconds": 0.181252,
-        "p50_seconds": 0.171955,
-        "p95_seconds": 0.363294,
+        "mean_seconds": 0.192227,
+        "p50_seconds": 0.181414,
+        "p95_seconds": 0.38124,
         "turn_count": 1009
       },
-      "wall_seconds": 182.95
+      "wall_seconds": 194.025
     }
   },
   "candidate_pool_metrics": {
@@ -270,9 +272,9 @@
       "policy_version": "pool-aware-global-v2",
       "rerank_deadline_seconds": 1.5,
       "rerank_depth": 50,
+      "reranker_directory_sha256": "92df7334846cb53cf56721bf1c44f5f8dd9f7068b818940ef9b5646c6333e502",
       "reranker_enabled": true,
       "reranker_identity": "cross-encoder/ms-marco-MiniLM-L-6-v2",
-      "reranker_directory_sha256": "92df7334846cb53cf56721bf1c44f5f8dd9f7068b818940ef9b5646c6333e502",
       "reranker_revision": "233902d25c440f23af6f7d6e94d2946bac0bee0a",
       "reranker_status": "available",
       "route_depth": 100,
@@ -284,15 +286,17 @@
     },
     "planning": {
       "connected_model_version": null,
-      "prompt_sha256": "5f48763e134016e0bfc2046039407b9adb9f62ce474b90f2175bc85825424f5b",
-      "prompt_version": "shopping-turn-planner-v1",
-      "provider": null
+      "prompt_sha256": "3006accb659a14cb5feaf6fa6e03b13e9044bd7ffade16e0a73fc663554c35bd",
+      "prompt_version": "shopping-turn-planner-v2",
+      "provider": null,
+      "replacement_evidence_sha256": "b2fb42142bd8cf5e8fd7a20881a5fd8d89f0c915c5109566c74037f76fc95d4d",
+      "replacement_evidence_version": "explicit-replacement-evidence-v1"
     },
     "reranker": {
       "deadline_seconds": 1.5,
       "depth": 50,
-      "identity": "cross-encoder/ms-marco-MiniLM-L-6-v2",
       "directory_sha256": "92df7334846cb53cf56721bf1c44f5f8dd9f7068b818940ef9b5646c6333e502",
+      "identity": "cross-encoder/ms-marco-MiniLM-L-6-v2",
       "revision": "233902d25c440f23af6f7d6e94d2946bac0bee0a",
       "status": "available"
     },
@@ -342,35 +346,35 @@
     "dense_route": {
       "disabled_reason": null,
       "last_candidate_count": 100,
-      "last_query_seconds": 0.05437787499977276,
-      "load_seconds": 4.848935167014133,
+      "last_query_seconds": 0.05551829098840244,
+      "load_seconds": 5.326730708009563,
       "query_count": 1901,
       "status": "available"
     },
-    "projected_wall_seconds_200_sessions": 545.437,
+    "projected_wall_seconds_200_sessions": 568.298,
     "reranker": {
       "attempt_count": 892,
       "deadline_seconds": 1.5,
       "depth": 50,
+      "directory_sha256": "92df7334846cb53cf56721bf1c44f5f8dd9f7068b818940ef9b5646c6333e502",
       "failure_cause": null,
       "failure_detail": null,
       "identity": "cross-encoder/ms-marco-MiniLM-L-6-v2",
-      "last_latency_seconds": 0.30241595799452625,
-      "latency_p50_seconds": 0.30682012499892153,
-      "latency_p95_seconds": 0.31475950000458397,
+      "last_latency_seconds": 0.3070334579970222,
+      "latency_p50_seconds": 0.3132472080178559,
+      "latency_p95_seconds": 0.3483509580255486,
       "query_count": 892,
-      "directory_sha256": "92df7334846cb53cf56721bf1c44f5f8dd9f7068b818940ef9b5646c6333e502",
       "revision": "233902d25c440f23af6f7d6e94d2946bac0bee0a",
       "status": "available",
-      "worker_pid": 31115
+      "worker_pid": 38537
     },
     "turn_latency": {
-      "mean_seconds": 0.489094,
-      "p50_seconds": 0.480716,
-      "p95_seconds": 0.653053,
+      "mean_seconds": 0.509594,
+      "p50_seconds": 0.49747,
+      "p95_seconds": 0.703681,
       "turn_count": 892
     },
-    "wall_seconds": 436.35
+    "wall_seconds": 454.638
   },
   "session_count": 160
 }

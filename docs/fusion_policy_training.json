@@ -473,13 +473,13 @@
   "pool_recall_tolerance": 0.0,
   "provenance": {
     "artifact_sha256": "712378b277e1bb3fa7543828f101312725dab727f0bf1c59756ed2d253c4cd31",
-    "artifact_version": "fusion-training-v1",
-    "configuration_sha256": "dc2f02b4af6bf8455eb5b826a6e2774808ad0ddcd4774edec9eefb3793aa4835",
+    "artifact_version": "fusion-training-v2",
+    "configuration_sha256": "3d8894b693cfc3f087a116abe668652016182715fc77e1af895d24f9b71a4935",
     "identities_sha256": "2c577a75c345dc30f21b933694d47237c33a1769cf95482770176631d1677e1f",
     "public_set_sha256": "857259f7a438e6188ac63e18995b6ff4489bfcfc4a716a798b9a2aa0ee8f7579",
     "split_version": "public-split-v1"
   },
-  "report_version": "fusion-weight-search-v1",
+  "report_version": "fusion-weight-search-v2",
   "search": {
     "coarse_candidate_count": 66,
     "coarse_candidates": [

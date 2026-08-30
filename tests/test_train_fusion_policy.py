@@ -7,6 +7,7 @@ import unittest
 from unittest.mock import patch
 
 from tools.train_fusion_policy import (
+    REPORT_VERSION,
     evaluate_weighted_policy,
     load_fused30_baseline,
     rank_weighted_pool,
@@ -51,6 +52,9 @@ def _record(
 
 
 class TrainFusionPolicyTest(unittest.TestCase):
+    def test_report_uses_planning_contract_v2_provenance(self) -> None:
+        self.assertEqual(REPORT_VERSION, "fusion-weight-search-v2")
+
     def records(self) -> list[dict]:
         return [
             _record(

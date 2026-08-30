@@ -118,6 +118,16 @@ class ConstraintState:
             "next_product_intent_number": self._next_product_intent_number,
         }
 
+    def active_constraints(self, attribute: str | None = None) -> list[Constraint]:
+        """Return active constraints, optionally limited to one attribute."""
+
+        return [
+            constraint
+            for constraint in self.constraints
+            if constraint.status == "active"
+            and (attribute is None or constraint.attribute == attribute)
+        ]
+
     def apply(
         self,
         plan: TurnPlan,

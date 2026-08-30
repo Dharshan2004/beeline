@@ -6,13 +6,16 @@ from typing import Mapping
 
 from starter.constraint_state import (
     AddConstraint,
-    Constraint,
     ConstraintState,
     DismissAttribute,
     ReintroduceConstraint,
     ReplaceConstraint,
     ReplaceProductIntent,
     TurnPlan,
+)
+from starter.replacement_evidence import (
+    classify_replacement_evidence,
+    has_replacement_cue,
 )
 
 
@@ -37,12 +40,6 @@ SOFT_RE = re.compile(
 )
 HARD_RE = re.compile(
     r"\b(?:must|need|require|requirement|only|have\s+to|has\s+to|what\s+matters)\b",
-    re.IGNORECASE,
-)
-OVERRIDE_RE = re.compile(
-    r"\b(?:actually|instead|rather\s+than|no\s+longer|changed\s+my\s+mind|"
-    r"switch(?:ing)?\s+to|ignore\s+(?:my\s+)?(?:earlier|previous)|"
-    r"forget\s+(?:my\s+)?(?:earlier|previous))\b",
     re.IGNORECASE,
 )
 BOUNDARY_RE = re.compile(
@@ -103,17 +100,6 @@ def _boundary_attribute(
     return last_asked_attribute
 
 
-def _active_for_attribute(
-    state: ConstraintState,
-    attribute: str,
-) -> list[Constraint]:
-    return [
-        constraint
-        for constraint in state.constraints
-        if constraint.status == "active" and constraint.attribute == attribute
-    ]
-
-
 def interpret_turn(
     user_message: str,
     *,
@@ -149,7 +135,7 @@ def interpret_turn(
             turn > 1
             and not HARD_RE.search(segment)
             and not SOFT_RE.search(segment)
-            and not OVERRIDE_RE.search(user_message)
+            and not has_replacement_cue(user_message)
         ):
             continue
         candidate = re.split(
@@ -205,24 +191,14 @@ def interpret_turn(
             confidence=items[0][5],
         ))
 
-    active_category = _active_for_attribute(state, "category")
-    incoming_category = next(
-        (item for item in additions if item.attribute == "category"),
-        None,
+    replacement_evidence = classify_replacement_evidence(
+        user_message,
+        state,
+        additions,
     )
-    active_product_constraints = [
-        constraint
-        for constraint in state.constraints
-        if constraint.status == "active" and constraint.scope == "product_intent"
-    ]
     replaces_product_intent = bool(
-        incoming_category
-        and active_product_constraints
-        and (
-            not active_category
-            or set(incoming_category.values) != set(active_category[-1].values)
-        )
-        and OVERRIDE_RE.search(user_message)
+        replacement_evidence
+        and replacement_evidence.scope == "product_intent"
     )
     if replaces_product_intent:
         mutations.append(ReplaceProductIntent(
@@ -230,34 +206,20 @@ def interpret_turn(
             raw_phrase=user_message,
         ))
 
-    explicit_constraint_override = bool(
-        re.search(
-            r"\b(?:ignore|forget)\s+(?:my\s+)?(?:earlier|previous)\s+preference\b",
-            user_message,
-            re.I,
-        )
-    )
     override_target = next(
         (
             constraint
-            for constraint in reversed(state.constraints)
-            if constraint.status == "active" and constraint.classification == "soft"
+            for constraint in state.constraints
+            if replacement_evidence
+            and replacement_evidence.scope == "constraint"
+            and constraint.constraint_id == replacement_evidence.target_constraint_id
         ),
         None,
-    ) if explicit_constraint_override else None
-    if explicit_constraint_override and override_target is None:
-        override_target = next(
-            (
-                constraint
-                for constraint in reversed(state.constraints)
-                if constraint.status == "active" and constraint.attribute != "category"
-            ),
-            None,
-        )
+    )
     used_override_target = False
 
     for addition in additions:
-        active = _active_for_attribute(state, addition.attribute)
+        active = state.active_constraints(addition.attribute)
         if replaces_product_intent and addition.scope == "product_intent":
             mutations.append(addition)
             continue
@@ -283,7 +245,11 @@ def interpret_turn(
             for constraint in active
         ):
             continue
-        if OVERRIDE_RE.search(user_message):
+        if (
+            replacement_evidence
+            and replacement_evidence.scope == "constraint"
+            and replacement_evidence.target_constraint_id == active[-1].constraint_id
+        ):
             mutations.append(ReplaceConstraint(
                 constraint_id=active[-1].constraint_id,
                 **addition.__dict__,

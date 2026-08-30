@@ -49,3 +49,11 @@ Validated planning from Slice 12 is already present on `main` and therefore form
 - Slice 11 freezes and validates planner, route, fusion, reranker, depth, and timeout identities together, with post-override scenario guardrails.
 
 Connected-provider behavior is not a variable in Slices 7–11: their datasets and comparisons use `planning_provider=None`. Slices 14–15 separately measure connected planning quality, latency, token use, and cost, and the final release gate remeasures the complete connected configuration.
+
+## Slice 12 repair contract
+
+The validated planning boundary uses one versioned deterministic Explicit Replacement Evidence classifier in both the offline interpreter and connected-plan validator. Attribute-level correction replaces only one unambiguous Constraint and preserves the rest of the Product Intent. Product Intent replacement requires product-type replacement language or explicit withdrawal of the whole prior intent, plus a distinct supported successor in the same atomic Turn Plan. Ambiguous mentions are rejected, retried once through the existing bounded planning loop, and then handled by deterministic takeover without partial state change.
+
+The model-selectable tool contract contains only Candidate Pool-producing Retrieval Routes: structured, BM25, and dense. Local Reranking remains the frozen mandatory post-fusion policy when available and cannot be selected, disabled, or bypassed by a Turn Plan. Slice 12 is provider-neutral and uses deterministic fake providers for connected success, ambiguity, repeated replacement, rejection, retry, and offline-takeover tests; the concrete OpenAI adapter remains part of Slice 14's measured model comparison.
+
+These corrections create planning contract v2 and a separately identified replacement-evidence classifier. They invalidate the development-only Slice 9 replay artifact and the dependent Slice 10–11 reports. Regeneration may activate v2 only when the complete artifact chain passes its existing provenance, scenario guardrail, runtime, and regression gates; otherwise the v1 frozen build remains active. The locked holdout is not opened during regeneration.

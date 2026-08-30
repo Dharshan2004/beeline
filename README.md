@@ -71,6 +71,31 @@ class Agent:
 
 `ask_attribute` is one of `category`, `material`, `color`, `size`, `style`, `brand`, `budget`, `feature`, `use_case`, `other`, or `null`. See `docs/agent_api_contract.json`.
 
+## Validated Intent Override Planning
+
+Planning contract `shopping-turn-planner-v2` accepts provider-neutral structured
+Turn Plans while local Constraint State remains authoritative. One versioned
+Explicit Replacement Evidence classifier is shared by connected validation and
+the deterministic interpreter. Attribute-level correction replaces only the
+affected Constraint; Product Intent replacement requires explicit product-type
+replacement or whole-intent withdrawal plus a distinct supported successor in
+the same atomic Turn Plan. Ambiguous mentions, stale state, invalid tools,
+invalid schemas, timeouts, and provider failures receive one bounded retry and
+then deterministic takeover without partial mutation.
+
+The model may select only Candidate Pool-producing Retrieval Routes:
+`structured`, `bm25`, and `dense`. Local reranking is the frozen post-fusion
+policy and cannot be selected, disabled, or bypassed by a Turn Plan. Slice 12 is
+provider-neutral and its connected behavior is tested with deterministic fake
+providers; the measured concrete OpenAI adapter belongs to Slice 14.
+
+Run the planning and Intent Override contract tests without API credentials or
+spending:
+
+```bash
+.venv/bin/python -m unittest -v tests.test_planning tests.test_turn_interpreter
+```
+
 ## Technical Metrics
 
 - **Hit Rate@10:** fraction of sessions that find the target within 10 turns.
@@ -298,8 +323,8 @@ The Locked Holdout remains unopened.
 The frozen policy reaches 0.825 pool recall, 0.65625 HitRate@10, 0.406937 MRR,
 and 0.551831 TechnicalScore. No scenario violates the five-point HitRate@10
 guardrail; Intent Override improves from 0.375 to 0.500. A complete live run
-matches those cached metrics exactly, with 315 ms rerank p95 latency and a
-545.4-second projected 200-session wall time. See
+matches those cached metrics exactly, with 348 ms rerank p95 latency and a
+568.3-second projected 200-session wall time. See
 `docs/fusion_policy_validation.md` and `docs/fusion_policy_freeze.json` for the
 fold evidence, gap closure, checksums, and full frozen runtime identity.
 

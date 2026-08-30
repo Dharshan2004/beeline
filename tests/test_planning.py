@@ -40,6 +40,7 @@ def add_constraint(
     *,
     attribute: str = "material",
     classification: str = "hard",
+    scope: str = "product_intent",
 ) -> dict:
     return {
         "type": "add_constraint",
@@ -47,9 +48,36 @@ def add_constraint(
         "values": [value],
         "match_rule": "all",
         "classification": classification,
-        "scope": "product_intent",
+        "scope": scope,
         "raw_phrase": value,
         "confidence": 0.97,
+    }
+
+
+def replace_product_intent(
+    *,
+    product_intent_id: str = "intent-1",
+    raw_phrase: str,
+) -> dict:
+    return {
+        "type": "replace_product_intent",
+        "product_intent_id": product_intent_id,
+        "raw_phrase": raw_phrase,
+    }
+
+
+def replace_constraint(
+    constraint_id: str,
+    value: str,
+    *,
+    attribute: str,
+    raw_phrase: str,
+) -> dict:
+    return {
+        **add_constraint(value, attribute=attribute),
+        "type": "replace_constraint",
+        "constraint_id": constraint_id,
+        "raw_phrase": raw_phrase,
     }
 
 
@@ -133,6 +161,16 @@ class PlanningLoopTest(unittest.TestCase):
                 "title": "Red leather walking shoe",
                 "features": ["leather", "red"],
             },
+            {
+                "parent_asin": "C",
+                "title": "Plain house slipper",
+                "categories": ["Slippers"],
+            },
+            {
+                "parent_asin": "D",
+                "title": "Plain outdoor boot",
+                "categories": ["Boots"],
+            },
         ])
 
     def write_catalog(self, rows: list[dict]) -> None:
@@ -146,7 +184,7 @@ class PlanningLoopTest(unittest.TestCase):
             ProviderResponse(
                 output=plan_payload(
                     mutations=[add_constraint("cotton")],
-                    tools=["structured", "local_rerank"],
+                    tools=["structured"],
                     clarification={
                         "ask_attribute": "color",
                         "message": "Which color would you prefer?",
@@ -195,7 +233,7 @@ class PlanningLoopTest(unittest.TestCase):
             "state_revision": 1,
             "source": "connected",
             "attempts": 1,
-            "retrieval_tools": ["structured", "local_rerank"],
+            "retrieval_tools": ["structured"],
             "ask_attribute": "color",
             "fallback_reason": None,
             "errors": [],
@@ -221,7 +259,13 @@ class PlanningLoopTest(unittest.TestCase):
             "material": {"cotton"},
             "color": {"blue"},
         }
-        for forbidden_tool in ("shell", "web", "python", "catalog_mutation"):
+        for forbidden_tool in (
+            "shell",
+            "web",
+            "python",
+            "catalog_mutation",
+            "local_rerank",
+        ):
             with self.subTest(tool=forbidden_tool):
                 with self.assertRaisesRegex(
                     PlanningToolError,
@@ -229,6 +273,7 @@ class PlanningLoopTest(unittest.TestCase):
                 ):
                     decode_plan(
                         plan_payload(tools=[forbidden_tool]),
+                        user_message="walking shoes",
                         turn=1,
                         state=ConstraintState(),
                         supported_values=supported_values,
@@ -254,6 +299,332 @@ class PlanningLoopTest(unittest.TestCase):
         self.assertEqual(diagnostic["source"], "fallback")
         self.assertEqual(diagnostic["fallback_reason"], "unapproved_tool")
         self.assertEqual(diagnostic["attempts"], 2)
+
+    def test_ambiguous_product_mention_cannot_replace_product_intent(self) -> None:
+        ambiguous_message = "What about slippers?"
+        ambiguous_plan = plan_payload(
+            revision=1,
+            turn=2,
+            mutations=[
+                replace_product_intent(raw_phrase=ambiguous_message),
+                add_constraint("slipper", attribute="category"),
+            ],
+            tools=["structured"],
+        )
+        provider = ScriptedProvider([
+            plan_payload(
+                mutations=[add_constraint("shoe", attribute="category")],
+                tools=["structured"],
+            ),
+            ambiguous_plan,
+            dict(ambiguous_plan),
+        ])
+        agent = Agent(self.catalog_path, planning_provider=provider)
+        agent.reset("session", {})
+        agent.respond("session", "I need shoes.", 1, 10)
+
+        response = agent.respond("session", ambiguous_message, 2, 10)
+
+        self.assertEqual(len(provider.requests), 3)
+        self.assertNotIn({"parent_asin": "C"}, response["recommendations"])
+        self.assertEqual(agent.get_constraint_revision("session"), 1)
+        self.assertEqual(
+            [
+                (item["normalized_value"], item["status"])
+                for item in agent.get_constraint_state("session")
+            ],
+            [("shoe", "active")],
+        )
+        diagnostic = agent.get_planning_history("session")[1]
+        self.assertEqual(diagnostic["source"], "fallback")
+        self.assertEqual(diagnostic["fallback_reason"], "rejected_state_change")
+        self.assertEqual(diagnostic["attempts"], 2)
+
+    def test_connected_plan_cannot_ignore_explicit_product_intent_replacement(self) -> None:
+        provider = ScriptedProvider([
+            plan_payload(
+                mutations=[
+                    add_constraint("shoe", attribute="category"),
+                    add_constraint(
+                        "blue",
+                        attribute="color",
+                        classification="soft",
+                        scope="session",
+                    ),
+                ],
+                tools=["structured"],
+            ),
+            plan_payload(revision=1, turn=2, tools=["structured"]),
+            plan_payload(revision=1, turn=2, tools=["structured"]),
+        ])
+        agent = Agent(self.catalog_path, planning_provider=provider)
+        agent.reset("session", {})
+        agent.respond("session", "Whatever I buy, I prefer blue shoes.", 1, 10)
+
+        response = agent.respond(
+            "session",
+            "Actually, slippers instead of shoes.",
+            2,
+            10,
+        )
+
+        self.assertEqual(len(provider.requests), 3)
+        self.assertEqual(response["recommendations"], [{"parent_asin": "C"}])
+        self.assertEqual(
+            [
+                (item["normalized_value"], item["scope"], item["status"])
+                for item in agent.get_constraint_state("session")
+            ],
+            [
+                ("shoe", "product_intent", "superseded"),
+                ("blue", "session", "active"),
+                ("slipper", "product_intent", "active"),
+            ],
+        )
+        diagnostic = agent.get_planning_history("session")[1]
+        self.assertEqual(diagnostic["source"], "fallback")
+        self.assertEqual(diagnostic["fallback_reason"], "rejected_state_change")
+
+    def test_connected_product_intent_replacement_must_match_requested_successor(self) -> None:
+        message = "Actually, slippers instead of shoes."
+        wrong_successor = plan_payload(
+            revision=1,
+            turn=2,
+            mutations=[
+                replace_product_intent(raw_phrase=message),
+                add_constraint("boot", attribute="category"),
+            ],
+            tools=["structured"],
+        )
+        provider = ScriptedProvider([
+            plan_payload(
+                mutations=[add_constraint("shoe", attribute="category")],
+                tools=["structured"],
+            ),
+            wrong_successor,
+            dict(wrong_successor),
+        ])
+        agent = Agent(self.catalog_path, planning_provider=provider)
+        agent.reset("session", {})
+        agent.respond("session", "I need shoes.", 1, 10)
+
+        response = agent.respond("session", message, 2, 10)
+
+        self.assertEqual(len(provider.requests), 3)
+        self.assertEqual(response["recommendations"], [{"parent_asin": "C"}])
+        self.assertEqual(
+            [
+                (item["normalized_value"], item["status"])
+                for item in agent.get_constraint_state("session")
+            ],
+            [("shoe", "superseded"), ("slipper", "active")],
+        )
+        diagnostic = agent.get_planning_history("session")[1]
+        self.assertEqual(diagnostic["source"], "fallback")
+        self.assertEqual(diagnostic["fallback_reason"], "rejected_state_change")
+
+    def test_connected_product_intent_replacement_preserves_session_constraint(self) -> None:
+        message = "Actually, slippers instead of shoes."
+        provider = ScriptedProvider([
+            plan_payload(
+                mutations=[
+                    add_constraint("shoe", attribute="category"),
+                    add_constraint(
+                        "blue",
+                        attribute="color",
+                        classification="soft",
+                        scope="session",
+                    ),
+                ],
+                tools=["structured"],
+            ),
+            plan_payload(
+                revision=1,
+                turn=2,
+                mutations=[
+                    replace_product_intent(raw_phrase=message),
+                    add_constraint("slipper", attribute="category"),
+                ],
+                tools=["structured"],
+            ),
+        ])
+        agent = Agent(self.catalog_path, planning_provider=provider)
+        agent.reset("session", {})
+        agent.respond("session", "Whatever I buy, I prefer blue shoes.", 1, 10)
+
+        response = agent.respond("session", message, 2, 10)
+
+        self.assertEqual(response["recommendations"], [{"parent_asin": "C"}])
+        self.assertEqual(
+            [
+                (item["normalized_value"], item["scope"], item["status"])
+                for item in agent.get_constraint_state("session")
+            ],
+            [
+                ("shoe", "product_intent", "superseded"),
+                ("blue", "session", "active"),
+                ("slipper", "product_intent", "active"),
+            ],
+        )
+        self.assertEqual(agent.get_planning_history("session")[1]["source"], "connected")
+
+    def test_connected_attribute_correction_preserves_product_intent(self) -> None:
+        message = "Actually, ignore my earlier preference. What I need is cotton."
+        provider = ScriptedProvider([
+            plan_payload(
+                mutations=[
+                    add_constraint(
+                        "blue",
+                        attribute="color",
+                        classification="soft",
+                    ),
+                ],
+                tools=["structured"],
+            ),
+            plan_payload(
+                revision=1,
+                turn=2,
+                mutations=[
+                    replace_constraint(
+                        "c1",
+                        "cotton",
+                        attribute="material",
+                        raw_phrase=message,
+                    ),
+                ],
+                tools=["structured"],
+            ),
+        ])
+        agent = Agent(self.catalog_path, planning_provider=provider)
+        agent.reset("session", {})
+        agent.respond("session", "I prefer blue.", 1, 10)
+        original_intent = agent.get_constraint_state("session")[0]["product_intent_id"]
+
+        response = agent.respond("session", message, 2, 10)
+
+        self.assertEqual(response["recommendations"], [{"parent_asin": "A"}])
+        self.assertEqual(
+            agent.get_constraint_state("session")[1]["product_intent_id"],
+            original_intent,
+        )
+        self.assertEqual(
+            [
+                (item["normalized_value"], item["status"])
+                for item in agent.get_constraint_state("session")
+            ],
+            [("blue", "superseded"), ("cotton", "active")],
+        )
+
+    def test_connected_preference_override_must_target_same_attribute(self) -> None:
+        message = "Actually, ignore my previous preference. I need cotton."
+        wrong_target = plan_payload(
+            revision=1,
+            turn=2,
+            mutations=[
+                replace_constraint(
+                    "c2",
+                    "cotton",
+                    attribute="material",
+                    raw_phrase=message,
+                ),
+            ],
+            tools=["structured"],
+        )
+        provider = ScriptedProvider([
+            plan_payload(
+                mutations=[
+                    add_constraint(
+                        "leather",
+                        attribute="material",
+                        classification="soft",
+                    ),
+                    add_constraint(
+                        "blue",
+                        attribute="color",
+                        classification="soft",
+                    ),
+                ],
+                tools=["structured"],
+            ),
+            wrong_target,
+            dict(wrong_target),
+        ])
+        agent = Agent(self.catalog_path, planning_provider=provider)
+        agent.reset("session", {})
+        agent.respond("session", "I prefer leather, but I prefer blue.", 1, 10)
+
+        agent.respond("session", message, 2, 10)
+
+        self.assertEqual(len(provider.requests), 3)
+        self.assertEqual(
+            [
+                (item["normalized_value"], item["status"])
+                for item in agent.get_constraint_state("session")
+            ],
+            [
+                ("leather", "superseded"),
+                ("blue", "active"),
+                ("cotton", "active"),
+            ],
+        )
+        diagnostic = agent.get_planning_history("session")[1]
+        self.assertEqual(diagnostic["source"], "fallback")
+        self.assertEqual(diagnostic["fallback_reason"], "rejected_state_change")
+
+    def test_connected_repeated_product_intent_replacements_preserve_audit_history(self) -> None:
+        boots_message = "Actually, boots instead of shoes."
+        slippers_message = "Actually, slippers instead of boots."
+        provider = ScriptedProvider([
+            plan_payload(
+                mutations=[add_constraint("shoe", attribute="category")],
+                tools=["structured"],
+            ),
+            plan_payload(
+                revision=1,
+                turn=2,
+                mutations=[
+                    replace_product_intent(raw_phrase=boots_message),
+                    add_constraint("boot", attribute="category"),
+                ],
+                tools=["structured"],
+            ),
+            plan_payload(
+                revision=2,
+                turn=3,
+                mutations=[
+                    replace_product_intent(
+                        product_intent_id="intent-2",
+                        raw_phrase=slippers_message,
+                    ),
+                    add_constraint("slipper", attribute="category"),
+                ],
+                tools=["structured"],
+            ),
+        ])
+        agent = Agent(self.catalog_path, planning_provider=provider)
+        agent.reset("session", {})
+        agent.respond("session", "I need shoes.", 1, 10)
+        boots = agent.respond("session", boots_message, 2, 10)
+
+        slippers = agent.respond("session", slippers_message, 3, 10)
+
+        self.assertEqual(boots["recommendations"], [{"parent_asin": "D"}])
+        self.assertEqual(slippers["recommendations"], [{"parent_asin": "C"}])
+        self.assertEqual(
+            [
+                (item["normalized_value"], item["status"])
+                for item in agent.get_constraint_state("session")
+            ],
+            [
+                ("shoe", "superseded"),
+                ("boot", "superseded"),
+                ("slipper", "active"),
+            ],
+        )
+        self.assertEqual(
+            [event["from_product_intent_id"] for event in agent.get_transition_history("session")],
+            ["intent-1", "intent-2"],
+        )
 
     def test_invalid_schema_is_retried_with_feedback_then_succeeds(self) -> None:
         invalid = plan_payload()
@@ -384,7 +755,7 @@ class PlanningLoopTest(unittest.TestCase):
         )
         self.assertEqual(len(second.recent_history), 1)
         self.assertEqual(second.recent_history[0]["user_message"], "I need cotton.")
-        self.assertEqual(second.prompt_version, "shopping-turn-planner-v1")
+        self.assertEqual(second.prompt_version, "shopping-turn-planner-v2")
         self.assertIn("Local Constraint State is", second.instructions)
         self.assertFalse(hasattr(second, "conversation_id"))
         self.assertEqual(response["recommendations"], [{"parent_asin": "A"}])
