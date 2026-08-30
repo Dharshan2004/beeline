@@ -184,13 +184,13 @@ remains unchanged and uses the fixed policy through the default `Agent`. See
 
 Slice 07 selects the bundled cross-encoder and the deepest Candidate Pool it may
 rerank, on the 160-session development split only. Every model and depth is
-compared on one cached replay of identical base-route unions, so the comparison
+compared on one cached replay of identical Deep Candidate Pools, so the comparison
 never conflates a different pool with a different model. Runs are CPU-only and
 network-disabled.
 
 The frozen result is `cross-encoder/ms-marco-MiniLM-L-6-v2` at depth 50:
 HitRate@10 0.600000, TechnicalScore 0.507240, p95 rerank latency 548.9 ms, and
-an 800.4-second normalized 200-session wall-clock projection. Slice 08 activates
+an 800.6-second normalized 200-session wall-clock projection. Slice 08 activates
 that choice through the live Agent; Slice 07 only records the decision.
 
 ```bash

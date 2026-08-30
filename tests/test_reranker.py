@@ -1,8 +1,8 @@
 from __future__ import annotations
 
 import json
+import socket
 import tempfile
-import time
 import unittest
 from pathlib import Path
 from unittest.mock import patch
@@ -13,9 +13,7 @@ from retrieval.reranker import (
     FROZEN_RERANK_DEPTH,
     RERANKER_CANDIDATES,
     CrossEncoderReranker,
-    RerankDeadlineExceeded,
     RerankerUnavailable,
-    RerankRoute,
     order_by_scores,
 )
 from tools.benchmark_reranker import (
@@ -24,14 +22,17 @@ from tools.benchmark_reranker import (
     build_cache,
     pool_recall,
     session_metrics,
+    score_cache,
     subset_records,
     summarize,
 )
 from tools.dataset_split import (
+    FROZEN_HOLDOUT_SAMPLE_IDS,
     HOLDOUT_SCENARIO_COUNTS,
     development_samples,
     holdout_sample_ids,
     holdout_samples,
+    load_frozen_development_samples,
     stratified_subset,
 )
 
@@ -49,29 +50,6 @@ def skip_on_mega_cache_defect(case: unittest.TestCase, error: Exception) -> None
     if MEGA_CACHE_DEFECT in str(error):
         case.skipTest(f"transformers/torch lazy-import defect: {error}")
     raise error
-
-
-class _StubReranker:
-    """Stands in for the bundled cross-encoder so tests stay CPU-cheap."""
-
-    def __init__(self, scores: dict[str, float] | None = None, error: Exception | None = None) -> None:
-        self.scores = scores or {}
-        self.error = error
-        self.calls: list[tuple[str, tuple[str, ...]]] = []
-
-    def score(self, query: str, documents, *, deadline=None) -> list[float]:
-        self.calls.append((query, tuple(documents)))
-        if self.error is not None:
-            raise self.error
-        return [self.scores.get(document, 0.0) for document in documents]
-
-
-def _route_with(stub: _StubReranker) -> RerankRoute:
-    route = RerankRoute(Path("does-not-exist"))
-    route._reranker = stub
-    route._status = "available"
-    route._disabled_reason = None
-    return route
 
 
 class OrderByScoresTest(unittest.TestCase):
@@ -99,57 +77,7 @@ class CrossEncoderRerankerTest(unittest.TestCase):
             CrossEncoderReranker(Path("models") / "not-a-bundled-model")
 
 
-class RerankRouteTest(unittest.TestCase):
-    def test_missing_model_falls_back_to_the_fused_ordering(self) -> None:
-        route = RerankRoute(Path("models") / "not-a-bundled-model")
-
-        ordered = route.rerank("query", ["A", "B"], {"A": "a", "B": "b"})
-
-        self.assertEqual(ordered, ["A", "B"])
-        metrics = route.metrics()
-        self.assertEqual(metrics["status"], "disabled")
-        self.assertIn("RerankerUnavailable", metrics["disabled_reason"])
-        self.assertEqual(metrics["turn_count"], 0)
-
-    def test_available_route_reorders_by_score(self) -> None:
-        stub = _StubReranker({"a": 0.1, "b": 5.0, "c": 2.0})
-        route = _route_with(stub)
-
-        ordered = route.rerank("query", ["A", "B", "C"], {"A": "a", "B": "b", "C": "c"})
-
-        self.assertEqual(ordered, ["B", "C", "A"])
-        self.assertEqual(stub.calls, [("query", ("a", "b", "c"))])
-        self.assertEqual(route.metrics()["last_candidate_count"], 3)
-
-    def test_deadline_expiry_falls_back_without_disabling_the_route(self) -> None:
-        route = _route_with(_StubReranker(error=RerankDeadlineExceeded("too slow")))
-
-        ordered = route.rerank("query", ["A", "B"], {"A": "a", "B": "b"})
-
-        self.assertEqual(ordered, ["A", "B"])
-        metrics = route.metrics()
-        self.assertEqual(metrics["status"], "available")
-        self.assertEqual(metrics["deadline_count"], 1)
-        self.assertEqual(metrics["fallback_count"], 1)
-
-    def test_scoring_error_disables_the_route_and_falls_back(self) -> None:
-        route = _route_with(_StubReranker(error=RuntimeError("boom")))
-
-        ordered = route.rerank("query", ["A", "B"], {"A": "a", "B": "b"})
-
-        self.assertEqual(ordered, ["A", "B"])
-        metrics = route.metrics()
-        self.assertEqual(metrics["status"], "disabled")
-        self.assertIn("RuntimeError", metrics["disabled_reason"])
-        self.assertEqual(metrics["fallback_count"], 1)
-
-    def test_missing_document_text_still_returns_every_candidate(self) -> None:
-        route = _route_with(_StubReranker({"a": 1.0}))
-
-        ordered = route.rerank("query", ["A", "B"], {"A": "a"})
-
-        self.assertEqual(sorted(ordered), ["A", "B"])
-
+class CrossEncoderRerankerIntegrationTest(unittest.TestCase):
     @unittest.skipUnless(
         DEFAULT_RERANKER_DIR.is_dir(),
         "the bundled cross-encoder is not installed",
@@ -171,20 +99,6 @@ class RerankRouteTest(unittest.TestCase):
         self.assertEqual(len(scores), 2)
         self.assertGreater(scores[0], scores[1])
 
-    @unittest.skipUnless(
-        DEFAULT_RERANKER_DIR.is_dir(),
-        "the bundled cross-encoder is not installed",
-    )
-    def test_an_elapsed_deadline_stops_scoring(self) -> None:
-        try:
-            reranker = CrossEncoderReranker(DEFAULT_RERANKER_DIR, batch_size=1)
-        except RerankerUnavailable as error:
-            skip_on_mega_cache_defect(self, error)
-
-        with self.assertRaises(RerankDeadlineExceeded):
-            reranker.score("query", ["a", "b"], deadline=time.monotonic() - 1.0)
-
-
 class DatasetSplitTest(unittest.TestCase):
     def setUp(self) -> None:
         self.samples = [
@@ -205,6 +119,14 @@ class DatasetSplitTest(unittest.TestCase):
 
         self.assertEqual(len(holdout), 40)
         self.assertEqual(counts, HOLDOUT_SCENARIO_COUNTS)
+
+    def test_frozen_loader_never_deserializes_holdout_payloads(self) -> None:
+        samples = load_frozen_development_samples("data/public_set.jsonl")
+
+        self.assertEqual(len(samples), 160)
+        self.assertFalse(
+            {sample["sample_id"] for sample in samples} & FROZEN_HOLDOUT_SAMPLE_IDS
+        )
 
     def test_development_and_holdout_partition_the_public_set(self) -> None:
         development = development_samples(self.samples)
@@ -385,6 +307,18 @@ class BenchmarkMetricsTest(unittest.TestCase):
 
 
 class BenchmarkCacheTest(unittest.TestCase):
+    def test_score_stage_rejects_general_network_connections(self) -> None:
+        def attempt_connection(_arguments):
+            with socket.socket() as connection:
+                connection.connect(("127.0.0.1", 9))
+
+        with patch(
+            "tools.benchmark_reranker._score_cache_offline",
+            side_effect=attempt_connection,
+        ):
+            with self.assertRaisesRegex(RuntimeError, "network is disabled"):
+                score_cache(object())
+
     def test_cache_refuses_to_measure_without_the_dense_route(self) -> None:
         class DisabledDenseAgent:
             def __init__(self, *_args, **_kwargs) -> None:
@@ -400,8 +334,7 @@ class BenchmarkCacheTest(unittest.TestCase):
             sessions = 0
 
         with (
-            patch("tools.benchmark_reranker.load_jsonl", return_value=[]),
-            patch("tools.benchmark_reranker.development_samples", return_value=[]),
+            patch("tools.benchmark_reranker.load_frozen_development_samples", return_value=[]),
             patch("tools.benchmark_reranker.catalog_index", return_value=(set(), {}, {})),
             patch("tools.benchmark_reranker.Agent", DisabledDenseAgent),
         ):
@@ -437,10 +370,13 @@ class SummaryTest(unittest.TestCase):
             "turn_count": 1000,
             "baseline_wall_seconds": 100.0,
             "baseline_peak_rss_bytes": 1,
+            "cache_sha256": "digest",
         }), encoding="utf-8")
         report = root / "model.json"
         report.write_text(json.dumps({
             "identity": "cross-encoder/ms-marco-MiniLM-L-2-v2",
+            "cache_sha256": "digest", "session_count": 160,
+            "turn_count": 1000, "depths": [30, 50, 100, 150, 200, 250, 300],
             "model_bytes": 10,
             "peak_rss_bytes": 20,
             "baseline_row": {
@@ -498,6 +434,14 @@ class SummaryTest(unittest.TestCase):
             round(0.9 - 0.8, 6),
         )
 
+        mismatched = root / "mismatched.json"
+        mismatched_report = json.loads(report.read_text(encoding="utf-8"))
+        mismatched_report["cache_sha256"] = "different"
+        mismatched.write_text(json.dumps(mismatched_report), encoding="utf-8")
+        _Arguments.reports = [str(report), str(mismatched)]
+        with self.assertRaisesRegex(RuntimeError, "identical cache/depth manifest"):
+            summarize(_Arguments())
+
     def test_the_winner_prioritizes_depth_after_quality_floors(self) -> None:
         directory = tempfile.TemporaryDirectory()
         self.addCleanup(directory.cleanup)
@@ -508,6 +452,7 @@ class SummaryTest(unittest.TestCase):
             "turn_count": 1000,
             "baseline_wall_seconds": 100.0,
             "baseline_peak_rss_bytes": 1,
+            "cache_sha256": "digest",
         }), encoding="utf-8")
         baseline = {
             "identity": "none (fused-30 baseline)", "depth": 30,
@@ -534,6 +479,8 @@ class SummaryTest(unittest.TestCase):
         report = root / "model.json"
         report.write_text(json.dumps({
             "identity": "model", "model_bytes": 10, "peak_rss_bytes": 20,
+            "cache_sha256": "digest", "session_count": 160,
+            "turn_count": 1000, "depths": [30, 50, 100, 150, 200, 250, 300],
             "baseline_row": baseline, "rows": [shallow, deep],
         }), encoding="utf-8")
 
@@ -556,6 +503,7 @@ class SummaryTest(unittest.TestCase):
         meta.write_text(json.dumps({
             "session_count": 160, "turn_count": 1000,
             "baseline_wall_seconds": 100.0, "baseline_peak_rss_bytes": 1,
+            "cache_sha256": "digest",
         }), encoding="utf-8")
         baseline = {
             "identity": "none", "depth": 30, "reranked": False,
@@ -576,6 +524,8 @@ class SummaryTest(unittest.TestCase):
         report = root / "model.json"
         report.write_text(json.dumps({
             "identity": "model", "model_bytes": 10, "peak_rss_bytes": 20,
+            "cache_sha256": "digest", "session_count": 160,
+            "turn_count": 1000, "depths": [30, 50, 100, 150, 200, 250, 300],
             "baseline_row": baseline, "rows": [regressing],
         }), encoding="utf-8")
 

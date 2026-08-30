@@ -1,7 +1,7 @@
 """Compare cross-encoders and deep Candidate Pool depths on one cached replay.
 
 Slice 07 is a decision gate: it selects the offline reranker and the deepest
-base-route union that still fits the official evaluator's runtime limits. That
+Deep Candidate Pool that still fits the official evaluator's runtime limits. That
 decision is only trustworthy if every model and depth sees exactly the same
 Candidate Pools, so the tool runs in stages.
 
@@ -26,6 +26,7 @@ hard failure rather than a silent download.
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import math
 import os
@@ -42,12 +43,7 @@ os.environ["CUDA_VISIBLE_DEVICES"] = ""
 os.environ["HF_HUB_OFFLINE"] = "1"
 os.environ["TRANSFORMERS_OFFLINE"] = "1"
 
-from evaluator.local_evaluator import (
-    catalog_index,
-    evaluate,
-    load_jsonl,
-    materialize_hidden_fields,
-)
+from evaluator.local_evaluator import catalog_index, evaluate, materialize_hidden_fields
 from retrieval.product_text import product_text
 from retrieval.reranker import (
     DEFAULT_BATCH_SIZE,
@@ -61,7 +57,7 @@ from starter.agent import Agent
 from starter.retrieval import RERANK_TEXT_CHAR_LIMIT
 from tools.dataset_split import (
     SPLIT_VERSION,
-    development_samples,
+    load_frozen_development_samples,
     stratified_subset,
 )
 
@@ -85,6 +81,22 @@ def _directory_size_bytes(path: Path) -> int:
     return sum(item.stat().st_size for item in path.rglob("*") if item.is_file())
 
 
+def _network_disabled():
+    return patch.object(
+        socket.socket,
+        "connect",
+        side_effect=RuntimeError("network is disabled during reranker benchmarking"),
+    )
+
+
+def _records_digest(records: Sequence[dict]) -> str:
+    digest = hashlib.sha256()
+    for record in records:
+        digest.update(json.dumps(record, sort_keys=True).encode("utf-8"))
+        digest.update(b"\n")
+    return digest.hexdigest()
+
+
 def _model_provenance(model_dir: Path, identity: str) -> dict:
     """Return the immutable fetch identity used to reproduce a local model."""
     fetched_path = model_dir / "FETCHED.json"
@@ -105,15 +117,11 @@ def _model_provenance(model_dir: Path, identity: str) -> dict:
 
 def build_cache(arguments: argparse.Namespace) -> dict:
     """Replay the shipped configuration once and record every scored turn."""
-    samples = development_samples(load_jsonl(arguments.dataset))
+    samples = load_frozen_development_samples(arguments.dataset)
     if arguments.sessions:
         samples = stratified_subset(samples, arguments.sessions, seed=SUBSET_SEED)
     catalog_ids, categories, products = catalog_index(arguments.catalog)
-    with patch.object(
-        socket.socket,
-        "connect",
-        side_effect=RuntimeError("network is disabled during reranker benchmarking"),
-    ):
+    with _network_disabled():
         agent = Agent(arguments.catalog, trace_pool_depths=DEFAULT_DEPTHS)
         dense_metrics = agent.get_dense_route_metrics()
         if dense_metrics.get("status") != "available":
@@ -179,6 +187,7 @@ def build_cache(arguments: argparse.Namespace) -> dict:
         "split_version": SPLIT_VERSION,
         "session_count": len(samples),
         "turn_count": len(records),
+        "cache_sha256": _records_digest(records),
         "max_pool_depth": MAX_POOL_DEPTH,
         "union_size_mean": round(statistics.fmean(union_sizes), 2) if union_sizes else 0,
         "union_size_median": statistics.median(union_sizes) if union_sizes else 0,
@@ -354,6 +363,12 @@ def baseline_rows(records: Sequence[dict]) -> dict:
 
 
 def score_cache(arguments: argparse.Namespace) -> dict:
+    """Score one model while rejecting every attempted network connection."""
+    with _network_disabled():
+        return _score_cache_offline(arguments)
+
+
+def _score_cache_offline(arguments: argparse.Namespace) -> dict:
     """Score exact cached pools, reusing work after proving prefix extension."""
     depths = sorted(set(arguments.depths))
     if depths[-1] > MAX_POOL_DEPTH:
@@ -465,6 +480,9 @@ def score_cache(arguments: argparse.Namespace) -> dict:
         "rerank_text_char_limit": RERANK_TEXT_CHAR_LIMIT,
         "cache_path": str(arguments.cache),
         "turn_count": len(records),
+        "session_count": len({record["sample_id"] for record in records}),
+        "cache_sha256": _records_digest(records),
+        "depths": depths,
         "device": "cpu",
         "network": "disabled",
         "peak_rss_bytes": peak_rss_bytes(),
@@ -480,6 +498,31 @@ def summarize(arguments: argparse.Namespace) -> dict:
         json.loads(Path(path).read_text(encoding="utf-8"))
         for path in arguments.reports
     ]
+    expected_depths = list(DEFAULT_DEPTHS)
+    reference = reports[0]
+    required_manifest = {
+        "cache_sha256": reference.get("cache_sha256"),
+        "session_count": reference.get("session_count"),
+        "turn_count": reference.get("turn_count"),
+        "depths": reference.get("depths"),
+        "baseline_row": reference.get("baseline_row"),
+    }
+    if required_manifest["cache_sha256"] is None:
+        raise RuntimeError("score report is missing its cache identity manifest")
+    if required_manifest["depths"] != expected_depths:
+        raise RuntimeError("score report does not cover every declared exact depth")
+    for report in reports[1:]:
+        manifest = {
+            "cache_sha256": report.get("cache_sha256"),
+            "session_count": report.get("session_count"),
+            "turn_count": report.get("turn_count"),
+            "depths": report.get("depths"),
+            "baseline_row": report.get("baseline_row"),
+        }
+        if manifest != required_manifest:
+            raise RuntimeError(
+                "score reports do not share one identical cache/depth manifest"
+            )
     models = []
     for report in sorted(reports, key=lambda item: item["identity"]):
         if "model_dir" not in report:
@@ -502,6 +545,8 @@ def summarize(arguments: argparse.Namespace) -> dict:
             )
         models.append(provenance)
     metadata = json.loads(Path(arguments.cache_meta).read_text(encoding="utf-8"))
+    if metadata.get("cache_sha256") != required_manifest["cache_sha256"]:
+        raise RuntimeError("cache metadata does not match the score-report cache")
     cached_sessions = int(metadata["session_count"])
     cached_turns = int(metadata["turn_count"])
     baseline_seconds = float(metadata["baseline_wall_seconds"])
@@ -587,6 +632,7 @@ def summarize(arguments: argparse.Namespace) -> dict:
         "benchmark_session_count": rows[0]["session_count"],
         "cache_metadata": metadata,
         "cache_pool_recall": metadata.get("pool_recall_by_depth"),
+        "score_manifest": required_manifest,
         "models": models,
         "rows": rows,
         "selected": winner,

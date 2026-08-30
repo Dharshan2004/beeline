@@ -4,19 +4,34 @@ The PRD reserves 40 of the 200 public sessions as a scenario-stratified holdout
 that is opened once, in the final human-reviewed slice. Every development
 benchmark, weight search, and regression check runs on the remaining 160.
 
-The split is computed, not stored, so that it cannot drift between tools: given
-the same public set it is always the same 40 sessions. Selection is by a seeded
-shuffle of each scenario's sorted sample identifiers, so it does not depend on
-file order and does not simply take the numerically lowest identifiers.
+The split algorithm remains available for tests and audits. Production
+development tools use the frozen public-set checksum and holdout identifiers
+below so protected rows can be discarded before JSON deserialization.
 """
 from __future__ import annotations
 
+import hashlib
+import json
 import random
+from pathlib import Path
 from typing import Iterable, Sequence
 
 
 SPLIT_VERSION = "public-split-v1"
 HOLDOUT_SEED = 20260829
+FROZEN_PUBLIC_SET_SHA256 = "857259f7a438e6188ac63e18995b6ff4489bfcfc4a716a798b9a2aa0ee8f7579"
+FROZEN_HOLDOUT_SAMPLE_IDS = frozenset({
+    "public_0008", "public_0009", "public_0014", "public_0018",
+    "public_0026", "public_0028", "public_0030", "public_0033",
+    "public_0045", "public_0048", "public_0050", "public_0069",
+    "public_0070", "public_0072", "public_0074", "public_0076",
+    "public_0080", "public_0081", "public_0082", "public_0084",
+    "public_0086", "public_0099", "public_0105", "public_0109",
+    "public_0112", "public_0117", "public_0122", "public_0126",
+    "public_0130", "public_0135", "public_0136", "public_0141",
+    "public_0142", "public_0148", "public_0166", "public_0174",
+    "public_0191", "public_0194", "public_0195", "public_0199",
+})
 
 # The official scenario distribution, applied to a 40-session holdout.
 HOLDOUT_SCENARIO_COUNTS: dict[str, int] = {
@@ -25,6 +40,34 @@ HOLDOUT_SCENARIO_COUNTS: dict[str, int] = {
     "intent_override": 6,
     "boundary": 2,
 }
+
+
+def load_frozen_development_samples(path: str | Path) -> list[dict]:
+    """Deserialize development rows without opening locked holdout payloads."""
+    dataset_path = Path(path)
+    with dataset_path.open("rb") as binary_handle:
+        digest = hashlib.file_digest(binary_handle, "sha256").hexdigest()
+    if digest != FROZEN_PUBLIC_SET_SHA256:
+        raise ValueError(
+            "public set checksum does not match the frozen development split"
+        )
+
+    samples: list[dict] = []
+    line_count = 0
+    with dataset_path.open(encoding="utf-8") as handle:
+        for line_count, line in enumerate(handle, start=1):
+            expected_id = f"public_{line_count:04d}"
+            if expected_id in FROZEN_HOLDOUT_SAMPLE_IDS:
+                continue
+            sample = json.loads(line)
+            if str(sample.get("sample_id")) != expected_id:
+                raise ValueError(
+                    "public set ordering does not match the frozen split manifest"
+                )
+            samples.append(sample)
+    if line_count != 200 or len(samples) != 160:
+        raise ValueError("public set shape does not match the frozen split manifest")
+    return samples
 
 
 def _sample_ids_by_scenario(samples: Iterable[dict]) -> dict[str, list[str]]:

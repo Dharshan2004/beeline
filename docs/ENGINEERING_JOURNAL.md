@@ -353,7 +353,7 @@ Full artifact measurements: 669.8-second build, 198 MB artifact, 1.89-second fre
 **Evidence received from the candidate-boundary analysis:**
 
 - The fused pool of 30 makes the Target Product reachable in approximately 0.77 of sessions.
-- The deeper base-route union of roughly 100–200 candidates makes it reachable in approximately 0.93 of sessions.
+- The deeper Candidate Pool of roughly 100–200 candidates makes it reachable in approximately 0.93 of sessions.
 - Intent Override has the largest gap between post-override target recall and a valid post-override hit.
 - The latest dense-enabled end-to-end run already costs 248.45 seconds for 200 sessions before adding a cross-encoder.
 
@@ -362,7 +362,7 @@ These reachability figures currently come from the latest analysis/plan review a
 **What we changed in the plan:**
 
 1. Slice 7 now benchmarks both compact cross-encoders and practical deep-pool depths, reporting per-turn latency, full-run time, memory, package size, pool recall, final HitRate@10, MRR, and recall-to-hit conversion.
-2. Slice 8 reranks the base-route union up to the Slice 7 frozen latency budget rather than hard-coding the fused top 30.
+2. Slice 8 reranks the Deep Candidate Pool up to the Slice 7 frozen latency budget rather than hard-coding the fused top 30.
 3. Slice 10 trains Fusion Policy weights to reward the Target Product entering the rerank pool before refining final ordering.
 4. Slice 11 validates pool recall separately from post-rerank ranking, compares the fused-30 and full-union ceilings, and freezes rerank depth with the weights and models.
 5. Slice 12 is narrowed to validated LLM planning for Intent Overrides and measures only post-override eligibility and conversion; evaluator hits before the override do not count.
@@ -373,7 +373,7 @@ These reachability figures currently come from the latest analysis/plan review a
 
 **Known limitations:** A cross-encoder over 100–200 candidates per turn may exceed the evaluator budget. The 0.77 and 0.93 measurements need reproducible checked-in evidence, and the feasible depth may be smaller than the full union.
 
-**Next experiment:** Produce cached per-turn base-route unions and labels, reproduce recall@30 and full-union recall, then benchmark cross-encoders at several candidate depths against the 248.45-second no-reranker baseline.
+**Next experiment:** Produce cached per-turn Deep Candidate Pools and labels, reproduce recall@30 and full-pool recall, then benchmark cross-encoders at several candidate depths against the 248.45-second no-reranker baseline.
 
 ### 2026-08-30 — Iteration 11: carry validated planning through the retrieval experiments
 
@@ -403,9 +403,9 @@ These reachability figures currently come from the latest analysis/plan review a
 
 **Problem or hypothesis:** Select the deepest three-route Candidate Pool that a compact CPU cross-encoder can rerank without sacrificing fused-30 quality or exceeding the predeclared runtime gates.
 
-**Change:** Repaired route admission and strict caps, cached exact pools at depths 30/50/100/150/200/250/300 across all 160 development sessions, preserved post-override conversion eligibility, and benchmarked three immutable local cross-encoder revisions on the same 1,009 cached turns. The locked 40-session holdout was not loaded.
+**Change:** Repaired route admission and strict caps, cached exact pools at depths 30/50/100/150/200/250/300 across all 160 development sessions, preserved post-override conversion eligibility, and benchmarked three immutable local cross-encoder revisions on the same 1,009 cached turns. Frozen split identifiers discarded the locked 40-session JSONL rows before their payloads were deserialized or inspected.
 
-**Evidence:** The fused-30 baseline produced HitRate@10 0.543750, MRR 0.368237, TechnicalScore 0.467096, and a normalized 200-session wall projection of 239.6 seconds. `ms-marco-MiniLM-L-6-v2` at depth 50 produced HitRate@10 0.600000, MRR 0.376215, TechnicalScore 0.507240, p95 rerank latency 548.9 ms, and an 800.4-second projection. Its depth-100 row improved HitRate@10 to 0.618750 and TechnicalScore to 0.519015 but projected to 1,366.7 seconds, failing the 900-second gate. TinyBERT never improved TechnicalScore; MiniLM-L2 qualified only at depth 30.
+**Evidence:** The fused-30 baseline produced HitRate@10 0.543750, MRR 0.368237, TechnicalScore 0.467096, and a normalized 200-session wall projection of 239.8 seconds. `ms-marco-MiniLM-L-6-v2` at depth 50 produced HitRate@10 0.600000, MRR 0.376215, TechnicalScore 0.507240, p95 rerank latency 548.9 ms, and an 800.6-second projection. Its depth-100 row improved HitRate@10 to 0.618750 and TechnicalScore to 0.519015 but projected to 1,366.9 seconds, failing the 900-second gate. TinyBERT never improved TechnicalScore; MiniLM-L2 qualified only at depth 30.
 
 **Decision and rationale:** Freeze `cross-encoder/ms-marco-MiniLM-L-6-v2` revision `233902d25c440f23af6f7d6e94d2946bac0bee0a` at Candidate Pool depth 50. It is the deepest configuration that passes both runtime gates and both quality floors. Depth 50 has 0.775 session pool recall versus the observed depth-300 ceiling of 0.900, so truncation gives up 0.125 reachability for runtime feasibility.
 

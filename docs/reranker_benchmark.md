@@ -2,12 +2,13 @@
 
 Slice 07 freezes `cross-encoder/ms-marco-MiniLM-L-6-v2` at Candidate Pool
 depth **50** for Slice 08. The decision was made on all 160 development
-sessions. The locked 40-session holdout was not loaded, including for timing.
+sessions. The locked 40-session holdout payloads were never deserialized,
+inspected, or executed, including for timing.
 
 The selected replay result improves HitRate@10 from 0.543750 to 0.600000 and
 TechnicalScore from 0.467096 to 0.507240. Its measured rerank latency is
 435.5 ms p50 and 548.9 ms p95, and its normalized 200-session wall-clock
-projection is 800.4 seconds. The next depth, 100, improves quality further but
+projection is 800.6 seconds. The next depth, 100, improves quality further but
 projects to 1,366.7 seconds and therefore fails the frozen 900-second gate.
 
 ## Decision rule
@@ -64,7 +65,8 @@ labels.
    evaluator on all 160 development sessions. Record the exact pools, fused-30
    response pool, reranker query, target, scenario, turn, and conversion
    eligibility. Intent Override targets are ineligible before the replacement
-   Product Intent commits.
+   Product Intent commits. A frozen public-set checksum and predeclared holdout
+   identifiers let the loader discard protected JSONL rows before deserialization.
 2. **Score:** in a fresh CPU-only process for each model, score every cached pool
    with fixed padding, batch size 32, sequence length 128, and eight torch
    threads. No conversation or retrieval step is rerun between candidates.
@@ -76,6 +78,8 @@ The cache covers 1,009 scored turns. Its dense route remained available for all
 1,009 queries and returned 100 candidates on the final query. Cache construction
 fails if dense readiness is not `available`, if fused-30 differs from the exact
 depth-30 pool, or if a scoring pool violates the prefix invariant.
+Every score report carries the exact cache SHA-256, session/turn counts, baseline
+row, and depth manifest; summarization rejects any mismatch.
 
 The replay trajectory is frozen, so post-rerank metrics compare configurations
 fairly but cannot model a reranker's effect on later customer answers. Slice 08
@@ -94,8 +98,8 @@ connections. Missing or mismatched local model provenance is a hard failure.
 | `ms-marco-MiniLM-L-2-v2` | `1b5cd67b15209f24824c50370e0397743aa9b787` | 63,423,160 B | 863,977,472 B |
 | `ms-marco-MiniLM-L-6-v2` | `233902d25c440f23af6f7d6e94d2946bac0bee0a` | 91,821,988 B | 775,372,800 B |
 
-The dense-enabled fused-30 cache took 191.71 seconds for 160 development
-sessions, or 239.6 seconds when normalized to 200. The 200-session value is a
+The dense-enabled fused-30 cache took 191.88 seconds for 160 development
+sessions, or 239.8 seconds when normalized to 200. The 200-session value is a
 projection, not a run over development plus holdout.
 
 ## Results
@@ -105,14 +109,14 @@ machine-readable artifact contains all 22 baseline/model/depth rows.
 
 | Configuration | Depth | Pool recall | HR@10 | MRR | TechnicalScore | p95 ms | Projected wall s | Decision |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | --- |
-| fused, no reranker | 30 | 0.72500 | 0.54375 | 0.368237 | 0.467096 | 0.0 | 239.6 | baseline |
-| TinyBERT-L2 | 50 | 0.77500 | 0.56250 | 0.308276 | 0.463608 | 49.5 | 289.1 | quality floor failed |
-| MiniLM-L2 | 30 | 0.72500 | 0.57500 | 0.324950 | 0.476860 | 116.2 | 355.0 | admissible, shallower |
-| MiniLM-L2 | 50 | 0.77500 | 0.56250 | 0.309328 | 0.463298 | 198.4 | 434.9 | quality floor failed |
-| MiniLM-L6 | 30 | 0.72500 | 0.60625 | 0.392250 | 0.516425 | 318.6 | 569.6 | admissible, shallower |
-| **MiniLM-L6** | **50** | **0.77500** | **0.60000** | **0.376215** | **0.507240** | **548.9** | **800.4** | **selected** |
-| MiniLM-L6 | 100 | 0.80000 | 0.61875 | 0.373383 | 0.519015 | 1092.6 | 1366.7 | wall gate failed |
-| MiniLM-L6 | 150 | 0.83750 | 0.63125 | 0.378269 | 0.528231 | 1625.9 | 1919.4 | both runtime gates failed |
+| fused, no reranker | 30 | 0.72500 | 0.54375 | 0.368237 | 0.467096 | 0.0 | 239.8 | baseline |
+| TinyBERT-L2 | 50 | 0.77500 | 0.56250 | 0.308276 | 0.463608 | 49.5 | 289.3 | quality floor failed |
+| MiniLM-L2 | 30 | 0.72500 | 0.57500 | 0.324950 | 0.476860 | 116.2 | 355.3 | admissible, shallower |
+| MiniLM-L2 | 50 | 0.77500 | 0.56250 | 0.309328 | 0.463298 | 198.4 | 435.1 | quality floor failed |
+| MiniLM-L6 | 30 | 0.72500 | 0.60625 | 0.392250 | 0.516425 | 318.6 | 569.8 | admissible, shallower |
+| **MiniLM-L6** | **50** | **0.77500** | **0.60000** | **0.376215** | **0.507240** | **548.9** | **800.6** | **selected** |
+| MiniLM-L6 | 100 | 0.80000 | 0.61875 | 0.373383 | 0.519015 | 1092.6 | 1366.9 | wall gate failed |
+| MiniLM-L6 | 150 | 0.83750 | 0.63125 | 0.378269 | 0.528231 | 1625.9 | 1919.6 | both runtime gates failed |
 
 TinyBERT fits the runtime envelope at every tested depth but never beats the
 baseline TechnicalScore. MiniLM-L2 qualifies only at depth 30. MiniLM-L6 has the
