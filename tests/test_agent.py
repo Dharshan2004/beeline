@@ -14,7 +14,17 @@ from retrieval.dense_index import BuildConfig, build
 from retrieval.dense_route import DenseRetrievalRoute
 from retrieval.embedder import DEFAULT_MODEL_DIR
 from retrieval.fusion import FixedFusionPolicy
-from starter.agent import Agent
+from retrieval.reranker import (
+    DEFAULT_RERANKER_DIR,
+    DEFAULT_RERANKER_IDENTITY,
+    RerankRoute,
+)
+from tests.test_reranker import skip_on_mega_cache_defect
+from starter.agent import (
+    RERANK_CANDIDATE_DEPTH,
+    RERANK_DEADLINE_SECONDS,
+    Agent,
+)
 from starter.constraint_state import AddConstraint, TurnPlan
 
 
@@ -152,7 +162,10 @@ class AgentContractTest(unittest.TestCase):
         self.assertEqual(agent.get_retrieval_configuration(), {
             "policy_version": "fixed-hybrid-v1",
             "route_depth": 100,
-            "fused_candidate_depth": 30,
+            "fused_candidate_depth": RERANK_CANDIDATE_DEPTH,
+            "rerank_deadline_seconds": RERANK_DEADLINE_SECONDS,
+            "reranker_status": "disabled",
+            "reranker_identity": DEFAULT_RERANKER_IDENTITY,
             "weights": {"structured": 0.4, "bm25": 0.3, "dense": 0.3},
         })
 
@@ -1046,3 +1059,189 @@ class AgentContractTest(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class DeepRerankTest(unittest.TestCase):
+    """Slice 08: the cross-encoder reorders the deep pool through the Agent."""
+
+    def setUp(self) -> None:
+        self.directory = tempfile.TemporaryDirectory()
+        self.addCleanup(self.directory.cleanup)
+        self.catalog_path = Path(self.directory.name) / "catalog.jsonl"
+        self.catalog_path.write_text(
+            "".join(
+                json.dumps({
+                    "parent_asin": f"P{index:03d}",
+                    "title": f"Blue running shoe model {index}",
+                    "description": ["A lightweight shoe for daily running"],
+                }) + "\n"
+                for index in range(120)
+            ),
+            encoding="utf-8",
+        )
+
+    class RecordingReranker:
+        """Reverses the pool so any reordering is unmistakable."""
+
+        def __init__(self) -> None:
+            self.calls: list[tuple[str, list[str]]] = []
+
+        def rerank(self, query, candidates, documents):
+            self.calls.append((query, list(candidates)))
+            return list(reversed(list(candidates)))
+
+        def metrics(self) -> dict:
+            return {"status": "available", "identity": "recording"}
+
+    class PassThroughReranker:
+        """The fused ordering, unchanged: the reference every fallback must match."""
+
+        def rerank(self, query, candidates, documents):
+            return list(candidates)
+
+        def metrics(self) -> dict:
+            return {"status": "available", "identity": "pass-through"}
+
+    class BrokenReranker:
+        """Returns a set that does not match its input, which must be refused."""
+
+        def rerank(self, query, candidates, documents):
+            return ["NOT-A-CATALOG-ID", *list(candidates)[:-1]]
+
+        def metrics(self) -> dict:
+            return {"status": "available", "identity": "broken"}
+
+    def _agent(self, reranker) -> Agent:
+        return Agent(
+            self.catalog_path,
+            dense_route=AgentContractTest.RecordingDenseRoute([]),
+            reranker=reranker,
+        )
+
+    def _fused_agent(self) -> Agent:
+        """An Agent whose rerank stage is a no-op, i.e. the fused ordering."""
+        return self._agent(self.PassThroughReranker())
+
+    def test_the_reranker_changes_live_ordering_through_the_agent(self) -> None:
+        reranker = self.RecordingReranker()
+        agent = self._agent(reranker)
+        baseline = self._fused_agent()
+        agent.reset("session", {})
+        baseline.reset("session", {})
+
+        reranked = agent.respond("session", "blue running shoe", 1, 10)
+        fused = baseline.respond("session", "blue running shoe", 1, 10)
+
+        self.assertNotEqual(
+            reranked["recommendations"],
+            fused["recommendations"],
+        )
+
+    def test_the_reranker_receives_the_deep_pool_not_a_fused_top_thirty(self) -> None:
+        reranker = self.RecordingReranker()
+        agent = self._agent(reranker)
+        agent.reset("session", {})
+
+        agent.respond("session", "blue running shoe", 1, 10)
+
+        _query, candidates = reranker.calls[0]
+        self.assertEqual(len(candidates), RERANK_CANDIDATE_DEPTH)
+        self.assertGreater(RERANK_CANDIDATE_DEPTH, 10)
+
+    def test_the_pool_is_capped_deterministically(self) -> None:
+        first = self.RecordingReranker()
+        second = self.RecordingReranker()
+        for reranker in (first, second):
+            agent = self._agent(reranker)
+            agent.reset("session", {})
+            agent.respond("session", "blue running shoe", 1, 10)
+
+        self.assertEqual(first.calls[0][1], second.calls[0][1])
+
+    def test_returned_identifiers_stay_catalog_valid_and_unique(self) -> None:
+        agent = self._agent(self.RecordingReranker())
+        agent.reset("session", {})
+
+        response = agent.respond("session", "blue running shoe", 1, 10)
+
+        returned = [item["parent_asin"] for item in response["recommendations"]]
+        self.assertEqual(len(returned), 10)
+        self.assertEqual(len(set(returned)), len(returned))
+        self.assertTrue(set(returned).issubset(set(agent.retrieval.product_text)))
+
+    def test_a_reranker_that_changes_the_candidate_set_is_refused(self) -> None:
+        broken = self._agent(self.BrokenReranker())
+        fused = self._fused_agent()
+        broken.reset("session", {})
+        fused.reset("session", {})
+
+        # The fused ordering stands, and no invented identifier is returned.
+        self.assertEqual(
+            broken.respond("session", "blue running shoe", 1, 10)["recommendations"],
+            fused.respond("session", "blue running shoe", 1, 10)["recommendations"],
+        )
+
+    def test_a_missing_model_falls_back_to_the_fused_ordering(self) -> None:
+        route = RerankRoute(Path("models") / "not-a-bundled-model")
+        agent = self._agent(route)
+        fused = self._fused_agent()
+        agent.reset("session", {})
+        fused.reset("session", {})
+
+        response = agent.respond("session", "blue running shoe", 1, 10)
+
+        self.assertEqual(
+            response["recommendations"],
+            fused.respond("session", "blue running shoe", 1, 10)["recommendations"],
+        )
+        self.assertEqual(agent.get_reranker_metrics()["status"], "disabled")
+
+    def test_an_expired_deadline_falls_back_without_an_invalid_response(self) -> None:
+        route = RerankRoute(DEFAULT_RERANKER_DIR, deadline_seconds=-1.0)
+        if route.metrics()["status"] != "available":
+            self.skipTest("the bundled cross-encoder is not installed")
+        agent = self._agent(route)
+        fused = self._fused_agent()
+        agent.reset("session", {})
+        fused.reset("session", {})
+
+        response = agent.respond("session", "blue running shoe", 1, 10)
+
+        self.assertEqual(
+            response["recommendations"],
+            fused.respond("session", "blue running shoe", 1, 10)["recommendations"],
+        )
+        self.assertIsInstance(response["message"], str)
+        self.assertEqual(agent.get_reranker_metrics()["deadline_count"], 1)
+
+    def test_top_k_below_ten_is_honoured(self) -> None:
+        agent = self._agent(self.RecordingReranker())
+        agent.reset("session", {})
+
+        response = agent.respond("session", "blue running shoe", 1, 3)
+
+        self.assertEqual(len(response["recommendations"]), 3)
+
+    @unittest.skipUnless(
+        DEFAULT_RERANKER_DIR.is_dir(),
+        "the bundled cross-encoder is not installed",
+    )
+    def test_the_bundled_model_loads_without_a_runtime_download(self) -> None:
+        with patch.object(
+            socket.socket,
+            "connect",
+            side_effect=AssertionError("the scoring path must not use the network"),
+        ):
+            agent = Agent(
+                self.catalog_path,
+                dense_route=AgentContractTest.RecordingDenseRoute([]),
+            )
+            agent.reset("session", {})
+            response = agent.respond("session", "blue running shoe", 1, 10)
+
+        metrics = agent.get_reranker_metrics()
+        if metrics["status"] != "available":
+            skip_on_mega_cache_defect(
+                self, RuntimeError(metrics["disabled_reason"] or "unavailable")
+            )
+        self.assertEqual(len(response["recommendations"]), 10)
