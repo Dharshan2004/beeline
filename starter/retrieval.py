@@ -108,6 +108,10 @@ class CatalogRetrieval:
         }
         self._build_index()
 
+    def rerank_documents(self, candidates: list[str]) -> list[str]:
+        """Render catalog-valid candidates for the local cross-encoder."""
+        return [self.rerank_text[parent_asin] for parent_asin in candidates]
+
     def _build_index(self) -> None:
         cursor = self.connection.cursor()
         cursor.execute(

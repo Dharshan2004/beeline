@@ -6,6 +6,7 @@ import unittest
 from pathlib import Path
 from unittest.mock import patch
 
+from retrieval.reranker import UnavailableReranker
 from starter.agent import Agent
 from starter.constraint_state import ConstraintState
 from starter.planning import (
@@ -95,10 +96,32 @@ class PlanningLoopTest(unittest.TestCase):
         def metrics(self) -> dict:
             return {"status": "available", "query_count": self.calls}
 
+    class RecordingReranker:
+        identity = "test-reranker"
+
+        def __init__(self) -> None:
+            self.calls = 0
+
+        def rerank(self, query, candidates, documents):
+            self.calls += 1
+            return list(reversed(candidates))
+
+        def metrics(self) -> dict:
+            return {"status": "available"}
+
+        def close(self) -> None:
+            pass
+
     def setUp(self) -> None:
         self.directory = tempfile.TemporaryDirectory()
         self.addCleanup(self.directory.cleanup)
         self.catalog_path = Path(self.directory.name) / "catalog.jsonl"
+        reranker_patch = patch(
+            "starter.agent.build_live_reranker",
+            return_value=UnavailableReranker("disabled_for_planning_test"),
+        )
+        reranker_patch.start()
+        self.addCleanup(reranker_patch.stop)
         self.write_catalog([
             {
                 "parent_asin": "A",
@@ -177,6 +200,21 @@ class PlanningLoopTest(unittest.TestCase):
             "fallback_reason": None,
             "errors": [],
         })
+
+    def test_connected_tool_selection_cannot_bypass_fixed_post_fusion_reranking(self) -> None:
+        provider = ScriptedProvider([plan_payload(tools=["structured"])])
+        reranker = self.RecordingReranker()
+        agent = Agent(
+            self.catalog_path,
+            planning_provider=provider,
+            dense_route=self.RecordingDenseRoute(),
+            reranker=reranker,
+        )
+        agent.reset("session", {})
+
+        agent.respond("session", "walking shoe", 1, 10)
+
+        self.assertEqual(reranker.calls, 1)
 
     def test_shell_web_code_and_catalog_mutation_tools_are_never_allowed(self) -> None:
         supported_values = {

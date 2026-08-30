@@ -171,11 +171,12 @@ mismatch behavior, and live route metrics.
 
 ## Fixed Hybrid Fusion
 
-The default policy min-max normalizes the three route scores per turn, combines
-them with fixed weights (`structured=0.15`, `bm25=0.55`, `dense=0.30`), and
-narrows the union to 30 candidates before returning at most ten. Constant-score
-and missing routes have deterministic behavior. Run transparent baselines
-through the same official-scoring wrapper with
+The default policy min-max normalizes the three route scores per turn and combines
+them with fixed weights (`structured=0.15`, `bm25=0.55`, `dense=0.30`). The live
+Agent keeps the strongest 50 fused candidates for local reranking, while the
+transparent no-reranker baseline intentionally preserves its historical depth
+of 30. Constant-score and missing routes have deterministic behavior. Run those
+baselines through the same official-scoring wrapper with
 `python3 -m tools.evaluate_retrieval --policy <name>`. The official evaluator
 remains unchanged and uses the fixed policy through the default `Agent`. See
 `docs/fixed_hybrid_fusion.md` for the exact policy and commands.
@@ -190,22 +191,53 @@ network-disabled.
 
 The frozen result is `cross-encoder/ms-marco-MiniLM-L-6-v2` at depth 50:
 HitRate@10 0.600000, TechnicalScore 0.507240, p95 rerank latency 548.9 ms, and
-an 800.6-second normalized 200-session wall-clock projection. Slice 08 activates
-that choice through the live Agent; Slice 07 only records the decision.
+an 800.6-second normalized 200-session wall-clock projection. The live Agent now
+activates that choice in one persistent worker process. It verifies the exact
+model revision before startup, applies a 1.5-second absolute deadline per turn,
+and permanently returns the fused ordering after startup failure, worker crash,
+malformed output, or timeout. The model is loaded with local-only flags and is
+never downloaded in the scoring path.
 
 ```bash
 python -m tools.fetch_model \
-  --identity cross-encoder/ms-marco-MiniLM-L-2-v2 \
-  --destination models/cross-encoder__ms-marco-MiniLM-L-2-v2 \
-  --revision 1b5cd67b15209f24824c50370e0397743aa9b787
-python -m tools.benchmark_reranker cache --output benchmarks/rerank_cache.jsonl
-python -m tools.benchmark_reranker score \
-  --identity cross-encoder/ms-marco-MiniLM-L-2-v2 \
-  --cache benchmarks/rerank_cache.jsonl \
-  --output benchmarks/rerank_MiniLM-L-2.json
-python -m tools.benchmark_reranker summarize benchmarks/rerank_*.json \
-  --output docs/reranker_benchmark.json
+  --identity cross-encoder/ms-marco-MiniLM-L-6-v2 \
+  --destination models/cross-encoder__ms-marco-MiniLM-L-6-v2 \
+  --revision 233902d25c440f23af6f7d6e94d2946bac0bee0a
 ```
+
+Run the selected configuration end to end on the 160 development sessions only:
+
+```bash
+.venv/bin/python -m tools.evaluate_live_reranker \
+  --output docs/live_reranker_evaluation.json
+```
+
+That report records the official aggregate and per-scenario metrics, depth-50
+pool recall, recall-to-hit conversion, reranker p50/p95 latency, full-run wall
+time, the normalized 200-session projection, route readiness, and the frozen
+configuration beside the fused-30 baseline. `--sessions N` selects a deterministic
+scenario-stratified development subset for smoke tests.
+
+The checked-in isolated 160-session live run reached HitRate@10 **0.556250**,
+MRR **0.384139**, and TechnicalScore **0.479617**, compared with 0.543750,
+0.368237, and 0.467096 for fused-30. Depth-50 pool recall was 0.775000 and
+recall-to-hit conversion was 0.717742. The persistent worker completed 217
+reranks at 337.2 ms p50 and 513.9 ms p95 before one 1.5-second deadline event;
+the Agent then correctly used fused fallback for the rest of the evaluator run.
+The 423.1-second development run projects to 528.8 seconds for 200 sessions,
+inside both frozen runtime gates. See
+`docs/live_reranker_evaluation.json` for scenario metrics and exact configuration.
+Intent Override HitRate@10 declined from 0.333333 to 0.291667; the 4.17-point
+drop remains inside the agreed five-point scenario rejection guardrail and is
+recorded explicitly rather than hidden by the aggregate improvement. Scenario
+MRR and mean turns remain diagnostic evidence, not configured rejection gates.
+The local reranker reports zero tokens and has **$0 incremental model/API cost**;
+it uses only local CPU inference after the one-time model fetch. The configuration
+in this Slice 08 report records the catalog and index checksums, embedding and
+reranker revisions, planning prompt and connected-provider identity, Fusion
+Policy, candidate depths, feature states, timeout, and declared cost thresholds.
+Later slices may extend this versioned runtime manifest, but scored reports must
+continue carrying all fields that apply to their build.
 
 `tools/dataset_split.py` computes the development/holdout partition used by every
 development benchmark. The locked 40-session holdout is opened once, in the final

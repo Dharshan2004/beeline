@@ -6,6 +6,7 @@ from pathlib import Path
 
 from evaluator.local_evaluator import catalog_index, evaluate, load_jsonl
 from retrieval.fusion import POLICY_NAMES
+from retrieval.reranker import UnavailableReranker
 from starter.agent import Agent
 
 
@@ -21,7 +22,12 @@ def main() -> None:
 
     samples = load_jsonl(args.dataset)
     catalog_ids, categories, products = catalog_index(args.catalog)
-    agent = Agent(args.catalog, fusion_policy=args.policy)
+    agent = Agent(
+        args.catalog,
+        fusion_policy=args.policy,
+        reranker=UnavailableReranker("transparent_retrieval_baseline"),
+        candidate_pool_depth=30,
+    )
     result = evaluate(
         agent,
         samples,
@@ -29,6 +35,7 @@ def main() -> None:
         categories,
         products,
     )
+    agent.close()
     result["retrieval_policy"] = args.policy
     result["retrieval_configuration"] = agent.get_retrieval_configuration()
     Path(args.output).write_text(

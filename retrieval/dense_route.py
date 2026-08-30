@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from copy import deepcopy
 import time
 from pathlib import Path
 
@@ -17,6 +18,7 @@ class DenseRetrievalRoute:
         model_dir: str | Path = DEFAULT_MODEL_DIR,
     ) -> None:
         started = time.perf_counter()
+        self.configured = True
         self._embedder: LocalEmbedder | None = None
         self._index: DenseIndex | None = None
         self._status = "disabled"
@@ -67,6 +69,18 @@ class DenseRetrievalRoute:
             "query_count": self._query_count,
             "last_query_seconds": self._last_query_seconds,
             "last_candidate_count": self._last_candidate_count,
+        }
+
+    def configuration(self) -> dict:
+        """Return the verified index/model identity used by this route."""
+        return {
+            "status": self._status,
+            "disabled_reason": self._disabled_reason,
+            "manifest": (
+                deepcopy(self._index.manifest)
+                if self._index is not None
+                else None
+            ),
         }
 
     def close(self) -> None:

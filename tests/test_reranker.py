@@ -1,8 +1,11 @@
 from __future__ import annotations
 
 import json
+import multiprocessing
+import os
 import socket
 import tempfile
+import time
 import unittest
 from pathlib import Path
 from unittest.mock import patch
@@ -11,10 +14,12 @@ from retrieval.reranker import (
     DEFAULT_RERANKER_DIR,
     DEFAULT_RERANKER_IDENTITY,
     FROZEN_RERANK_DEPTH,
+    LocalRerankerWorker,
     RERANKER_CANDIDATES,
     CrossEncoderReranker,
     RerankerCandidate,
     RerankerUnavailable,
+    build_live_reranker,
     order_by_scores,
 )
 from tools.benchmark_reranker import (
@@ -36,6 +41,7 @@ from tools.dataset_split import (
     load_frozen_development_samples,
     stratified_subset,
 )
+from tools.evaluate_live_reranker import pool_conversion_metrics
 
 
 # transformers lazily imports a model's modeling module on first use, and in this
@@ -45,6 +51,45 @@ from tools.dataset_split import (
 # have been loaded in one long-lived process. Tests that need a real model skip
 # on it rather than reporting a failure the Agent did not cause.
 MEGA_CACHE_DEFECT = "mega-cache artifact factory"
+
+
+def _successful_worker(connection, settings) -> None:
+    connection.send({"type": "ready", "pid": os.getpid()})
+    while True:
+        request = connection.recv()
+        if request["type"] == "close":
+            return
+        connection.send({
+            "type": "scores",
+            "request_id": request["request_id"],
+            "scores": [float(index) for index, _ in enumerate(request["documents"])],
+        })
+
+
+def _hanging_worker(connection, settings) -> None:
+    connection.send({"type": "ready", "pid": os.getpid()})
+    connection.recv()
+    connection.recv()
+
+
+def _malformed_worker(connection, settings) -> None:
+    connection.send({"type": "ready", "pid": os.getpid()})
+    request = connection.recv()
+    connection.send({
+        "type": "scores",
+        "request_id": request["request_id"],
+        "scores": ["not-a-number"],
+    })
+
+
+def _crashing_worker(connection, settings) -> None:
+    connection.send({"type": "ready", "pid": os.getpid()})
+    connection.recv()
+    os._exit(7)
+
+
+def _startup_failure_worker(connection, settings) -> None:
+    connection.send({"type": "startup_error", "error": "model rejected"})
 
 
 def skip_on_mega_cache_defect(case: unittest.TestCase, error: Exception) -> None:
@@ -71,11 +116,121 @@ class OrderByScoresTest(unittest.TestCase):
     def test_empty_candidates_are_handled(self) -> None:
         self.assertEqual(order_by_scores([], []), [])
 
+    def test_malformed_scores_are_rejected_instead_of_dropping_candidates(self) -> None:
+        with self.assertRaises(ValueError):
+            order_by_scores(["A", "B"], [1.0])
+
+
+class LocalRerankerWorkerTest(unittest.TestCase):
+    def setUp(self) -> None:
+        self.directory = tempfile.TemporaryDirectory()
+        self.addCleanup(self.directory.cleanup)
+        self.model_dir = Path(self.directory.name) / "model"
+        self.model_dir.mkdir()
+        (self.model_dir / "FETCHED.json").write_text(json.dumps({
+            "identity": DEFAULT_RERANKER_IDENTITY,
+            "revision": RERANKER_CANDIDATES[DEFAULT_RERANKER_IDENTITY].revision,
+        }), encoding="utf-8")
+        self.context = multiprocessing.get_context("fork")
+
+    def worker(self, target, **overrides) -> LocalRerankerWorker:
+        worker = LocalRerankerWorker(
+            self.model_dir,
+            context=self.context,
+            worker_target=target,
+            startup_timeout_seconds=0.5,
+            deadline_seconds=0.05,
+            **overrides,
+        )
+        self.addCleanup(worker.close)
+        return worker
+
+    def test_one_worker_serves_multiple_turns_and_caps_at_the_frozen_depth(self) -> None:
+        worker = self.worker(_successful_worker)
+        candidates = [f"A{index:03d}" for index in range(75)]
+
+        first = worker.rerank("query", candidates, [f"doc {item}" for item in candidates])
+        first_pid = worker.metrics()["worker_pid"]
+        second = worker.rerank("query 2", candidates, [f"doc {item}" for item in candidates])
+
+        self.assertEqual(len(first), FROZEN_RERANK_DEPTH)
+        self.assertEqual(first[0], "A049")
+        self.assertEqual(second, first)
+        self.assertEqual(worker.metrics()["worker_pid"], first_pid)
+        self.assertEqual(worker.metrics()["query_count"], 2)
+
+    def test_timeout_returns_fused_order_and_disables_future_calls(self) -> None:
+        worker = self.worker(_hanging_worker)
+        candidates = ["A", "B"]
+
+        started = time.monotonic()
+        first = worker.rerank("query", candidates, ["doc a", "doc b"])
+        elapsed = time.monotonic() - started
+        second = worker.rerank("query", candidates, ["doc a", "doc b"])
+
+        self.assertEqual(first, candidates)
+        self.assertEqual(second, candidates)
+        self.assertEqual(worker.metrics()["status"], "disabled")
+        self.assertEqual(worker.metrics()["failure_cause"], "deadline_exceeded")
+        self.assertLess(elapsed, 0.15)
+
+    def test_malformed_output_returns_fused_order_and_disables_worker(self) -> None:
+        worker = self.worker(_malformed_worker)
+
+        ranked = worker.rerank("query", ["A", "B"], ["doc a", "doc b"])
+
+        self.assertEqual(ranked, ["A", "B"])
+        self.assertEqual(worker.metrics()["failure_cause"], "malformed_output")
+
+    def test_crash_returns_fused_order_and_disables_worker(self) -> None:
+        worker = self.worker(_crashing_worker)
+
+        ranked = worker.rerank("query", ["A", "B"], ["doc a", "doc b"])
+
+        self.assertEqual(ranked, ["A", "B"])
+        self.assertEqual(worker.metrics()["failure_cause"], "worker_crash")
+
+    def test_startup_failure_is_clear_and_never_scores(self) -> None:
+        with self.assertRaisesRegex(RerankerUnavailable, "model rejected"):
+            self.worker(_startup_failure_worker)
+
+
+class LocalRerankerWorkerIntegrationTest(unittest.TestCase):
+    @unittest.skipUnless(
+        DEFAULT_RERANKER_DIR.is_dir(),
+        "the bundled cross-encoder is not installed",
+    )
+    def test_bundled_model_scores_in_the_persistent_worker(self) -> None:
+        worker = LocalRerankerWorker(
+            DEFAULT_RERANKER_DIR,
+            context=multiprocessing.get_context("spawn"),
+        )
+        self.addCleanup(worker.close)
+
+        ranked = worker.rerank(
+            "waterproof hiking boots for wet trails",
+            ["SCARF", "BOOTS"],
+            [
+                "title: Silk evening scarf | features: lightweight print",
+                "title: Black leather waterproof hiking boot | features: sealed seams",
+            ],
+        )
+
+        self.assertEqual(ranked, ["BOOTS", "SCARF"])
+        self.assertEqual(worker.metrics()["status"], "available")
+
 
 class CrossEncoderRerankerTest(unittest.TestCase):
     def test_missing_model_directory_is_a_clear_failure(self) -> None:
         with self.assertRaises(RerankerUnavailable):
             CrossEncoderReranker(Path("models") / "not-a-bundled-model")
+
+    def test_live_factory_fails_open_when_the_bundle_is_missing(self) -> None:
+        reranker = build_live_reranker(Path("models") / "not-a-bundled-model")
+
+        self.assertEqual(reranker.rerank("query", ["A", "B"], ["a", "b"]), ["A", "B"])
+        self.assertEqual(reranker.metrics()["status"], "disabled")
+        self.assertTrue(reranker.configured)
 
 
 class CrossEncoderRerankerIntegrationTest(unittest.TestCase):
@@ -306,6 +461,48 @@ class BenchmarkMetricsTest(unittest.TestCase):
         self.assertEqual(row["hit_rate_at_10"], 1.0)
         self.assertEqual(row["turn_latency_p95_ms"], 0.0)
 
+    def test_live_pool_metrics_exclude_pre_override_reachability(self) -> None:
+        samples = [
+            {
+                "sample_id": "buying",
+                "scenario_type": "buying",
+                "ground_truth": {"parent_asin": "T1"},
+                "intent_card": {},
+                "behavior": {"scenario_type": "buying"},
+            },
+            {
+                "sample_id": "override",
+                "scenario_type": "intent_override",
+                "ground_truth": {"parent_asin": "T2"},
+                "intent_card": {},
+                "behavior": {
+                    "scenario_type": "intent_override",
+                    "override": {"turn": 2},
+                },
+            },
+        ]
+        sessions = [
+            {"sample_id": "buying", "hit": True},
+            {"sample_id": "override", "hit": False},
+        ]
+        traces = {
+            "session-1": [{"turn": 1, "pools": {"50": ["T1"]}}],
+            "session-2": [
+                {"turn": 1, "pools": {"50": ["T2"]}},
+                {"turn": 2, "pools": {"50": ["A"]}},
+            ],
+        }
+
+        metrics = pool_conversion_metrics(samples, sessions, traces, {})
+
+        self.assertEqual(metrics["session_pool_recall"], 0.5)
+        self.assertEqual(metrics["post_rerank_hit_rate_at_10"], 0.5)
+        self.assertEqual(metrics["recall_to_hit_conversion"], 1.0)
+        self.assertEqual(
+            metrics["scenario_metrics"]["intent_override"]["session_pool_recall"],
+            0.0,
+        )
+
 
 class BenchmarkCacheTest(unittest.TestCase):
     def test_score_stage_rejects_general_network_connections(self) -> None:
@@ -374,9 +571,9 @@ class SummaryTest(unittest.TestCase):
             )
             report_path.write_text(json.dumps(report), encoding="utf-8")
             manifest[identity] = RerankerCandidate(model_dir.name, revision)
-        with patch(
-            "tools.benchmark_reranker.RERANKER_CANDIDATES",
-            manifest,
+        with (
+            patch("tools.benchmark_reranker.RERANKER_CANDIDATES", manifest),
+            patch("retrieval.reranker.RERANKER_CANDIDATES", manifest),
         ):
             return summarize(arguments)
 
@@ -394,7 +591,10 @@ class SummaryTest(unittest.TestCase):
             "candidate/model": RerankerCandidate("candidate", "abc123"),
             "different/model": RerankerCandidate("different", "abc123"),
         }
-        with patch("tools.benchmark_reranker.RERANKER_CANDIDATES", manifest):
+        with (
+            patch("tools.benchmark_reranker.RERANKER_CANDIDATES", manifest),
+            patch("retrieval.reranker.RERANKER_CANDIDATES", manifest),
+        ):
             provenance = _model_provenance(root, "candidate/model")
 
             self.assertEqual(provenance["revision"], "abc123")

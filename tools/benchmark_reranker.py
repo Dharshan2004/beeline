@@ -39,6 +39,8 @@ from pathlib import Path
 from typing import Sequence
 from unittest.mock import patch
 
+from retrieval.reranker import UnavailableReranker, verify_frozen_reranker_model
+
 # Enforced before torch or transformers can be imported by anything below.
 os.environ["CUDA_VISIBLE_DEVICES"] = ""
 os.environ["HF_HUB_OFFLINE"] = "1"
@@ -106,21 +108,10 @@ def _records_digest(records: Sequence[dict]) -> str:
 
 def _model_provenance(model_dir: Path, identity: str) -> dict:
     """Return the immutable fetch identity used to reproduce a local model."""
-    fetched_path = model_dir / "FETCHED.json"
-    if not fetched_path.is_file():
-        raise RuntimeError(f"missing model provenance: {fetched_path}")
-    fetched = json.loads(fetched_path.read_text(encoding="utf-8"))
-    candidate = RERANKER_CANDIDATES[identity]
-    if (
-        fetched.get("identity") != identity
-        or fetched.get("revision") != candidate.revision
-    ):
-        raise RuntimeError(
-            f"model provenance does not match {identity}: {fetched_path}"
-        )
+    revision = verify_frozen_reranker_model(model_dir, identity)
     return {
         "identity": identity,
-        "revision": fetched["revision"],
+        "revision": revision,
         "model_dir": str(model_dir),
         "model_bytes": _directory_size_bytes(model_dir),
     }
@@ -133,7 +124,12 @@ def build_cache(arguments: argparse.Namespace) -> dict:
         samples = stratified_subset(samples, arguments.sessions, seed=SUBSET_SEED)
     catalog_ids, categories, products = catalog_index(arguments.catalog)
     with _network_disabled():
-        agent = Agent(arguments.catalog, trace_pool_depths=DEFAULT_DEPTHS)
+        agent = Agent(
+            arguments.catalog,
+            reranker=UnavailableReranker("slice_7_no_reranker_baseline"),
+            candidate_pool_depth=30,
+            trace_pool_depths=DEFAULT_DEPTHS,
+        )
         dense_metrics = agent.get_dense_route_metrics()
         if dense_metrics.get("status") != "available":
             raise RuntimeError(

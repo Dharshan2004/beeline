@@ -6,12 +6,20 @@ from typing import Protocol, Sequence
 
 from retrieval.dense_route import DenseRetrievalRoute
 from retrieval.fusion import FusionPolicy, build_fusion_policy
+from retrieval.manifest import file_sha256
+from retrieval.reranker import (
+    DEFAULT_RERANKER_IDENTITY,
+    FROZEN_RERANK_DEPTH,
+    Reranker,
+    build_live_reranker,
+)
 from starter.constraint_state import ConstraintState, PlanValidationError, TurnPlan
 from starter.planning import (
     DEFAULT_RETRIEVAL_TOOLS,
     PlanningLoop,
     PlanningOutcome,
     PlanningProvider,
+    PLANNING_PROMPT_VERSION,
 )
 from starter.retrieval import CatalogRetrieval
 from starter.turn_interpreter import interpret_turn
@@ -40,6 +48,7 @@ class Agent:
         dense_route: DenseRoute | None = None,
         fusion_policy: FusionPolicy | str = "fixed",
         planning_provider: PlanningProvider | None = None,
+        reranker: Reranker | None = None,
         candidate_pool_depth: int | None = None,
         trace_pool_depths: Sequence[int] | None = None,
     ) -> None:
@@ -56,10 +65,9 @@ class Agent:
         # The depth the response is drawn from, and optional exact pools recorded
         # for offline benchmarking. Tracing never changes the response, so a
         # cached benchmark run replays the shipped trajectory exactly.
+        self.reranker = reranker or build_live_reranker()
         self.candidate_pool_depth = (
-            self.fusion_policy.candidate_limit
-            if candidate_pool_depth is None
-            else candidate_pool_depth
+            FROZEN_RERANK_DEPTH if candidate_pool_depth is None else candidate_pool_depth
         )
         if self.candidate_pool_depth <= 0:
             raise ValueError("candidate_pool_depth must be positive")
@@ -126,17 +134,90 @@ class Agent:
         """Return measurable load/query evidence for the dense Retrieval Route."""
         return dict(self.dense_route.metrics())
 
+    def get_reranker_metrics(self) -> dict:
+        """Return local worker readiness, latency, and fail-open evidence."""
+        return dict(self.reranker.metrics())
+
     def get_retrieval_configuration(self) -> dict:
         """Return the versioned retrieval settings used by scored turns."""
+        reranker_metrics = self.reranker.metrics()
         configuration = {
             "policy_version": self.fusion_policy.version,
             "route_depth": DENSE_CANDIDATE_DEPTH,
             "fused_candidate_depth": self.candidate_pool_depth,
+            "reranker_identity": getattr(
+                self.reranker,
+                "identity",
+                DEFAULT_RERANKER_IDENTITY,
+            ),
+            "rerank_depth": FROZEN_RERANK_DEPTH,
+            "reranker_revision": reranker_metrics.get("revision"),
+            "rerank_deadline_seconds": reranker_metrics.get("deadline_seconds"),
+            "reranker_status": reranker_metrics.get("status"),
+            "reranker_enabled": getattr(self.reranker, "configured", True),
         }
         weights = getattr(self.fusion_policy, "weights", None)
         if weights is not None:
             configuration["weights"] = dict(weights)
         return configuration
+
+    def get_runtime_configuration(self) -> dict:
+        """Return the complete versioned identity of this scored Agent build."""
+        dense_configuration = getattr(self.dense_route, "configuration", None)
+        if callable(dense_configuration):
+            dense_identity = dense_configuration()
+        else:
+            dense_identity = {
+                "status": self.dense_route.metrics().get("status"),
+                "manifest": None,
+            }
+        reranker_metrics = self.reranker.metrics()
+        provider = self.planning_loop.provider
+        return {
+            "version": "shopping-agent-runtime-v1",
+            "catalog": {
+                "path": str(self.catalog_path),
+                "sha256": file_sha256(self.catalog_path),
+            },
+            "dense_index_and_model": dense_identity,
+            "reranker": {
+                key: reranker_metrics.get(key)
+                for key in (
+                    "status",
+                    "identity",
+                    "revision",
+                    "depth",
+                    "deadline_seconds",
+                )
+            },
+            "planning": {
+                "prompt_version": PLANNING_PROMPT_VERSION,
+                "provider": type(provider).__name__ if provider is not None else None,
+                "connected_model_version": (
+                    getattr(provider, "model", None) if provider is not None else None
+                ),
+            },
+            "fusion_and_retrieval": self.get_retrieval_configuration(),
+            "feature_flags": {
+                "connected_planning": provider is not None,
+                "dense_retrieval": getattr(self.dense_route, "configured", True),
+                "local_reranking": getattr(self.reranker, "configured", True),
+                "candidate_tracing": bool(self.trace_pool_depths),
+            },
+            "cost_limits_usd": {
+                "warning": 40,
+                "review_boundary": 50,
+                "absolute_stop": 600,
+                "enforcement_status": "scheduled_for_slice_15",
+            },
+        }
+
+    def close(self) -> None:
+        """Release persistent local runtime workers owned by this Agent."""
+        self.reranker.close()
+        close_dense = getattr(self.dense_route, "close", None)
+        if callable(close_dense):
+            close_dense()
 
     def _state(self, session_id: str) -> ConstraintState:
         if session_id not in self._sessions:
@@ -278,6 +359,23 @@ class Agent:
                 state.constraints,
                 self.candidate_pool_depth,
             )
+        fused_fallback = list(fused_candidates)
+        try:
+            reranked_candidates = self.reranker.rerank(
+                dense_query,
+                fused_candidates,
+                self.retrieval.rerank_documents(fused_candidates),
+            )
+            if (
+                len(reranked_candidates) != len(fused_candidates)
+                or set(reranked_candidates) != set(fused_candidates)
+            ):
+                raise ValueError(
+                    "reranker output must be a permutation of its Candidate Pool"
+                )
+            fused_candidates = reranked_candidates
+        except Exception:  # noqa: BLE001 - optional reranking must fail open
+            fused_candidates = fused_fallback
         if self.trace_pool_depths:
             self._candidate_traces[session_id].append({
                 "turn": turn,

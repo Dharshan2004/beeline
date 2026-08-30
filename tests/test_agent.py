@@ -14,6 +14,11 @@ from retrieval.dense_index import BuildConfig, build
 from retrieval.dense_route import DenseRetrievalRoute
 from retrieval.embedder import DEFAULT_MODEL_DIR
 from retrieval.fusion import FixedFusionPolicy
+from retrieval.reranker import (
+    DEFAULT_RERANKER_DIR,
+    LocalRerankerWorker,
+    UnavailableReranker,
+)
 from starter.agent import Agent
 from starter.constraint_state import AddConstraint, TurnPlan
 
@@ -23,6 +28,12 @@ class AgentContractTest(unittest.TestCase):
         self.directory = tempfile.TemporaryDirectory()
         self.addCleanup(self.directory.cleanup)
         self.catalog_path = Path(self.directory.name) / "catalog.jsonl"
+        reranker_patch = patch(
+            "starter.agent.build_live_reranker",
+            return_value=UnavailableReranker("disabled_for_non_reranker_test"),
+        )
+        reranker_patch.start()
+        self.addCleanup(reranker_patch.stop)
 
     def write_catalog(self, rows: list[dict]) -> None:
         self.catalog_path.write_text(
@@ -59,6 +70,23 @@ class AgentContractTest(unittest.TestCase):
 
         def metrics(self) -> dict:
             return {"status": "available", "query_count": 0}
+
+    class RecordingReranker:
+        def __init__(self, *, fail: bool = False) -> None:
+            self.fail = fail
+            self.calls: list[tuple[str, list[str], list[str]]] = []
+
+        def rerank(self, query, candidates, documents):
+            self.calls.append((query, list(candidates), list(documents)))
+            if self.fail:
+                raise RuntimeError("reranker failed")
+            return [candidates[-1], *candidates[:-1]] if candidates else []
+
+        def metrics(self) -> dict:
+            return {"status": "available"}
+
+        def close(self) -> None:
+            pass
 
     def test_semantic_paraphrase_uses_ordered_dense_candidates_live(self) -> None:
         self.write_catalog([
@@ -152,9 +180,123 @@ class AgentContractTest(unittest.TestCase):
         self.assertEqual(agent.get_retrieval_configuration(), {
             "policy_version": "fixed-hybrid-v1",
             "route_depth": 100,
-            "fused_candidate_depth": 30,
+            "fused_candidate_depth": 50,
+            "reranker_identity": "cross-encoder/ms-marco-MiniLM-L-6-v2",
+            "rerank_depth": 50,
+            "reranker_revision": "233902d25c440f23af6f7d6e94d2946bac0bee0a",
+            "rerank_deadline_seconds": 1.5,
+            "reranker_status": "disabled",
+            "reranker_enabled": False,
             "weights": {"structured": 0.4, "bm25": 0.3, "dense": 0.3},
         })
+
+    def test_live_reranker_receives_the_deep_pool_and_changes_official_order(self) -> None:
+        self.write_catalog([
+            {"parent_asin": f"A{index:03d}", "title": f"Product {index}"}
+            for index in range(60)
+        ])
+        route = self.RecordingDenseRoute([
+            (f"A{index:03d}", float(60 - index)) for index in range(60)
+        ])
+        reranker = self.RecordingReranker()
+        agent = Agent(self.catalog_path, dense_route=route, reranker=reranker)
+        agent.reset("session", {})
+
+        response = agent.respond("session", "semantic wording", 1, 10)
+
+        query, candidates, documents = reranker.calls[0]
+        self.assertEqual(len(candidates), 50)
+        self.assertEqual(candidates[-1], "A049")
+        self.assertEqual(len(documents), 50)
+        self.assertEqual(response["recommendations"][0], {"parent_asin": "A049"})
+        self.assertEqual(len(response["recommendations"]), 10)
+
+    @unittest.skipUnless(
+        DEFAULT_RERANKER_DIR.is_dir(),
+        "the bundled cross-encoder is not installed",
+    )
+    def test_bundled_reranker_changes_order_through_official_agent_interface(self) -> None:
+        class FixedPoolPolicy:
+            version = "fixed-test-pool-v1"
+            candidate_limit = 50
+
+            def rank(self, route_scores, candidate_limit=None):
+                return ["SCARF", "BOOTS"]
+
+        self.write_catalog([
+            {
+                "parent_asin": "SCARF",
+                "title": "Silk evening scarf",
+                "features": ["lightweight print"],
+            },
+            {
+                "parent_asin": "BOOTS",
+                "title": "Black leather waterproof hiking boot",
+                "features": ["sealed seams"],
+            },
+        ])
+        reranker = LocalRerankerWorker(DEFAULT_RERANKER_DIR)
+        agent = Agent(
+            self.catalog_path,
+            dense_route=self.RecordingDenseRoute([]),
+            fusion_policy=FixedPoolPolicy(),
+            reranker=reranker,
+        )
+        self.addCleanup(agent.close)
+        agent.reset("session", {})
+
+        response = agent.respond(
+            "session",
+            "waterproof hiking boots for wet trails",
+            1,
+            2,
+        )
+
+        self.assertEqual(
+            response["recommendations"],
+            [{"parent_asin": "BOOTS"}, {"parent_asin": "SCARF"}],
+        )
+
+    def test_live_reranker_failure_preserves_fused_order_through_agent(self) -> None:
+        self.write_catalog([
+            {"parent_asin": "A", "title": "First product"},
+            {"parent_asin": "B", "title": "Second product"},
+        ])
+        route = self.RecordingDenseRoute([("A", 1.0), ("B", 0.5)])
+        reranker = self.RecordingReranker(fail=True)
+        agent = Agent(self.catalog_path, dense_route=route, reranker=reranker)
+        agent.reset("session", {})
+
+        response = agent.respond("session", "semantic wording", 1, 10)
+
+        self.assertEqual(
+            response["recommendations"],
+            [{"parent_asin": "A"}, {"parent_asin": "B"}],
+        )
+
+    def test_invalid_reranker_identifiers_cannot_escape_the_catalog(self) -> None:
+        class InvalidReranker(self.RecordingReranker):
+            def rerank(self, query, candidates, documents):
+                return ["UNKNOWN", *candidates[:-1]]
+
+        self.write_catalog([
+            {"parent_asin": "A", "title": "First product"},
+            {"parent_asin": "B", "title": "Second product"},
+        ])
+        route = self.RecordingDenseRoute([("A", 1.0), ("B", 0.5)])
+        agent = Agent(
+            self.catalog_path,
+            dense_route=route,
+            reranker=InvalidReranker(),
+        )
+        agent.reset("session", {})
+
+        response = agent.respond("session", "semantic wording", 1, 10)
+
+        self.assertEqual(
+            response["recommendations"],
+            [{"parent_asin": "A"}, {"parent_asin": "B"}],
+        )
 
     def test_dense_query_failure_falls_back_to_deterministic_local_retrieval(self) -> None:
         self.write_catalog([
@@ -186,6 +328,27 @@ class AgentContractTest(unittest.TestCase):
             "last_query_seconds": 0.004,
             "last_candidate_count": 1,
         })
+
+    def test_runtime_configuration_identifies_every_scored_component(self) -> None:
+        self.write_catalog([{"parent_asin": "A", "title": "Product"}])
+        agent = Agent(
+            self.catalog_path,
+            dense_route=self.RecordingDenseRoute([]),
+        )
+
+        configuration = agent.get_runtime_configuration()
+
+        self.assertEqual(configuration["version"], "shopping-agent-runtime-v1")
+        self.assertEqual(len(configuration["catalog"]["sha256"]), 64)
+        self.assertIn("dense_index_and_model", configuration)
+        self.assertEqual(
+            configuration["planning"]["prompt_version"],
+            "shopping-turn-planner-v1",
+        )
+        self.assertIn("fusion_and_retrieval", configuration)
+        self.assertEqual(configuration["feature_flags"]["local_reranking"], False)
+        self.assertEqual(configuration["reranker"]["status"], "disabled")
+        self.assertEqual(configuration["cost_limits_usd"]["absolute_stop"], 600)
 
     def test_candidate_tracing_records_each_requested_depth_independently(self) -> None:
         self.write_catalog([
