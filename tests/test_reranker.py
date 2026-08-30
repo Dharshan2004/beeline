@@ -354,13 +354,29 @@ class BenchmarkCacheTest(unittest.TestCase):
 
 class SummaryTest(unittest.TestCase):
     def summarize_declared_reports(self, arguments):
-        identities = {
-            json.loads(Path(path).read_text(encoding="utf-8"))["identity"]
-            for path in arguments.reports
-        }
+        manifest = {}
+        for index, path in enumerate(arguments.reports):
+            report_path = Path(path)
+            report = json.loads(report_path.read_text(encoding="utf-8"))
+            identity = report["identity"]
+            revision = f"test-revision-{index}"
+            model_dir = report_path.parent / f"model-{index}"
+            model_dir.mkdir(exist_ok=True)
+            (model_dir / "weights.bin").write_bytes(b"weights")
+            (model_dir / "FETCHED.json").write_text(json.dumps({
+                "identity": identity,
+                "revision": revision,
+            }), encoding="utf-8")
+            report["model_dir"] = str(model_dir)
+            report["model_revision"] = revision
+            report["model_bytes"] = sum(
+                item.stat().st_size for item in model_dir.rglob("*") if item.is_file()
+            )
+            report_path.write_text(json.dumps(report), encoding="utf-8")
+            manifest[identity] = RerankerCandidate(model_dir.name, revision)
         with patch(
             "tools.benchmark_reranker.RERANKER_CANDIDATES",
-            {identity: object() for identity in identities},
+            manifest,
         ):
             return summarize(arguments)
 

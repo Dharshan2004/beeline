@@ -543,15 +543,6 @@ def summarize(arguments: argparse.Namespace) -> dict:
             )
     models = []
     for report in sorted(reports, key=lambda item: item["identity"]):
-        if "model_dir" not in report:
-            # Synthetic unit-test reports need not create a model directory.
-            models.append({
-                "identity": report["identity"],
-                "revision": report.get("model_revision"),
-                "model_dir": None,
-                "model_bytes": report["model_bytes"],
-            })
-            continue
         provenance = _model_provenance(Path(report["model_dir"]), report["identity"])
         if report.get("model_revision") not in (None, provenance["revision"]):
             raise RuntimeError(
