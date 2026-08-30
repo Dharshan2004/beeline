@@ -17,7 +17,21 @@ class FusionPolicy(Protocol):
     def rank(
         self,
         route_scores: Mapping[str, Sequence[tuple[str, float]]],
+        candidate_limit: int | None = None,
     ) -> list[str]: ...
+
+
+def _resolved_limit(default_limit: int, requested: int | None) -> int:
+    """Depth for one call: the policy default unless the caller overrides it.
+
+    A deeper Candidate Pool is a per-call decision made by the reranking stage,
+    not a different Fusion Policy, so the policy version is unchanged by it.
+    """
+    if requested is None:
+        return default_limit
+    if requested <= 0:
+        raise ValueError("candidate_limit must be positive")
+    return requested
 
 
 def _best_scores(candidates: Sequence[tuple[str, float]]) -> dict[str, float]:
@@ -80,7 +94,9 @@ class FixedFusionPolicy:
     def rank(
         self,
         route_scores: Mapping[str, Sequence[tuple[str, float]]],
+        candidate_limit: int | None = None,
     ) -> list[str]:
+        limit = _resolved_limit(self.candidate_limit, candidate_limit)
         normalized_routes = {
             route_name: _normalized_scores(route_scores.get(route_name, ()))
             for route_name in ROUTE_NAMES
@@ -107,9 +123,9 @@ class FixedFusionPolicy:
             for identifier, _score in sorted(
                 base_scores.items(),
                 key=lambda item: (-item[1], item[0]),
-            )[:self.candidate_limit]
+            )[:limit]
         ]
-        if len(selected) < self.candidate_limit:
+        if len(selected) < limit:
             selected_set = set(selected)
             structured_additions = [
                 identifier
@@ -120,7 +136,7 @@ class FixedFusionPolicy:
                 key=lambda identifier: (-fused[identifier], identifier),
             )
             selected.extend(
-                structured_additions[:self.candidate_limit - len(selected)],
+                structured_additions[:limit - len(selected)],
             )
         return [
             identifier
@@ -147,14 +163,16 @@ class SingleRoutePolicy:
     def rank(
         self,
         route_scores: Mapping[str, Sequence[tuple[str, float]]],
+        candidate_limit: int | None = None,
     ) -> list[str]:
+        limit = _resolved_limit(self.candidate_limit, candidate_limit)
         best = _best_scores(route_scores.get(self.route_name, ()))
         return [
             identifier
             for identifier, _score in sorted(
                 best.items(),
                 key=lambda item: (-item[1], item[0]),
-            )[:self.candidate_limit]
+            )[:limit]
         ]
 
 
@@ -167,13 +185,15 @@ class ReciprocalRankFusionPolicy:
     def rank(
         self,
         route_scores: Mapping[str, Sequence[tuple[str, float]]],
+        candidate_limit: int | None = None,
     ) -> list[str]:
+        limit = _resolved_limit(self.candidate_limit, candidate_limit)
         fused: dict[str, float] = {}
         for route_name in ROUTE_NAMES:
             ordered = SingleRoutePolicy(
                 route_name,
                 candidate_limit=max(
-                    self.candidate_limit,
+                    limit,
                     len(route_scores.get(route_name, ())),
                 ),
             ).rank(route_scores)
@@ -186,16 +206,17 @@ class ReciprocalRankFusionPolicy:
             for identifier, _score in sorted(
                 fused.items(),
                 key=lambda item: (-item[1], item[0]),
-            )[:self.candidate_limit]
+            )[:limit]
         ]
 
 
-def build_fusion_policy(name: str) -> FusionPolicy:
+def build_fusion_policy(name: str, candidate_limit: int | None = None) -> FusionPolicy:
+    overrides = {} if candidate_limit is None else {"candidate_limit": candidate_limit}
     if name == "fixed":
-        return FixedFusionPolicy()
+        return FixedFusionPolicy(**overrides)
     if name == "rrf":
-        return ReciprocalRankFusionPolicy()
+        return ReciprocalRankFusionPolicy(**overrides)
     if name in ROUTE_NAMES:
-        return SingleRoutePolicy(name)
+        return SingleRoutePolicy(name, **overrides)
     choices = ", ".join(POLICY_NAMES)
     raise ValueError(f"unknown Fusion Policy {name!r}; choose from {choices}")

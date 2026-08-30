@@ -24,6 +24,51 @@ class FixedFusionPolicyTest(unittest.TestCase):
 
         self.assertEqual(ranked, ["A", "B", "C"])
 
+    def test_a_per_call_depth_deepens_the_pool_without_reordering_it(self) -> None:
+        policy = FixedFusionPolicy()
+        fixtures = {
+            "structured": [],
+            "bm25": [(f"B{index:03d}", float(100 - index)) for index in range(60)],
+            "dense": [],
+        }
+
+        shallow = policy.rank(fixtures, candidate_limit=10)
+        deep = policy.rank(fixtures, candidate_limit=50)
+
+        self.assertEqual(len(shallow), 10)
+        self.assertEqual(len(deep), 50)
+        # A deeper Candidate Pool must extend the shallow one, never reshuffle
+        # it: the reranker is given more candidates, not different evidence.
+        self.assertEqual(deep[:10], shallow)
+
+    def test_the_policy_default_depth_is_used_when_no_depth_is_given(self) -> None:
+        policy = FixedFusionPolicy()
+        fixtures = {
+            "structured": [],
+            "bm25": [(f"B{index:03d}", float(100 - index)) for index in range(60)],
+            "dense": [],
+        }
+
+        self.assertEqual(len(policy.rank(fixtures)), policy.candidate_limit)
+
+    def test_a_non_positive_depth_is_rejected(self) -> None:
+        with self.assertRaises(ValueError):
+            FixedFusionPolicy().rank({"bm25": [("A", 1.0)]}, candidate_limit=0)
+
+    def test_build_fusion_policy_can_set_the_default_depth(self) -> None:
+        self.assertEqual(
+            build_fusion_policy("fixed", candidate_limit=200).candidate_limit,
+            200,
+        )
+        self.assertEqual(
+            build_fusion_policy("rrf", candidate_limit=200).candidate_limit,
+            200,
+        )
+        self.assertEqual(
+            build_fusion_policy("bm25", candidate_limit=200).candidate_limit,
+            200,
+        )
+
     def test_missing_and_constant_score_routes_are_deterministic(self) -> None:
         policy = FixedFusionPolicy(
             weights={"structured": 0.4, "bm25": 0.3, "dense": 0.3},

@@ -102,9 +102,11 @@ docs/baseline_results.json        reproducible weak-starter reference score
 starter/agent.py                  editable weak starter
 evaluator/local_evaluator.py      public-set simulator and scorer
 retrieval/                        Retrieval Routes and their local index artifacts
-tools/                            one-time embedding model fetch
+tools/                            one-time model fetch, splits, and benchmarks
 docs/dense_index.md               dense index build, verification, and measured scale
 docs/fixed_hybrid_fusion.md       fixed policy, score normalization, and baselines
+docs/reranker_benchmark.md        cross-encoder and deep-pool depth decision gate
+docs/reranker_benchmark.json      machine-readable benchmark summary
 ```
 
 ## Dense Retrieval Route
@@ -178,6 +180,26 @@ through the same official-scoring wrapper with
 remains unchanged and uses the fixed policy through the default `Agent`. See
 `docs/fixed_hybrid_fusion.md` for the exact policy and commands.
 
+## Reranking Benchmark
+
+Slice 07 selects the bundled cross-encoder and the deepest Candidate Pool it may
+rerank, on the 160-session development split only. Every model and depth is
+compared on one cached replay of identical base-route unions, so the comparison
+never conflates a different pool with a different model. Runs are CPU-only and
+network-disabled.
+
+```bash
+python -m tools.fetch_model     --identity cross-encoder/ms-marco-MiniLM-L-2-v2     --destination models/cross-encoder__ms-marco-MiniLM-L-2-v2
+python -m tools.benchmark_reranker cache --output benchmarks/rerank_cache.jsonl
+python -m tools.benchmark_reranker score     --identity cross-encoder/ms-marco-MiniLM-L-2-v2     --sessions 40 --output benchmarks/rerank_MiniLM-L-2.json
+python -m tools.benchmark_reranker summarize benchmarks/rerank_*.json     --output docs/reranker_benchmark.json
+```
+
+`tools/dataset_split.py` computes the development/holdout partition used by every
+development benchmark. The locked 40-session holdout is opened once, in the final
+human-reviewed slice. See `docs/reranker_benchmark.md` for the method, the
+selection rule, and the measured result.
+
 ### Reproducibility and external assets
 
 The official harness entry point remains:
@@ -193,6 +215,7 @@ be committed:
 | --- | --- | --- |
 | Frozen Amazon Reviews 2023 catalog | Organizer release; evaluator and retrieval corpus | Download and verify as described in **Download the Catalog** above |
 | `sentence-transformers/all-MiniLM-L6-v2` (`1110a243…`) | Local 384-dimensional embedding model; no scoring-time API | `python -m tools.fetch_model` |
+| `cross-encoder/ms-marco-*` | Local reranking candidates benchmarked in Slice 07; no scoring-time API | `python -m tools.fetch_model --identity <id> --destination models/<dir>` |
 | Dense Qdrant index | Derived locally from the frozen catalog and pinned MiniLM model | `python -m retrieval.build_dense_index --catalog data/catalog.jsonl --verify-load` |
 | Qdrant, PyTorch, Transformers, NumPy | Local dense-route runtime dependencies | `pip install -r requirements-dense.txt` |
 

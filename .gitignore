@@ -23,3 +23,4 @@ tests/test_organizer_pipeline.py
 # 'python -m retrieval.build_dense_index'.
 models/
 artifacts/
+benchmarks/
