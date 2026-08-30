@@ -218,19 +218,16 @@ time, the normalized 200-session projection, route readiness, and the frozen
 configuration beside the fused-30 baseline. `--sessions N` selects a deterministic
 scenario-stratified development subset for smoke tests.
 
-The checked-in isolated 160-session live run reached HitRate@10 **0.556250**,
-MRR **0.384139**, and TechnicalScore **0.479617**, compared with 0.543750,
-0.368237, and 0.467096 for fused-30. Depth-50 pool recall was 0.775000 and
-recall-to-hit conversion was 0.717742. The persistent worker completed 217
-reranks at 337.2 ms p50 and 513.9 ms p95 before one 1.5-second deadline event;
-the Agent then correctly used fused fallback for the rest of the evaluator run.
-The 423.1-second development run projects to 528.8 seconds for 200 sessions,
-inside both frozen runtime gates. See
-`docs/live_reranker_evaluation.json` for scenario metrics and exact configuration.
-Intent Override HitRate@10 declined from 0.333333 to 0.291667; the 4.17-point
-drop remains inside the agreed five-point scenario rejection guardrail and is
-recorded explicitly rather than hidden by the aggregate improvement. Scenario
-MRR and mean turns remain diagnostic evidence, not configured rejection gates.
+The checked-in isolated 160-session live run reached HitRate@10 **0.637500**,
+MRR **0.405035**, and TechnicalScore **0.539511**, compared with 0.543750,
+0.368237, and 0.467096 for a fresh fused-30 run through the same evaluator.
+Depth-50 pool recall was 0.775000 and recall-to-hit conversion was 0.822581.
+The persistent worker completed all 908 reranks without fallback at 368.5 ms
+p50 and 392.9 ms p95 reranker latency. Complete Agent turn latency was 594.5 ms
+p50 and 819.3 ms p95, compared with 202.5 ms and 455.5 ms for fused-30. The
+548.8-second development run projects to 686.0 seconds for 200 sessions, below
+the frozen 900-second gate. See `docs/live_reranker_evaluation.json` for
+scenario metrics, baseline timing, and exact configuration.
 The local reranker reports zero tokens and has **$0 incremental model/API cost**;
 it uses only local CPU inference after the one-time model fetch. The configuration
 in this Slice 08 report records the catalog and index checksums, embedding and

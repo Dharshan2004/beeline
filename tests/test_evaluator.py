@@ -4,6 +4,7 @@ import unittest
 from pathlib import Path
 import json
 import tempfile
+from unittest.mock import patch
 
 from evaluator.local_evaluator import (
     catalog_index,
@@ -84,6 +85,30 @@ class EvaluatorTest(unittest.TestCase):
             }]
             result = evaluate(EchoTargetAgent(), samples, catalog_ids, categories, products)
             self.assertEqual(result["hit_rate_at_10"], 1.0)
+
+    def test_evaluate_records_end_to_end_agent_turn_latency(self) -> None:
+        samples = [{
+            "sample_id": "timed",
+            "scenario_type": "browsing",
+            "user_profile": {},
+            "ground_truth": {"parent_asin": "A"},
+            "intent_card": {"hard_constraints": [], "soft_preferences": []},
+            "behavior": {"scenario_type": "browsing"},
+        }]
+        products = {"A": {"parent_asin": "A"}}
+
+        with patch(
+            "evaluator.local_evaluator.time.perf_counter",
+            side_effect=[10.0, 10.125],
+        ):
+            result = evaluate(EchoTargetAgent(), samples, {"A"}, {"A": []}, products)
+
+        self.assertEqual(result["turn_latency"], {
+            "turn_count": 1,
+            "p50_seconds": 0.125,
+            "p95_seconds": 0.125,
+            "mean_seconds": 0.125,
+        })
 
 if __name__ == "__main__":
     unittest.main()

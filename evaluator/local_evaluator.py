@@ -5,8 +5,10 @@ import json
 import random
 import re
 import statistics
+import time
 import uuid
 from collections import defaultdict
+from math import ceil
 from pathlib import Path
 
 from starter.agent import Agent
@@ -201,6 +203,29 @@ def metric_summary(sessions: list[dict]) -> dict:
     }
 
 
+def turn_latency_summary(latencies: list[float]) -> dict:
+    """Summarize complete ``Agent.respond`` latency with nearest-rank tails."""
+    if not latencies:
+        return {
+            "turn_count": 0,
+            "p50_seconds": 0.0,
+            "p95_seconds": 0.0,
+            "mean_seconds": 0.0,
+        }
+    ordered = sorted(latencies)
+
+    def percentile(fraction: float) -> float:
+        index = max(0, ceil(len(ordered) * fraction) - 1)
+        return ordered[index]
+
+    return {
+        "turn_count": len(ordered),
+        "p50_seconds": round(percentile(0.50), 6),
+        "p95_seconds": round(percentile(0.95), 6),
+        "mean_seconds": round(statistics.fmean(ordered), 6),
+    }
+
+
 def materialize_hidden_fields(sample: dict, products: dict[str, dict]) -> tuple[dict, dict]:
     if "intent_card" in sample and "behavior" in sample:
         return sample["intent_card"], sample["behavior"]
@@ -221,6 +246,7 @@ def evaluate(
     products: dict[str, dict],
 ) -> dict:
     sessions: list[dict] = []
+    turn_latencies: list[float] = []
     total_prompt_tokens = 0
     total_completion_tokens = 0
     for sample in samples:
@@ -236,10 +262,13 @@ def evaluate(
         hit_turn: int | None = None
         best_rank: int | None = None
         for turn in range(1, MAX_TURNS + 1):
+            turn_started = time.perf_counter()
             try:
                 response = agent.respond(session_id, user_message, turn, TOP_K)
             except Exception:
                 response = {"message": "", "ask_attribute": None, "recommendations": []}
+            finally:
+                turn_latencies.append(time.perf_counter() - turn_started)
             if not isinstance(response, dict) or not isinstance(response.get("message"), str):
                 response = {"message": "", "ask_attribute": None, "recommendations": []}
             usage = response.get("usage")
@@ -291,6 +320,7 @@ def evaluate(
             "total_tokens": total_prompt_tokens + total_completion_tokens,
         },
         "scenario_metrics": {name: metric_summary(grouped[name]) for name in sorted(grouped)},
+        "turn_latency": turn_latency_summary(turn_latencies),
         "sessions": sessions,
     }
 

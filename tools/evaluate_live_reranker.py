@@ -12,13 +12,13 @@ import time
 from pathlib import Path
 
 from evaluator.local_evaluator import catalog_index, evaluate, materialize_hidden_fields
-from retrieval.reranker import FROZEN_RERANK_DEPTH
+from retrieval.dense_route import DenseRetrievalRoute
+from retrieval.reranker import FROZEN_RERANK_DEPTH, UnavailableReranker
 from starter.agent import Agent
 from tools.dataset_split import load_frozen_development_samples, stratified_subset
 
 
 SUBSET_SEED = 20260830
-DEFAULT_BASELINE_REPORT = Path("docs/reranker_benchmark.json")
 
 
 def _group_summary(records: list[dict]) -> dict:
@@ -89,14 +89,11 @@ def pool_conversion_metrics(
     }
 
 
-def _baseline_evidence(path: Path) -> dict:
-    report = json.loads(path.read_text(encoding="utf-8"))
-    cache = report["cache_metadata"]
+def _scored_metrics(result: dict) -> dict:
     return {
-        "identity": "fused-30 no-reranker baseline",
-        "wall_seconds_160_sessions": cache["baseline_wall_seconds"],
-        "projected_wall_seconds_200_sessions": report["projected_baseline_seconds"],
-        "metrics": cache["baseline_metrics"],
+        key: value
+        for key, value in result.items()
+        if key not in {"sessions", "turn_latency"}
     }
 
 
@@ -105,7 +102,6 @@ def main() -> None:
     parser.add_argument("--catalog", default="data/catalog.jsonl")
     parser.add_argument("--dataset", default="data/public_set.jsonl")
     parser.add_argument("--output", default="docs/live_reranker_evaluation.json")
-    parser.add_argument("--baseline-report", default=str(DEFAULT_BASELINE_REPORT))
     parser.add_argument(
         "--sessions",
         type=int,
@@ -118,7 +114,33 @@ def main() -> None:
     if arguments.sessions is not None:
         samples = stratified_subset(samples, arguments.sessions, seed=SUBSET_SEED)
     catalog_ids, categories, products = catalog_index(arguments.catalog)
-    agent = Agent(arguments.catalog, trace_pool_depths=(FROZEN_RERANK_DEPTH,))
+    dense_route = DenseRetrievalRoute(arguments.catalog)
+
+    baseline_agent = Agent(
+        arguments.catalog,
+        dense_route=dense_route,
+        reranker=UnavailableReranker("fused_30_live_baseline"),
+        candidate_pool_depth=30,
+    )
+    baseline_started = time.perf_counter()
+    try:
+        baseline_result = evaluate(
+            baseline_agent,
+            samples,
+            catalog_ids,
+            categories,
+            products,
+        )
+        baseline_wall_seconds = time.perf_counter() - baseline_started
+        baseline_configuration = baseline_agent.get_runtime_configuration()
+    finally:
+        baseline_agent.reranker.close()
+
+    agent = Agent(
+        arguments.catalog,
+        dense_route=dense_route,
+        trace_pool_depths=(FROZEN_RERANK_DEPTH,),
+    )
     started = time.perf_counter()
     try:
         result = evaluate(agent, samples, catalog_ids, categories, products)
@@ -133,7 +155,7 @@ def main() -> None:
         output = {
             "evaluation": "live-reranker-development-v1",
             "session_count": len(samples),
-            "metrics": {key: value for key, value in result.items() if key != "sessions"},
+            "metrics": _scored_metrics(result),
             "candidate_pool_metrics": pool_metrics,
             "runtime": {
                 "wall_seconds": round(wall_seconds, 3),
@@ -141,11 +163,24 @@ def main() -> None:
                     wall_seconds * 200 / len(samples),
                     3,
                 ),
+                "turn_latency": result["turn_latency"],
                 "reranker": reranker_metrics,
                 "dense_route": agent.get_dense_route_metrics(),
             },
             "configuration": agent.get_runtime_configuration(),
-            "baseline": _baseline_evidence(Path(arguments.baseline_report)),
+            "baseline": {
+                "identity": "fused-30 no-reranker live baseline",
+                "metrics": _scored_metrics(baseline_result),
+                "runtime": {
+                    "wall_seconds": round(baseline_wall_seconds, 3),
+                    "projected_wall_seconds_200_sessions": round(
+                        baseline_wall_seconds * 200 / len(samples),
+                        3,
+                    ),
+                    "turn_latency": baseline_result["turn_latency"],
+                },
+                "configuration": baseline_configuration,
+            },
         }
     finally:
         agent.close()
