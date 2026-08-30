@@ -14,14 +14,14 @@ from math import isfinite
 from pathlib import Path
 from typing import Callable, Sequence
 
-from retrieval.fusion import ROUTE_NAMES
+from retrieval.fusion import LEGACY_FIXED_WEIGHTS, ROUTE_NAMES
 from retrieval.reranker import order_by_scores
 from tools.benchmark_reranker import session_metrics
 from tools.build_fusion_dataset import MAX_TRAINING_POOL_DEPTH, load_artifact
 
 
 REPORT_VERSION = "fusion-weight-search-v1"
-CURRENT_WEIGHTS = {"structured": 0.15, "bm25": 0.55, "dense": 0.3}
+CURRENT_WEIGHTS = dict(LEGACY_FIXED_WEIGHTS)
 DEFAULT_DEPTH = 50
 TOP_K = 10
 
@@ -182,11 +182,21 @@ def _evaluate_ranker(
             (str(record["sample_id"]), int(record["turn"]))
             for record in scenario_records
         }
+        scenario_recall = _pool_recall(scenario_records, pools)
+        scenario_ranking = _official_metrics(
+            scenario_records,
+            {key: ranked[key] for key in scenario_keys},
+        )
         scenario_metrics[scenario] = {
-            "pool_recall": _pool_recall(scenario_records, pools),
-            "metrics": _official_metrics(
-                scenario_records,
-                {key: ranked[key] for key in scenario_keys},
+            "pool_recall": scenario_recall,
+            "metrics": scenario_ranking,
+            "recall_to_hit_conversion": (
+                round(
+                    scenario_ranking["hit_rate_at_10"]
+                    / scenario_recall["session_pool_recall"],
+                    6,
+                )
+                if scenario_recall["session_pool_recall"] else 0.0
             ),
         }
     return {

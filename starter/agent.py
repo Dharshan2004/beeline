@@ -5,7 +5,12 @@ from pathlib import Path
 from typing import Protocol, Sequence
 
 from retrieval.dense_route import DenseRetrievalRoute
-from retrieval.fusion import FusionPolicy, build_fusion_policy, normalized_route_scores
+from retrieval.fusion import (
+    NORMALIZER_VERSION,
+    FusionPolicy,
+    build_fusion_policy,
+    normalized_route_scores,
+)
 from retrieval.manifest import file_sha256
 from retrieval.reranker import (
     DEFAULT_RERANKER_IDENTITY,
@@ -19,6 +24,7 @@ from starter.planning import (
     PlanningLoop,
     PlanningOutcome,
     PlanningProvider,
+    PLANNING_PROMPT_SHA256,
     PLANNING_PROMPT_VERSION,
 )
 from starter.retrieval import CatalogRetrieval
@@ -143,6 +149,7 @@ class Agent:
         reranker_metrics = self.reranker.metrics()
         configuration = {
             "policy_version": self.fusion_policy.version,
+            "normalizer": NORMALIZER_VERSION,
             "route_depth": DENSE_CANDIDATE_DEPTH,
             "fused_candidate_depth": self.candidate_pool_depth,
             "reranker_identity": getattr(
@@ -152,6 +159,9 @@ class Agent:
             ),
             "rerank_depth": FROZEN_RERANK_DEPTH,
             "reranker_revision": reranker_metrics.get("revision"),
+            "reranker_directory_sha256": reranker_metrics.get(
+                "directory_sha256"
+            ),
             "rerank_deadline_seconds": reranker_metrics.get("deadline_seconds"),
             "reranker_status": reranker_metrics.get("status"),
             "reranker_enabled": getattr(self.reranker, "configured", True),
@@ -186,12 +196,14 @@ class Agent:
                     "status",
                     "identity",
                     "revision",
+                    "directory_sha256",
                     "depth",
                     "deadline_seconds",
                 )
             },
             "planning": {
                 "prompt_version": PLANNING_PROMPT_VERSION,
+                "prompt_sha256": PLANNING_PROMPT_SHA256,
                 "provider": type(provider).__name__ if provider is not None else None,
                 "connected_model_version": (
                     getattr(provider, "model", None) if provider is not None else None

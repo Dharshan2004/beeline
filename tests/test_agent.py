@@ -178,12 +178,14 @@ class AgentContractTest(unittest.TestCase):
             {"STRUCTURED", "BM25", "DENSE"},
         )
         self.assertEqual(agent.get_retrieval_configuration(), {
-            "policy_version": "fixed-hybrid-v1",
+            "policy_version": "pool-aware-global-v2",
+            "normalizer": "per-route-min-max-v1",
             "route_depth": 100,
             "fused_candidate_depth": 50,
             "reranker_identity": "cross-encoder/ms-marco-MiniLM-L-6-v2",
             "rerank_depth": 50,
             "reranker_revision": "233902d25c440f23af6f7d6e94d2946bac0bee0a",
+            "reranker_directory_sha256": None,
             "rerank_deadline_seconds": 1.5,
             "reranker_status": "disabled",
             "reranker_enabled": False,

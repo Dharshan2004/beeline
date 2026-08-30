@@ -13,6 +13,7 @@ from pathlib import Path
 
 from evaluator.local_evaluator import catalog_index, evaluate, materialize_hidden_fields
 from retrieval.dense_route import DenseRetrievalRoute
+from retrieval.fusion import LEGACY_FIXED_WEIGHTS, FixedFusionPolicy
 from retrieval.reranker import FROZEN_RERANK_DEPTH, UnavailableReranker
 from starter.agent import Agent
 from tools.dataset_split import load_frozen_development_samples, stratified_subset
@@ -119,6 +120,10 @@ def main() -> None:
     baseline_agent = Agent(
         arguments.catalog,
         dense_route=dense_route,
+        fusion_policy=FixedFusionPolicy(
+            weights=LEGACY_FIXED_WEIGHTS,
+            version="fixed-hybrid-v1",
+        ),
         reranker=UnavailableReranker("fused_30_live_baseline"),
         candidate_pool_depth=30,
     )

@@ -10,7 +10,7 @@ from pathlib import Path
 from typing import Iterable, Sequence
 
 from evaluator.local_evaluator import catalog_index, evaluate, materialize_hidden_fields
-from retrieval.fusion import ROUTE_NAMES
+from retrieval.fusion import LEGACY_FIXED_WEIGHTS, ROUTE_NAMES, FixedFusionPolicy
 from retrieval.manifest import directory_sha256
 from retrieval.reranker import (
     DEFAULT_RERANKER_DIR,
@@ -466,12 +466,25 @@ def build_dataset(arguments: argparse.Namespace) -> dict:
         agent = Agent(
             arguments.catalog,
             reranker=reranker,
+            fusion_policy=FixedFusionPolicy(
+                weights=LEGACY_FIXED_WEIGHTS,
+                version="fixed-hybrid-v1",
+            ),
             candidate_pool_depth=FROZEN_RERANK_DEPTH,
             trace_pool_depths=(FROZEN_RERANK_DEPTH, MAX_TRAINING_POOL_DEPTH),
         )
         try:
             result = evaluate(agent, samples, catalog_ids, categories, products)
             runtime_configuration = agent.get_runtime_configuration()
+            # Artifact v1 predates the explicit normalizer/prompt digests. Keep
+            # its historical configuration bytes reproducible after Slice 11
+            # exposes those identities in the live runtime manifest.
+            runtime_configuration["fusion_and_retrieval"].pop("normalizer", None)
+            runtime_configuration["fusion_and_retrieval"].pop(
+                "reranker_directory_sha256", None
+            )
+            runtime_configuration["planning"].pop("prompt_sha256", None)
+            runtime_configuration["reranker"].pop("directory_sha256", None)
             traces = agent.get_candidate_traces()
         finally:
             agent.close()

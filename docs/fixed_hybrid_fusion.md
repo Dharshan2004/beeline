@@ -13,9 +13,29 @@ Hard Constraints are applied as an eligibility rule to every route before
 fusion. Unknown catalog identifiers and duplicate dense identifiers are removed
 at the same boundary.
 
-## Fixed policy
+## Validated default policy
 
-The default policy is `fixed-hybrid-v1`:
+Slice 11 supersedes the original starting weights below with the validated
+`pool-aware-global-v2` policy:
+
+| Setting | Frozen value |
+| --- | ---: |
+| Structured weight | 0.02 |
+| BM25 weight | 0.64 |
+| Dense weight | 0.34 |
+| Candidate depth per route | 100 |
+| Reranked Candidate Pool depth | 50 |
+| Evaluator recommendation depth | 10 |
+
+Four scenario-balanced development folds selected the center of a five-neighbor
+performance plateau. It reaches 0.825 session pool recall, 0.65625 HitRate@10,
+0.406937 MRR, and 0.551831 TechnicalScore without opening the Locked Holdout.
+The immutable decision evidence and complete runtime identities are recorded in
+`docs/fusion_policy_freeze.json`.
+
+## Original fixed policy
+
+The Slice 6 starting policy was `fixed-hybrid-v1`:
 
 | Setting | Value |
 | --- | ---: |

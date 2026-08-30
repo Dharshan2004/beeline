@@ -8,6 +8,18 @@ from typing import Mapping, Protocol, Sequence
 
 ROUTE_NAMES = ("structured", "bm25", "dense")
 POLICY_NAMES = ("fixed", "rrf", *ROUTE_NAMES)
+LEGACY_FIXED_WEIGHTS = {
+    "structured": 0.15,
+    "bm25": 0.55,
+    "dense": 0.3,
+}
+FROZEN_GLOBAL_WEIGHTS = {
+    "structured": 0.02,
+    "bm25": 0.64,
+    "dense": 0.34,
+}
+FROZEN_POLICY_VERSION = "pool-aware-global-v2"
+NORMALIZER_VERSION = "per-route-min-max-v1"
 
 
 class FusionPolicy(Protocol):
@@ -76,12 +88,10 @@ def normalized_route_scores(
 class FixedFusionPolicy:
     """Versioned weighted fusion over independently scored Retrieval Routes."""
 
-    weights: Mapping[str, float] = field(default_factory=lambda: {
-        "structured": 0.15,
-        "bm25": 0.55,
-        "dense": 0.3,
-    })
-    version: str = "fixed-hybrid-v1"
+    weights: Mapping[str, float] = field(
+        default_factory=lambda: dict(FROZEN_GLOBAL_WEIGHTS)
+    )
+    version: str = FROZEN_POLICY_VERSION
     candidate_limit: int = 30
 
     def __post_init__(self) -> None:

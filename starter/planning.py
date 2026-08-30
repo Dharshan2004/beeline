@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from copy import deepcopy
 from dataclasses import dataclass
+import hashlib
+import json
 from typing import Callable, Literal, Mapping, Protocol
 
 from starter.constraint_state import (
@@ -159,6 +161,17 @@ TURN_PLAN_JSON_SCHEMA = {
         },
     },
 }
+
+PLANNING_PROMPT_SHA256 = hashlib.sha256(
+    json.dumps(
+        {
+            "instructions": PLANNING_INSTRUCTIONS,
+            "schema": TURN_PLAN_JSON_SCHEMA,
+        },
+        sort_keys=True,
+        separators=(",", ":"),
+    ).encode("utf-8")
+).hexdigest()
 
 
 class PlanningError(ValueError):

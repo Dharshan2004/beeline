@@ -20,7 +20,7 @@ candidate pool is reconstructed from cached normalized route scores and every
 Top-K is reconstructed from cached cross-encoder scores.
 
 The checked-in report is deterministic. Its SHA-256 is
-`0ebd8169e396ac5a5d1bed32d6947d388ade826d01ae9220279aad341e2bbf90` and
+`72938ba34ab39630e0dd79e46ec2b7838fccd60572b5c32ff967a406402774a8` and
 it binds the search to artifact
 `712378b277e1bb3fa7543828f101312725dab727f0bf1c59756ed2d253c4cd31`.
 The locked holdout is not loaded.

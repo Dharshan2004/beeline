@@ -10,6 +10,8 @@ from pathlib import Path
 from types import MappingProxyType
 from typing import Any, Callable, Protocol, Sequence
 
+from retrieval.manifest import directory_sha256
+
 
 @dataclass(frozen=True)
 class RerankerCandidate:
@@ -239,6 +241,7 @@ class UnavailableReranker:
             "status": "disabled",
             "identity": self.identity,
             "revision": RERANKER_CANDIDATES[self.identity].revision,
+            "directory_sha256": None,
             "depth": FROZEN_RERANK_DEPTH,
             "deadline_seconds": DEFAULT_RERANK_DEADLINE_SECONDS,
             "failure_cause": self.reason,
@@ -310,6 +313,7 @@ class LocalRerankerWorker:
         self.configured = True
         self.identity = identity
         self.revision = self._verify_frozen_model()
+        self.directory_sha256 = directory_sha256(self.model_dir)
         self.deadline_seconds = deadline_seconds
         self._status = "starting"
         self._failure_cause: str | None = None
@@ -436,6 +440,7 @@ class LocalRerankerWorker:
             "status": self._status,
             "identity": self.identity,
             "revision": self.revision,
+            "directory_sha256": self.directory_sha256,
             "depth": FROZEN_RERANK_DEPTH,
             "deadline_seconds": self.deadline_seconds,
             "worker_pid": self._worker_pid,

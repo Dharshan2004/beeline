@@ -22,6 +22,7 @@ from retrieval.reranker import (
     build_live_reranker,
     order_by_scores,
 )
+from retrieval.manifest import directory_sha256
 from tools.benchmark_reranker import (
     _model_provenance,
     baseline_rows,
@@ -158,6 +159,9 @@ class LocalRerankerWorkerTest(unittest.TestCase):
         self.assertEqual(second, first)
         self.assertEqual(worker.metrics()["worker_pid"], first_pid)
         self.assertEqual(worker.metrics()["query_count"], 2)
+        self.assertEqual(
+            worker.metrics()["directory_sha256"], directory_sha256(self.model_dir)
+        )
 
     def test_timeout_returns_fused_order_and_disables_future_calls(self) -> None:
         worker = self.worker(_hanging_worker)

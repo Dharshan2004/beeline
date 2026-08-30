@@ -1,0 +1,6457 @@
+{
+  "activation_verified": true,
+  "admissible_candidate_count": 9,
+  "baseline": {
+    "depth": 50,
+    "metrics": {
+      "efficiency": 0.49625,
+      "hit_rate_at_10": 0.6375,
+      "mrr": 0.405035,
+      "mttc": 6.0375,
+      "recommended_technical_score": 0.539511,
+      "session_count": 160
+    },
+    "pool_recall": {
+      "session_pool_recall": 0.775,
+      "turn_pool_recall": 0.187943
+    },
+    "recall_to_hit_conversion": 0.822581,
+    "reranked": true,
+    "scenario_metrics": {
+      "boundary": {
+        "metrics": {
+          "efficiency": 0.475,
+          "hit_rate_at_10": 0.625,
+          "mrr": 0.479167,
+          "mttc": 6.25,
+          "recommended_technical_score": 0.55125,
+          "session_count": 8
+        },
+        "pool_recall": {
+          "session_pool_recall": 0.625,
+          "turn_pool_recall": 0.148936
+        },
+        "recall_to_hit_conversion": 1.0
+      },
+      "browsing": {
+        "metrics": {
+          "efficiency": 0.585938,
+          "hit_rate_at_10": 0.78125,
+          "mrr": 0.482688,
+          "mttc": 5.140625,
+          "recommended_technical_score": 0.652619,
+          "session_count": 64
+        },
+        "pool_recall": {
+          "session_pool_recall": 0.890625,
+          "turn_pool_recall": 0.234921
+        },
+        "recall_to_hit_conversion": 0.877193
+      },
+      "buying": {
+        "metrics": {
+          "efficiency": 0.510938,
+          "hit_rate_at_10": 0.59375,
+          "mrr": 0.36219,
+          "mttc": 5.890625,
+          "recommended_technical_score": 0.50772,
+          "session_count": 64
+        },
+        "pool_recall": {
+          "session_pool_recall": 0.78125,
+          "turn_pool_recall": 0.185185
+        },
+        "recall_to_hit_conversion": 0.76
+      },
+      "intent_override": {
+        "metrics": {
+          "efficiency": 0.225,
+          "hit_rate_at_10": 0.375,
+          "mrr": 0.2875,
+          "mttc": 8.75,
+          "recommended_technical_score": 0.31875,
+          "session_count": 24
+        },
+        "pool_recall": {
+          "session_pool_recall": 0.5,
+          "turn_pool_recall": 0.097744
+        },
+        "recall_to_hit_conversion": 0.75
+      }
+    },
+    "weights": {
+      "bm25": 0.55,
+      "dense": 0.3,
+      "structured": 0.15
+    }
+  },
+  "candidate_count": 91,
+  "candidates": [
+    {
+      "admissible": false,
+      "fold_stability": {
+        "mean_session_pool_recall": 0.8125,
+        "mean_technical_score": 0.556886,
+        "minimum_hit_rate_at_10": 0.6,
+        "minimum_session_pool_recall": 0.75,
+        "minimum_technical_score": 0.4915,
+        "session_pool_recall_pstdev": 0.045069,
+        "technical_score_pstdev": 0.066166
+      },
+      "improves_official_objective": true,
+      "metrics": {
+        "efficiency": 0.511875,
+        "hit_rate_at_10": 0.6625,
+        "mrr": 0.410871,
+        "mttc": 5.88125,
+        "recommended_technical_score": 0.556886,
+        "session_count": 160
+      },
+      "plateau_neighbor_count": 0,
+      "pool_recall": {
+        "session_pool_recall": 0.8125,
+        "turn_pool_recall": 0.20331
+      },
+      "recall_to_hit_conversion": 0.815385,
+      "scenario_guardrail": {
+        "maximum_allowed_drop": 0.05,
+        "passed": true,
+        "scenarios": {
+          "boundary": {
+            "baseline_hit_rate_at_10": 0.625,
+            "candidate_hit_rate_at_10": 0.625,
+            "delta": 0.0,
+            "passed": true
+          },
+          "browsing": {
+            "baseline_hit_rate_at_10": 0.78125,
+            "candidate_hit_rate_at_10": 0.78125,
+            "delta": 0.0,
+            "passed": true
+          },
+          "buying": {
+            "baseline_hit_rate_at_10": 0.59375,
+            "candidate_hit_rate_at_10": 0.59375,
+            "delta": 0.0,
+            "passed": true
+          },
+          "intent_override": {
+            "baseline_hit_rate_at_10": 0.375,
+            "candidate_hit_rate_at_10": 0.541667,
+            "delta": 0.166667,
+            "passed": true
+          }
+        }
+      },
+      "weights": {
+        "bm25": 0.6,
+        "dense": 0.4,
+        "structured": 0.0
+      },
+      "within_pool_recall_tolerance": false
+    },
+    {
+      "admissible": false,
+      "fold_stability": {
+        "mean_session_pool_recall": 0.8125,
+        "mean_technical_score": 0.552107,
+        "minimum_hit_rate_at_10": 0.575,
+        "minimum_session_pool_recall": 0.75,
+        "minimum_technical_score": 0.473634,
+        "session_pool_recall_pstdev": 0.045069,
+        "technical_score_pstdev": 0.070409
+      },
+      "improves_official_objective": true,
+      "metrics": {
+        "efficiency": 0.508125,
+        "hit_rate_at_10": 0.65625,
+        "mrr": 0.407857,
+        "mttc": 5.91875,
+        "recommended_technical_score": 0.552107,
+        "session_count": 160
+      },
+      "plateau_neighbor_count": 0,
+      "pool_recall": {
+        "session_pool_recall": 0.8125,
+        "turn_pool_recall": 0.202128
+      },
+      "recall_to_hit_conversion": 0.807692,
+      "scenario_guardrail": {
+        "maximum_allowed_drop": 0.05,
+        "passed": true,
+        "scenarios": {
+          "boundary": {
+            "baseline_hit_rate_at_10": 0.625,
+            "candidate_hit_rate_at_10": 0.625,
+            "delta": 0.0,
+            "passed": true
+          },
+          "browsing": {
+            "baseline_hit_rate_at_10": 0.78125,
+            "candidate_hit_rate_at_10": 0.78125,
+            "delta": 0.0,
+            "passed": true
+          },
+          "buying": {
+            "baseline_hit_rate_at_10": 0.59375,
+            "candidate_hit_rate_at_10": 0.59375,
+            "delta": 0.0,
+            "passed": true
+          },
+          "intent_override": {
+            "baseline_hit_rate_at_10": 0.375,
+            "candidate_hit_rate_at_10": 0.5,
+            "delta": 0.125,
+            "passed": true
+          }
+        }
+      },
+      "weights": {
+        "bm25": 0.62,
+        "dense": 0.38,
+        "structured": 0.0
+      },
+      "within_pool_recall_tolerance": false
+    },
+    {
+      "admissible": true,
+      "fold_stability": {
+        "mean_session_pool_recall": 0.825,
+        "mean_technical_score": 0.552013,
+        "minimum_hit_rate_at_10": 0.575,
+        "minimum_session_pool_recall": 0.75,
+        "minimum_technical_score": 0.473259,
+        "session_pool_recall_pstdev": 0.046771,
+        "technical_score_pstdev": 0.070514
+      },
+      "improves_official_objective": true,
+      "metrics": {
+        "efficiency": 0.508125,
+        "hit_rate_at_10": 0.65625,
+        "mrr": 0.407545,
+        "mttc": 5.91875,
+        "recommended_technical_score": 0.552013,
+        "session_count": 160
+      },
+      "plateau_neighbor_count": 3,
+      "pool_recall": {
+        "session_pool_recall": 0.825,
+        "turn_pool_recall": 0.204492
+      },
+      "recall_to_hit_conversion": 0.795455,
+      "scenario_guardrail": {
+        "maximum_allowed_drop": 0.05,
+        "passed": true,
+        "scenarios": {
+          "boundary": {
+            "baseline_hit_rate_at_10": 0.625,
+            "candidate_hit_rate_at_10": 0.625,
+            "delta": 0.0,
+            "passed": true
+          },
+          "browsing": {
+            "baseline_hit_rate_at_10": 0.78125,
+            "candidate_hit_rate_at_10": 0.78125,
+            "delta": 0.0,
+            "passed": true
+          },
+          "buying": {
+            "baseline_hit_rate_at_10": 0.59375,
+            "candidate_hit_rate_at_10": 0.59375,
+            "delta": 0.0,
+            "passed": true
+          },
+          "intent_override": {
+            "baseline_hit_rate_at_10": 0.375,
+            "candidate_hit_rate_at_10": 0.5,
+            "delta": 0.125,
+            "passed": true
+          }
+        }
+      },
+      "weights": {
+        "bm25": 0.64,
+        "dense": 0.36,
+        "structured": 0.0
+      },
+      "within_pool_recall_tolerance": true
+    },
+    {
+      "admissible": true,
+      "fold_stability": {
+        "mean_session_pool_recall": 0.825,
+        "mean_technical_score": 0.552169,
+        "minimum_hit_rate_at_10": 0.575,
+        "minimum_session_pool_recall": 0.75,
+        "minimum_technical_score": 0.473259,
+        "session_pool_recall_pstdev": 0.046771,
+        "technical_score_pstdev": 0.070404
+      },
+      "improves_official_objective": true,
+      "metrics": {
+        "efficiency": 0.508125,
+        "hit_rate_at_10": 0.65625,
+        "mrr": 0.408065,
+        "mttc": 5.91875,
+        "recommended_technical_score": 0.552169,
+        "session_count": 160
+      },
+      "plateau_neighbor_count": 4,
+      "pool_recall": {
+        "session_pool_recall": 0.825,
+        "turn_pool_recall": 0.20331
+      },
+      "recall_to_hit_conversion": 0.795455,
+      "scenario_guardrail": {
+        "maximum_allowed_drop": 0.05,
+        "passed": true,
+        "scenarios": {
+          "boundary": {
+            "baseline_hit_rate_at_10": 0.625,
+            "candidate_hit_rate_at_10": 0.625,
+            "delta": 0.0,
+            "passed": true
+          },
+          "browsing": {
+            "baseline_hit_rate_at_10": 0.78125,
+            "candidate_hit_rate_at_10": 0.78125,
+            "delta": 0.0,
+            "passed": true
+          },
+          "buying": {
+            "baseline_hit_rate_at_10": 0.59375,
+            "candidate_hit_rate_at_10": 0.59375,
+            "delta": 0.0,
+            "passed": true
+          },
+          "intent_override": {
+            "baseline_hit_rate_at_10": 0.375,
+            "candidate_hit_rate_at_10": 0.5,
+            "delta": 0.125,
+            "passed": true
+          }
+        }
+      },
+      "weights": {
+        "bm25": 0.66,
+        "dense": 0.34,
+        "structured": 0.0
+      },
+      "within_pool_recall_tolerance": true
+    },
+    {
+      "admissible": true,
+      "fold_stability": {
+        "mean_session_pool_recall": 0.825,
+        "mean_technical_score": 0.552274,
+        "minimum_hit_rate_at_10": 0.575,
+        "minimum_session_pool_recall": 0.75,
+        "minimum_technical_score": 0.473946,
+        "session_pool_recall_pstdev": 0.046771,
+        "technical_score_pstdev": 0.070404
+      },
+      "improves_official_objective": true,
+      "metrics": {
+        "efficiency": 0.50875,
+        "hit_rate_at_10": 0.65625,
+        "mrr": 0.407999,
+        "mttc": 5.9125,
+        "recommended_technical_score": 0.552275,
+        "session_count": 160
+      },
+      "plateau_neighbor_count": 2,
+      "pool_recall": {
+        "session_pool_recall": 0.825,
+        "turn_pool_recall": 0.204492
+      },
+      "recall_to_hit_conversion": 0.795455,
+      "scenario_guardrail": {
+        "maximum_allowed_drop": 0.05,
+        "passed": true,
+        "scenarios": {
+          "boundary": {
+            "baseline_hit_rate_at_10": 0.625,
+            "candidate_hit_rate_at_10": 0.625,
+            "delta": 0.0,
+            "passed": true
+          },
+          "browsing": {
+            "baseline_hit_rate_at_10": 0.78125,
+            "candidate_hit_rate_at_10": 0.78125,
+            "delta": 0.0,
+            "passed": true
+          },
+          "buying": {
+            "baseline_hit_rate_at_10": 0.59375,
+            "candidate_hit_rate_at_10": 0.59375,
+            "delta": 0.0,
+            "passed": true
+          },
+          "intent_override": {
+            "baseline_hit_rate_at_10": 0.375,
+            "candidate_hit_rate_at_10": 0.5,
+            "delta": 0.125,
+            "passed": true
+          }
+        }
+      },
+      "weights": {
+        "bm25": 0.68,
+        "dense": 0.32,
+        "structured": 0.0
+      },
+      "within_pool_recall_tolerance": true
+    },
+    {
+      "admissible": false,
+      "fold_stability": {
+        "mean_session_pool_recall": 0.81875,
+        "mean_technical_score": 0.55223,
+        "minimum_hit_rate_at_10": 0.575,
+        "minimum_session_pool_recall": 0.725,
+        "minimum_technical_score": 0.473946,
+        "session_pool_recall_pstdev": 0.05694,
+        "technical_score_pstdev": 0.070339
+      },
+      "improves_official_objective": true,
+      "metrics": {
+        "efficiency": 0.50875,
+        "hit_rate_at_10": 0.65625,
+        "mrr": 0.40785,
+        "mttc": 5.9125,
+        "recommended_technical_score": 0.55223,
+        "session_count": 160
+      },
+      "plateau_neighbor_count": 0,
+      "pool_recall": {
+        "session_pool_recall": 0.81875,
+        "turn_pool_recall": 0.204492
+      },
+      "recall_to_hit_conversion": 0.801527,
+      "scenario_guardrail": {
+        "maximum_allowed_drop": 0.05,
+        "passed": true,
+        "scenarios": {
+          "boundary": {
+            "baseline_hit_rate_at_10": 0.625,
+            "candidate_hit_rate_at_10": 0.625,
+            "delta": 0.0,
+            "passed": true
+          },
+          "browsing": {
+            "baseline_hit_rate_at_10": 0.78125,
+            "candidate_hit_rate_at_10": 0.78125,
+            "delta": 0.0,
+            "passed": true
+          },
+          "buying": {
+            "baseline_hit_rate_at_10": 0.59375,
+            "candidate_hit_rate_at_10": 0.59375,
+            "delta": 0.0,
+            "passed": true
+          },
+          "intent_override": {
+            "baseline_hit_rate_at_10": 0.375,
+            "candidate_hit_rate_at_10": 0.5,
+            "delta": 0.125,
+            "passed": true
+          }
+        }
+      },
+      "weights": {
+        "bm25": 0.7,
+        "dense": 0.3,
+        "structured": 0.0
+      },
+      "within_pool_recall_tolerance": false
+    },
+    {
+      "admissible": false,
+      "fold_stability": {
+        "mean_session_pool_recall": 0.80625,
+        "mean_technical_score": 0.552378,
+        "minimum_hit_rate_at_10": 0.6,
+        "minimum_session_pool_recall": 0.75,
+        "minimum_technical_score": 0.491217,
+        "session_pool_recall_pstdev": 0.036975,
+        "technical_score_pstdev": 0.059715
+      },
+      "improves_official_objective": true,
+      "metrics": {
+        "efficiency": 0.5075,
+        "hit_rate_at_10": 0.65625,
+        "mrr": 0.409177,
+        "mttc": 5.925,
+        "recommended_technical_score": 0.552378,
+        "session_count": 160
+      },
+      "plateau_neighbor_count": 0,
+      "pool_recall": {
+        "session_pool_recall": 0.80625,
+        "turn_pool_recall": 0.202128
+      },
+      "recall_to_hit_conversion": 0.813953,
+      "scenario_guardrail": {
+        "maximum_allowed_drop": 0.05,
+        "passed": true,
+        "scenarios": {
+          "boundary": {
+            "baseline_hit_rate_at_10": 0.625,
+            "candidate_hit_rate_at_10": 0.625,
+            "delta": 0.0,
+            "passed": true
+          },
+          "browsing": {
+            "baseline_hit_rate_at_10": 0.78125,
+            "candidate_hit_rate_at_10": 0.765625,
+            "delta": -0.015625,
+            "passed": true
+          },
+          "buying": {
+            "baseline_hit_rate_at_10": 0.59375,
+            "candidate_hit_rate_at_10": 0.59375,
+            "delta": 0.0,
+            "passed": true
+          },
+          "intent_override": {
+            "baseline_hit_rate_at_10": 0.375,
+            "candidate_hit_rate_at_10": 0.541667,
+            "delta": 0.166667,
+            "passed": true
+          }
+        }
+      },
+      "weights": {
+        "bm25": 0.58,
+        "dense": 0.4,
+        "structured": 0.02
+      },
+      "within_pool_recall_tolerance": false
+    },
+    {
+      "admissible": false,
+      "fold_stability": {
+        "mean_session_pool_recall": 0.8125,
+        "mean_technical_score": 0.551798,
+        "minimum_hit_rate_at_10": 0.575,
+        "minimum_session_pool_recall": 0.75,
+        "minimum_technical_score": 0.472396,
+        "session_pool_recall_pstdev": 0.045069,
+        "technical_score_pstdev": 0.070755
+      },
+      "improves_official_objective": true,
+      "metrics": {
+        "efficiency": 0.508125,
+        "hit_rate_at_10": 0.65625,
+        "mrr": 0.406825,
+        "mttc": 5.91875,
+        "recommended_technical_score": 0.551797,
+        "session_count": 160
+      },
+      "plateau_neighbor_count": 0,
+      "pool_recall": {
+        "session_pool_recall": 0.8125,
+        "turn_pool_recall": 0.200946
+      },
+      "recall_to_hit_conversion": 0.807692,
+      "scenario_guardrail": {
+        "maximum_allowed_drop": 0.05,
+        "passed": true,
+        "scenarios": {
+          "boundary": {
+            "baseline_hit_rate_at_10": 0.625,
+            "candidate_hit_rate_at_10": 0.625,
+            "delta": 0.0,
+            "passed": true
+          },
+          "browsing": {
+            "baseline_hit_rate_at_10": 0.78125,
+            "candidate_hit_rate_at_10": 0.78125,
+            "delta": 0.0,
+            "passed": true
+          },
+          "buying": {
+            "baseline_hit_rate_at_10": 0.59375,
+            "candidate_hit_rate_at_10": 0.59375,
+            "delta": 0.0,
+            "passed": true
+          },
+          "intent_override": {
+            "baseline_hit_rate_at_10": 0.375,
+            "candidate_hit_rate_at_10": 0.5,
+            "delta": 0.125,
+            "passed": true
+          }
+        }
+      },
+      "weights": {
+        "bm25": 0.6,
+        "dense": 0.38,
+        "structured": 0.02
+      },
+      "within_pool_recall_tolerance": false
+    },
+    {
+      "admissible": true,
+      "fold_stability": {
+        "mean_session_pool_recall": 0.825,
+        "mean_technical_score": 0.551831,
+        "minimum_hit_rate_at_10": 0.575,
+        "minimum_session_pool_recall": 0.75,
+        "minimum_technical_score": 0.47253,
+        "session_pool_recall_pstdev": 0.046771,
+        "technical_score_pstdev": 0.070718
+      },
+      "improves_official_objective": true,
+      "metrics": {
+        "efficiency": 0.508125,
+        "hit_rate_at_10": 0.65625,
+        "mrr": 0.406937,
+        "mttc": 5.91875,
+        "recommended_technical_score": 0.551831,
+        "session_count": 160
+      },
+      "plateau_neighbor_count": 3,
+      "pool_recall": {
+        "session_pool_recall": 0.825,
+        "turn_pool_recall": 0.20331
+      },
+      "recall_to_hit_conversion": 0.795455,
+      "scenario_guardrail": {
+        "maximum_allowed_drop": 0.05,
+        "passed": true,
+        "scenarios": {
+          "boundary": {
+            "baseline_hit_rate_at_10": 0.625,
+            "candidate_hit_rate_at_10": 0.625,
+            "delta": 0.0,
+            "passed": true
+          },
+          "browsing": {
+            "baseline_hit_rate_at_10": 0.78125,
+            "candidate_hit_rate_at_10": 0.78125,
+            "delta": 0.0,
+            "passed": true
+          },
+          "buying": {
+            "baseline_hit_rate_at_10": 0.59375,
+            "candidate_hit_rate_at_10": 0.59375,
+            "delta": 0.0,
+            "passed": true
+          },
+          "intent_override": {
+            "baseline_hit_rate_at_10": 0.375,
+            "candidate_hit_rate_at_10": 0.5,
+            "delta": 0.125,
+            "passed": true
+          }
+        }
+      },
+      "weights": {
+        "bm25": 0.62,
+        "dense": 0.36,
+        "structured": 0.02
+      },
+      "within_pool_recall_tolerance": true
+    },
+    {
+      "admissible": true,
+      "fold_stability": {
+        "mean_session_pool_recall": 0.825,
+        "mean_technical_score": 0.551831,
+        "minimum_hit_rate_at_10": 0.575,
+        "minimum_session_pool_recall": 0.75,
+        "minimum_technical_score": 0.47253,
+        "session_pool_recall_pstdev": 0.046771,
+        "technical_score_pstdev": 0.070718
+      },
+      "improves_official_objective": true,
+      "metrics": {
+        "efficiency": 0.508125,
+        "hit_rate_at_10": 0.65625,
+        "mrr": 0.406937,
+        "mttc": 5.91875,
+        "recommended_technical_score": 0.551831,
+        "session_count": 160
+      },
+      "plateau_neighbor_count": 5,
+      "pool_recall": {
+        "session_pool_recall": 0.825,
+        "turn_pool_recall": 0.20331
+      },
+      "recall_to_hit_conversion": 0.795455,
+      "scenario_guardrail": {
+        "maximum_allowed_drop": 0.05,
+        "passed": true,
+        "scenarios": {
+          "boundary": {
+            "baseline_hit_rate_at_10": 0.625,
+            "candidate_hit_rate_at_10": 0.625,
+            "delta": 0.0,
+            "passed": true
+          },
+          "browsing": {
+            "baseline_hit_rate_at_10": 0.78125,
+            "candidate_hit_rate_at_10": 0.78125,
+            "delta": 0.0,
+            "passed": true
+          },
+          "buying": {
+            "baseline_hit_rate_at_10": 0.59375,
+            "candidate_hit_rate_at_10": 0.59375,
+            "delta": 0.0,
+            "passed": true
+          },
+          "intent_override": {
+            "baseline_hit_rate_at_10": 0.375,
+            "candidate_hit_rate_at_10": 0.5,
+            "delta": 0.125,
+            "passed": true
+          }
+        }
+      },
+      "weights": {
+        "bm25": 0.64,
+        "dense": 0.34,
+        "structured": 0.02
+      },
+      "within_pool_recall_tolerance": true
+    },
+    {
+      "admissible": true,
+      "fold_stability": {
+        "mean_session_pool_recall": 0.825,
+        "mean_technical_score": 0.552047,
+        "minimum_hit_rate_at_10": 0.575,
+        "minimum_session_pool_recall": 0.75,
+        "minimum_technical_score": 0.473217,
+        "session_pool_recall_pstdev": 0.046771,
+        "technical_score_pstdev": 0.07059
+      },
+      "improves_official_objective": true,
+      "metrics": {
+        "efficiency": 0.50875,
+        "hit_rate_at_10": 0.65625,
+        "mrr": 0.407242,
+        "mttc": 5.9125,
+        "recommended_technical_score": 0.552048,
+        "session_count": 160
+      },
+      "plateau_neighbor_count": 3,
+      "pool_recall": {
+        "session_pool_recall": 0.825,
+        "turn_pool_recall": 0.204492
+      },
+      "recall_to_hit_conversion": 0.795455,
+      "scenario_guardrail": {
+        "maximum_allowed_drop": 0.05,
+        "passed": true,
+        "scenarios": {
+          "boundary": {
+            "baseline_hit_rate_at_10": 0.625,
+            "candidate_hit_rate_at_10": 0.625,
+            "delta": 0.0,
+            "passed": true
+          },
+          "browsing": {
+            "baseline_hit_rate_at_10": 0.78125,
+            "candidate_hit_rate_at_10": 0.78125,
+            "delta": 0.0,
+            "passed": true
+          },
+          "buying": {
+            "baseline_hit_rate_at_10": 0.59375,
+            "candidate_hit_rate_at_10": 0.59375,
+            "delta": 0.0,
+            "passed": true
+          },
+          "intent_override": {
+            "baseline_hit_rate_at_10": 0.375,
+            "candidate_hit_rate_at_10": 0.5,
+            "delta": 0.125,
+            "passed": true
+          }
+        }
+      },
+      "weights": {
+        "bm25": 0.66,
+        "dense": 0.32,
+        "structured": 0.02
+      },
+      "within_pool_recall_tolerance": true
+    },
+    {
+      "admissible": false,
+      "fold_stability": {
+        "mean_session_pool_recall": 0.81875,
+        "mean_technical_score": 0.552048,
+        "minimum_hit_rate_at_10": 0.575,
+        "minimum_session_pool_recall": 0.725,
+        "minimum_technical_score": 0.473217,
+        "session_pool_recall_pstdev": 0.05694,
+        "technical_score_pstdev": 0.070542
+      },
+      "improves_official_objective": true,
+      "metrics": {
+        "efficiency": 0.50875,
+        "hit_rate_at_10": 0.65625,
+        "mrr": 0.407242,
+        "mttc": 5.9125,
+        "recommended_technical_score": 0.552048,
+        "session_count": 160
+      },
+      "plateau_neighbor_count": 0,
+      "pool_recall": {
+        "session_pool_recall": 0.81875,
+        "turn_pool_recall": 0.204492
+      },
+      "recall_to_hit_conversion": 0.801527,
+      "scenario_guardrail": {
+        "maximum_allowed_drop": 0.05,
+        "passed": true,
+        "scenarios": {
+          "boundary": {
+            "baseline_hit_rate_at_10": 0.625,
+            "candidate_hit_rate_at_10": 0.625,
+            "delta": 0.0,
+            "passed": true
+          },
+          "browsing": {
+            "baseline_hit_rate_at_10": 0.78125,
+            "candidate_hit_rate_at_10": 0.78125,
+            "delta": 0.0,
+            "passed": true
+          },
+          "buying": {
+            "baseline_hit_rate_at_10": 0.59375,
+            "candidate_hit_rate_at_10": 0.59375,
+            "delta": 0.0,
+            "passed": true
+          },
+          "intent_override": {
+            "baseline_hit_rate_at_10": 0.375,
+            "candidate_hit_rate_at_10": 0.5,
+            "delta": 0.125,
+            "passed": true
+          }
+        }
+      },
+      "weights": {
+        "bm25": 0.68,
+        "dense": 0.3,
+        "structured": 0.02
+      },
+      "within_pool_recall_tolerance": false
+    },
+    {
+      "admissible": false,
+      "fold_stability": {
+        "mean_session_pool_recall": 0.81875,
+        "mean_technical_score": 0.555329,
+        "minimum_hit_rate_at_10": 0.575,
+        "minimum_session_pool_recall": 0.725,
+        "minimum_technical_score": 0.472842,
+        "session_pool_recall_pstdev": 0.05694,
+        "technical_score_pstdev": 0.067484
+      },
+      "improves_official_objective": true,
+      "metrics": {
+        "efficiency": 0.516875,
+        "hit_rate_at_10": 0.6625,
+        "mrr": 0.402346,
+        "mttc": 5.83125,
+        "recommended_technical_score": 0.555329,
+        "session_count": 160
+      },
+      "plateau_neighbor_count": 0,
+      "pool_recall": {
+        "session_pool_recall": 0.81875,
+        "turn_pool_recall": 0.206856
+      },
+      "recall_to_hit_conversion": 0.80916,
+      "scenario_guardrail": {
+        "maximum_allowed_drop": 0.05,
+        "passed": true,
+        "scenarios": {
+          "boundary": {
+            "baseline_hit_rate_at_10": 0.625,
+            "candidate_hit_rate_at_10": 0.625,
+            "delta": 0.0,
+            "passed": true
+          },
+          "browsing": {
+            "baseline_hit_rate_at_10": 0.78125,
+            "candidate_hit_rate_at_10": 0.796875,
+            "delta": 0.015625,
+            "passed": true
+          },
+          "buying": {
+            "baseline_hit_rate_at_10": 0.59375,
+            "candidate_hit_rate_at_10": 0.59375,
+            "delta": 0.0,
+            "passed": true
+          },
+          "intent_override": {
+            "baseline_hit_rate_at_10": 0.375,
+            "candidate_hit_rate_at_10": 0.5,
+            "delta": 0.125,
+            "passed": true
+          }
+        }
+      },
+      "weights": {
+        "bm25": 0.7,
+        "dense": 0.28,
+        "structured": 0.02
+      },
+      "within_pool_recall_tolerance": false
+    },
+    {
+      "admissible": false,
+      "fold_stability": {
+        "mean_session_pool_recall": 0.80625,
+        "mean_technical_score": 0.552601,
+        "minimum_hit_rate_at_10": 0.6,
+        "minimum_session_pool_recall": 0.75,
+        "minimum_technical_score": 0.491351,
+        "session_pool_recall_pstdev": 0.036975,
+        "technical_score_pstdev": 0.059878
+      },
+      "improves_official_objective": true,
+      "metrics": {
+        "efficiency": 0.5075,
+        "hit_rate_at_10": 0.65625,
+        "mrr": 0.409921,
+        "mttc": 5.925,
+        "recommended_technical_score": 0.552601,
+        "session_count": 160
+      },
+      "plateau_neighbor_count": 0,
+      "pool_recall": {
+        "session_pool_recall": 0.80625,
+        "turn_pool_recall": 0.205674
+      },
+      "recall_to_hit_conversion": 0.813953,
+      "scenario_guardrail": {
+        "maximum_allowed_drop": 0.05,
+        "passed": true,
+        "scenarios": {
+          "boundary": {
+            "baseline_hit_rate_at_10": 0.625,
+            "candidate_hit_rate_at_10": 0.625,
+            "delta": 0.0,
+            "passed": true
+          },
+          "browsing": {
+            "baseline_hit_rate_at_10": 0.78125,
+            "candidate_hit_rate_at_10": 0.765625,
+            "delta": -0.015625,
+            "passed": true
+          },
+          "buying": {
+            "baseline_hit_rate_at_10": 0.59375,
+            "candidate_hit_rate_at_10": 0.59375,
+            "delta": 0.0,
+            "passed": true
+          },
+          "intent_override": {
+            "baseline_hit_rate_at_10": 0.375,
+            "candidate_hit_rate_at_10": 0.541667,
+            "delta": 0.166667,
+            "passed": true
+          }
+        }
+      },
+      "weights": {
+        "bm25": 0.56,
+        "dense": 0.4,
+        "structured": 0.04
+      },
+      "within_pool_recall_tolerance": false
+    },
+    {
+      "admissible": false,
+      "fold_stability": {
+        "mean_session_pool_recall": 0.8125,
+        "mean_technical_score": 0.552177,
+        "minimum_hit_rate_at_10": 0.575,
+        "minimum_session_pool_recall": 0.75,
+        "minimum_technical_score": 0.47253,
+        "session_pool_recall_pstdev": 0.045069,
+        "technical_score_pstdev": 0.07115
+      },
+      "improves_official_objective": true,
+      "metrics": {
+        "efficiency": 0.508125,
+        "hit_rate_at_10": 0.65625,
+        "mrr": 0.40809,
+        "mttc": 5.91875,
+        "recommended_technical_score": 0.552177,
+        "session_count": 160
+      },
+      "plateau_neighbor_count": 0,
+      "pool_recall": {
+        "session_pool_recall": 0.8125,
+        "turn_pool_recall": 0.200946
+      },
+      "recall_to_hit_conversion": 0.807692,
+      "scenario_guardrail": {
+        "maximum_allowed_drop": 0.05,
+        "passed": true,
+        "scenarios": {
+          "boundary": {
+            "baseline_hit_rate_at_10": 0.625,
+            "candidate_hit_rate_at_10": 0.625,
+            "delta": 0.0,
+            "passed": true
+          },
+          "browsing": {
+            "baseline_hit_rate_at_10": 0.78125,
+            "candidate_hit_rate_at_10": 0.78125,
+            "delta": 0.0,
+            "passed": true
+          },
+          "buying": {
+            "baseline_hit_rate_at_10": 0.59375,
+            "candidate_hit_rate_at_10": 0.59375,
+            "delta": 0.0,
+            "passed": true
+          },
+          "intent_override": {
+            "baseline_hit_rate_at_10": 0.375,
+            "candidate_hit_rate_at_10": 0.5,
+            "delta": 0.125,
+            "passed": true
+          }
+        }
+      },
+      "weights": {
+        "bm25": 0.58,
+        "dense": 0.38,
+        "structured": 0.04
+      },
+      "within_pool_recall_tolerance": false
+    },
+    {
+      "admissible": false,
+      "fold_stability": {
+        "mean_session_pool_recall": 0.8125,
+        "mean_technical_score": 0.552177,
+        "minimum_hit_rate_at_10": 0.575,
+        "minimum_session_pool_recall": 0.75,
+        "minimum_technical_score": 0.47253,
+        "session_pool_recall_pstdev": 0.045069,
+        "technical_score_pstdev": 0.07115
+      },
+      "improves_official_objective": true,
+      "metrics": {
+        "efficiency": 0.508125,
+        "hit_rate_at_10": 0.65625,
+        "mrr": 0.40809,
+        "mttc": 5.91875,
+        "recommended_technical_score": 0.552177,
+        "session_count": 160
+      },
+      "plateau_neighbor_count": 0,
+      "pool_recall": {
+        "session_pool_recall": 0.8125,
+        "turn_pool_recall": 0.200946
+      },
+      "recall_to_hit_conversion": 0.807692,
+      "scenario_guardrail": {
+        "maximum_allowed_drop": 0.05,
+        "passed": true,
+        "scenarios": {
+          "boundary": {
+            "baseline_hit_rate_at_10": 0.625,
+            "candidate_hit_rate_at_10": 0.625,
+            "delta": 0.0,
+            "passed": true
+          },
+          "browsing": {
+            "baseline_hit_rate_at_10": 0.78125,
+            "candidate_hit_rate_at_10": 0.78125,
+            "delta": 0.0,
+            "passed": true
+          },
+          "buying": {
+            "baseline_hit_rate_at_10": 0.59375,
+            "candidate_hit_rate_at_10": 0.59375,
+            "delta": 0.0,
+            "passed": true
+          },
+          "intent_override": {
+            "baseline_hit_rate_at_10": 0.375,
+            "candidate_hit_rate_at_10": 0.5,
+            "delta": 0.125,
+            "passed": true
+          }
+        }
+      },
+      "weights": {
+        "bm25": 0.6,
+        "dense": 0.36,
+        "structured": 0.04
+      },
+      "within_pool_recall_tolerance": false
+    },
+    {
+      "admissible": true,
+      "fold_stability": {
+        "mean_session_pool_recall": 0.825,
+        "mean_technical_score": 0.551864,
+        "minimum_hit_rate_at_10": 0.575,
+        "minimum_session_pool_recall": 0.75,
+        "minimum_technical_score": 0.47253,
+        "session_pool_recall_pstdev": 0.046771,
+        "technical_score_pstdev": 0.070694
+      },
+      "improves_official_objective": true,
+      "metrics": {
+        "efficiency": 0.508125,
+        "hit_rate_at_10": 0.65625,
+        "mrr": 0.407049,
+        "mttc": 5.91875,
+        "recommended_technical_score": 0.551865,
+        "session_count": 160
+      },
+      "plateau_neighbor_count": 3,
+      "pool_recall": {
+        "session_pool_recall": 0.825,
+        "turn_pool_recall": 0.20331
+      },
+      "recall_to_hit_conversion": 0.795455,
+      "scenario_guardrail": {
+        "maximum_allowed_drop": 0.05,
+        "passed": true,
+        "scenarios": {
+          "boundary": {
+            "baseline_hit_rate_at_10": 0.625,
+            "candidate_hit_rate_at_10": 0.625,
+            "delta": 0.0,
+            "passed": true
+          },
+          "browsing": {
+            "baseline_hit_rate_at_10": 0.78125,
+            "candidate_hit_rate_at_10": 0.78125,
+            "delta": 0.0,
+            "passed": true
+          },
+          "buying": {
+            "baseline_hit_rate_at_10": 0.59375,
+            "candidate_hit_rate_at_10": 0.59375,
+            "delta": 0.0,
+            "passed": true
+          },
+          "intent_override": {
+            "baseline_hit_rate_at_10": 0.375,
+            "candidate_hit_rate_at_10": 0.5,
+            "delta": 0.125,
+            "passed": true
+          }
+        }
+      },
+      "weights": {
+        "bm25": 0.62,
+        "dense": 0.34,
+        "structured": 0.04
+      },
+      "within_pool_recall_tolerance": true
+    },
+    {
+      "admissible": false,
+      "fold_stability": {
+        "mean_session_pool_recall": 0.81875,
+        "mean_technical_score": 0.552036,
+        "minimum_hit_rate_at_10": 0.575,
+        "minimum_session_pool_recall": 0.725,
+        "minimum_technical_score": 0.473217,
+        "session_pool_recall_pstdev": 0.05694,
+        "technical_score_pstdev": 0.070502
+      },
+      "improves_official_objective": true,
+      "metrics": {
+        "efficiency": 0.50875,
+        "hit_rate_at_10": 0.65625,
+        "mrr": 0.407205,
+        "mttc": 5.9125,
+        "recommended_technical_score": 0.552037,
+        "session_count": 160
+      },
+      "plateau_neighbor_count": 0,
+      "pool_recall": {
+        "session_pool_recall": 0.81875,
+        "turn_pool_recall": 0.20331
+      },
+      "recall_to_hit_conversion": 0.801527,
+      "scenario_guardrail": {
+        "maximum_allowed_drop": 0.05,
+        "passed": true,
+        "scenarios": {
+          "boundary": {
+            "baseline_hit_rate_at_10": 0.625,
+            "candidate_hit_rate_at_10": 0.625,
+            "delta": 0.0,
+            "passed": true
+          },
+          "browsing": {
+            "baseline_hit_rate_at_10": 0.78125,
+            "candidate_hit_rate_at_10": 0.78125,
+            "delta": 0.0,
+            "passed": true
+          },
+          "buying": {
+            "baseline_hit_rate_at_10": 0.59375,
+            "candidate_hit_rate_at_10": 0.59375,
+            "delta": 0.0,
+            "passed": true
+          },
+          "intent_override": {
+            "baseline_hit_rate_at_10": 0.375,
+            "candidate_hit_rate_at_10": 0.5,
+            "delta": 0.125,
+            "passed": true
+          }
+        }
+      },
+      "weights": {
+        "bm25": 0.64,
+        "dense": 0.32,
+        "structured": 0.04
+      },
+      "within_pool_recall_tolerance": false
+    },
+    {
+      "admissible": false,
+      "fold_stability": {
+        "mean_session_pool_recall": 0.81875,
+        "mean_technical_score": 0.552081,
+        "minimum_hit_rate_at_10": 0.575,
+        "minimum_session_pool_recall": 0.725,
+        "minimum_technical_score": 0.473217,
+        "session_pool_recall_pstdev": 0.05694,
+        "technical_score_pstdev": 0.070518
+      },
+      "improves_official_objective": true,
+      "metrics": {
+        "efficiency": 0.50875,
+        "hit_rate_at_10": 0.65625,
+        "mrr": 0.407354,
+        "mttc": 5.9125,
+        "recommended_technical_score": 0.552081,
+        "session_count": 160
+      },
+      "plateau_neighbor_count": 0,
+      "pool_recall": {
+        "session_pool_recall": 0.81875,
+        "turn_pool_recall": 0.204492
+      },
+      "recall_to_hit_conversion": 0.801527,
+      "scenario_guardrail": {
+        "maximum_allowed_drop": 0.05,
+        "passed": true,
+        "scenarios": {
+          "boundary": {
+            "baseline_hit_rate_at_10": 0.625,
+            "candidate_hit_rate_at_10": 0.625,
+            "delta": 0.0,
+            "passed": true
+          },
+          "browsing": {
+            "baseline_hit_rate_at_10": 0.78125,
+            "candidate_hit_rate_at_10": 0.78125,
+            "delta": 0.0,
+            "passed": true
+          },
+          "buying": {
+            "baseline_hit_rate_at_10": 0.59375,
+            "candidate_hit_rate_at_10": 0.59375,
+            "delta": 0.0,
+            "passed": true
+          },
+          "intent_override": {
+            "baseline_hit_rate_at_10": 0.375,
+            "candidate_hit_rate_at_10": 0.5,
+            "delta": 0.125,
+            "passed": true
+          }
+        }
+      },
+      "weights": {
+        "bm25": 0.66,
+        "dense": 0.3,
+        "structured": 0.04
+      },
+      "within_pool_recall_tolerance": false
+    },
+    {
+      "admissible": false,
+      "fold_stability": {
+        "mean_session_pool_recall": 0.81875,
+        "mean_technical_score": 0.55655,
+        "minimum_hit_rate_at_10": 0.575,
+        "minimum_session_pool_recall": 0.725,
+        "minimum_technical_score": 0.472842,
+        "session_pool_recall_pstdev": 0.05694,
+        "technical_score_pstdev": 0.06781
+      },
+      "improves_official_objective": true,
+      "metrics": {
+        "efficiency": 0.515,
+        "hit_rate_at_10": 0.6625,
+        "mrr": 0.407666,
+        "mttc": 5.85,
+        "recommended_technical_score": 0.55655,
+        "session_count": 160
+      },
+      "plateau_neighbor_count": 0,
+      "pool_recall": {
+        "session_pool_recall": 0.81875,
+        "turn_pool_recall": 0.204492
+      },
+      "recall_to_hit_conversion": 0.80916,
+      "scenario_guardrail": {
+        "maximum_allowed_drop": 0.05,
+        "passed": true,
+        "scenarios": {
+          "boundary": {
+            "baseline_hit_rate_at_10": 0.625,
+            "candidate_hit_rate_at_10": 0.625,
+            "delta": 0.0,
+            "passed": true
+          },
+          "browsing": {
+            "baseline_hit_rate_at_10": 0.78125,
+            "candidate_hit_rate_at_10": 0.796875,
+            "delta": 0.015625,
+            "passed": true
+          },
+          "buying": {
+            "baseline_hit_rate_at_10": 0.59375,
+            "candidate_hit_rate_at_10": 0.59375,
+            "delta": 0.0,
+            "passed": true
+          },
+          "intent_override": {
+            "baseline_hit_rate_at_10": 0.375,
+            "candidate_hit_rate_at_10": 0.5,
+            "delta": 0.125,
+            "passed": true
+          }
+        }
+      },
+      "weights": {
+        "bm25": 0.68,
+        "dense": 0.28,
+        "structured": 0.04
+      },
+      "within_pool_recall_tolerance": false
+    },
+    {
+      "admissible": false,
+      "fold_stability": {
+        "mean_session_pool_recall": 0.81875,
+        "mean_technical_score": 0.555256,
+        "minimum_hit_rate_at_10": 0.575,
+        "minimum_session_pool_recall": 0.725,
+        "minimum_technical_score": 0.472417,
+        "session_pool_recall_pstdev": 0.05694,
+        "technical_score_pstdev": 0.067597
+      },
+      "improves_official_objective": true,
+      "metrics": {
+        "efficiency": 0.51625,
+        "hit_rate_at_10": 0.6625,
+        "mrr": 0.40252,
+        "mttc": 5.8375,
+        "recommended_technical_score": 0.555256,
+        "session_count": 160
+      },
+      "plateau_neighbor_count": 0,
+      "pool_recall": {
+        "session_pool_recall": 0.81875,
+        "turn_pool_recall": 0.204492
+      },
+      "recall_to_hit_conversion": 0.80916,
+      "scenario_guardrail": {
+        "maximum_allowed_drop": 0.05,
+        "passed": true,
+        "scenarios": {
+          "boundary": {
+            "baseline_hit_rate_at_10": 0.625,
+            "candidate_hit_rate_at_10": 0.625,
+            "delta": 0.0,
+            "passed": true
+          },
+          "browsing": {
+            "baseline_hit_rate_at_10": 0.78125,
+            "candidate_hit_rate_at_10": 0.796875,
+            "delta": 0.015625,
+            "passed": true
+          },
+          "buying": {
+            "baseline_hit_rate_at_10": 0.59375,
+            "candidate_hit_rate_at_10": 0.59375,
+            "delta": 0.0,
+            "passed": true
+          },
+          "intent_override": {
+            "baseline_hit_rate_at_10": 0.375,
+            "candidate_hit_rate_at_10": 0.5,
+            "delta": 0.125,
+            "passed": true
+          }
+        }
+      },
+      "weights": {
+        "bm25": 0.7,
+        "dense": 0.26,
+        "structured": 0.04
+      },
+      "within_pool_recall_tolerance": false
+    },
+    {
+      "admissible": false,
+      "fold_stability": {
+        "mean_session_pool_recall": 0.80625,
+        "mean_technical_score": 0.551214,
+        "minimum_hit_rate_at_10": 0.6,
+        "minimum_session_pool_recall": 0.75,
+        "minimum_technical_score": 0.490351,
+        "session_pool_recall_pstdev": 0.036975,
+        "technical_score_pstdev": 0.061025
+      },
+      "improves_official_objective": true,
+      "metrics": {
+        "efficiency": 0.51,
+        "hit_rate_at_10": 0.65625,
+        "mrr": 0.403628,
+        "mttc": 5.9,
+        "recommended_technical_score": 0.551213,
+        "session_count": 160
+      },
+      "plateau_neighbor_count": 0,
+      "pool_recall": {
+        "session_pool_recall": 0.80625,
+        "turn_pool_recall": 0.206856
+      },
+      "recall_to_hit_conversion": 0.813953,
+      "scenario_guardrail": {
+        "maximum_allowed_drop": 0.05,
+        "passed": true,
+        "scenarios": {
+          "boundary": {
+            "baseline_hit_rate_at_10": 0.625,
+            "candidate_hit_rate_at_10": 0.625,
+            "delta": 0.0,
+            "passed": true
+          },
+          "browsing": {
+            "baseline_hit_rate_at_10": 0.78125,
+            "candidate_hit_rate_at_10": 0.765625,
+            "delta": -0.015625,
+            "passed": true
+          },
+          "buying": {
+            "baseline_hit_rate_at_10": 0.59375,
+            "candidate_hit_rate_at_10": 0.59375,
+            "delta": 0.0,
+            "passed": true
+          },
+          "intent_override": {
+            "baseline_hit_rate_at_10": 0.375,
+            "candidate_hit_rate_at_10": 0.541667,
+            "delta": 0.166667,
+            "passed": true
+          }
+        }
+      },
+      "weights": {
+        "bm25": 0.54,
+        "dense": 0.4,
+        "structured": 0.06
+      },
+      "within_pool_recall_tolerance": false
+    },
+    {
+      "admissible": false,
+      "fold_stability": {
+        "mean_session_pool_recall": 0.8125,
+        "mean_technical_score": 0.556851,
+        "minimum_hit_rate_at_10": 0.6,
+        "minimum_session_pool_recall": 0.75,
+        "minimum_technical_score": 0.490351,
+        "session_pool_recall_pstdev": 0.045069,
+        "technical_score_pstdev": 0.066607
+      },
+      "improves_official_objective": true,
+      "metrics": {
+        "efficiency": 0.5125,
+        "hit_rate_at_10": 0.6625,
+        "mrr": 0.410337,
+        "mttc": 5.875,
+        "recommended_technical_score": 0.556851,
+        "session_count": 160
+      },
+      "plateau_neighbor_count": 0,
+      "pool_recall": {
+        "session_pool_recall": 0.8125,
+        "turn_pool_recall": 0.20331
+      },
+      "recall_to_hit_conversion": 0.815385,
+      "scenario_guardrail": {
+        "maximum_allowed_drop": 0.05,
+        "passed": true,
+        "scenarios": {
+          "boundary": {
+            "baseline_hit_rate_at_10": 0.625,
+            "candidate_hit_rate_at_10": 0.625,
+            "delta": 0.0,
+            "passed": true
+          },
+          "browsing": {
+            "baseline_hit_rate_at_10": 0.78125,
+            "candidate_hit_rate_at_10": 0.78125,
+            "delta": 0.0,
+            "passed": true
+          },
+          "buying": {
+            "baseline_hit_rate_at_10": 0.59375,
+            "candidate_hit_rate_at_10": 0.59375,
+            "delta": 0.0,
+            "passed": true
+          },
+          "intent_override": {
+            "baseline_hit_rate_at_10": 0.375,
+            "candidate_hit_rate_at_10": 0.541667,
+            "delta": 0.166667,
+            "passed": true
+          }
+        }
+      },
+      "weights": {
+        "bm25": 0.56,
+        "dense": 0.38,
+        "structured": 0.06
+      },
+      "within_pool_recall_tolerance": false
+    },
+    {
+      "admissible": false,
+      "fold_stability": {
+        "mean_session_pool_recall": 0.8125,
+        "mean_technical_score": 0.552083,
+        "minimum_hit_rate_at_10": 0.575,
+        "minimum_session_pool_recall": 0.75,
+        "minimum_technical_score": 0.471905,
+        "session_pool_recall_pstdev": 0.045069,
+        "technical_score_pstdev": 0.071282
+      },
+      "improves_official_objective": true,
+      "metrics": {
+        "efficiency": 0.508125,
+        "hit_rate_at_10": 0.65625,
+        "mrr": 0.407778,
+        "mttc": 5.91875,
+        "recommended_technical_score": 0.552083,
+        "session_count": 160
+      },
+      "plateau_neighbor_count": 0,
+      "pool_recall": {
+        "session_pool_recall": 0.8125,
+        "turn_pool_recall": 0.200946
+      },
+      "recall_to_hit_conversion": 0.807692,
+      "scenario_guardrail": {
+        "maximum_allowed_drop": 0.05,
+        "passed": true,
+        "scenarios": {
+          "boundary": {
+            "baseline_hit_rate_at_10": 0.625,
+            "candidate_hit_rate_at_10": 0.625,
+            "delta": 0.0,
+            "passed": true
+          },
+          "browsing": {
+            "baseline_hit_rate_at_10": 0.78125,
+            "candidate_hit_rate_at_10": 0.78125,
+            "delta": 0.0,
+            "passed": true
+          },
+          "buying": {
+            "baseline_hit_rate_at_10": 0.59375,
+            "candidate_hit_rate_at_10": 0.59375,
+            "delta": 0.0,
+            "passed": true
+          },
+          "intent_override": {
+            "baseline_hit_rate_at_10": 0.375,
+            "candidate_hit_rate_at_10": 0.5,
+            "delta": 0.125,
+            "passed": true
+          }
+        }
+      },
+      "weights": {
+        "bm25": 0.58,
+        "dense": 0.36,
+        "structured": 0.06
+      },
+      "within_pool_recall_tolerance": false
+    },
+    {
+      "admissible": true,
+      "fold_stability": {
+        "mean_session_pool_recall": 0.825,
+        "mean_technical_score": 0.552083,
+        "minimum_hit_rate_at_10": 0.575,
+        "minimum_session_pool_recall": 0.75,
+        "minimum_technical_score": 0.471905,
+        "session_pool_recall_pstdev": 0.046771,
+        "technical_score_pstdev": 0.071282
+      },
+      "improves_official_objective": true,
+      "metrics": {
+        "efficiency": 0.508125,
+        "hit_rate_at_10": 0.65625,
+        "mrr": 0.407778,
+        "mttc": 5.91875,
+        "recommended_technical_score": 0.552083,
+        "session_count": 160
+      },
+      "plateau_neighbor_count": 1,
+      "pool_recall": {
+        "session_pool_recall": 0.825,
+        "turn_pool_recall": 0.20331
+      },
+      "recall_to_hit_conversion": 0.795455,
+      "scenario_guardrail": {
+        "maximum_allowed_drop": 0.05,
+        "passed": true,
+        "scenarios": {
+          "boundary": {
+            "baseline_hit_rate_at_10": 0.625,
+            "candidate_hit_rate_at_10": 0.625,
+            "delta": 0.0,
+            "passed": true
+          },
+          "browsing": {
+            "baseline_hit_rate_at_10": 0.78125,
+            "candidate_hit_rate_at_10": 0.78125,
+            "delta": 0.0,
+            "passed": true
+          },
+          "buying": {
+            "baseline_hit_rate_at_10": 0.59375,
+            "candidate_hit_rate_at_10": 0.59375,
+            "delta": 0.0,
+            "passed": true
+          },
+          "intent_override": {
+            "baseline_hit_rate_at_10": 0.375,
+            "candidate_hit_rate_at_10": 0.5,
+            "delta": 0.125,
+            "passed": true
+          }
+        }
+      },
+      "weights": {
+        "bm25": 0.6,
+        "dense": 0.34,
+        "structured": 0.06
+      },
+      "within_pool_recall_tolerance": true
+    },
+    {
+      "admissible": false,
+      "fold_stability": {
+        "mean_session_pool_recall": 0.81875,
+        "mean_technical_score": 0.552177,
+        "minimum_hit_rate_at_10": 0.575,
+        "minimum_session_pool_recall": 0.725,
+        "minimum_technical_score": 0.471905,
+        "session_pool_recall_pstdev": 0.05694,
+        "technical_score_pstdev": 0.071217
+      },
+      "improves_official_objective": true,
+      "metrics": {
+        "efficiency": 0.508125,
+        "hit_rate_at_10": 0.65625,
+        "mrr": 0.40809,
+        "mttc": 5.91875,
+        "recommended_technical_score": 0.552177,
+        "session_count": 160
+      },
+      "plateau_neighbor_count": 0,
+      "pool_recall": {
+        "session_pool_recall": 0.81875,
+        "turn_pool_recall": 0.202128
+      },
+      "recall_to_hit_conversion": 0.801527,
+      "scenario_guardrail": {
+        "maximum_allowed_drop": 0.05,
+        "passed": true,
+        "scenarios": {
+          "boundary": {
+            "baseline_hit_rate_at_10": 0.625,
+            "candidate_hit_rate_at_10": 0.625,
+            "delta": 0.0,
+            "passed": true
+          },
+          "browsing": {
+            "baseline_hit_rate_at_10": 0.78125,
+            "candidate_hit_rate_at_10": 0.78125,
+            "delta": 0.0,
+            "passed": true
+          },
+          "buying": {
+            "baseline_hit_rate_at_10": 0.59375,
+            "candidate_hit_rate_at_10": 0.59375,
+            "delta": 0.0,
+            "passed": true
+          },
+          "intent_override": {
+            "baseline_hit_rate_at_10": 0.375,
+            "candidate_hit_rate_at_10": 0.5,
+            "delta": 0.125,
+            "passed": true
+          }
+        }
+      },
+      "weights": {
+        "bm25": 0.62,
+        "dense": 0.32,
+        "structured": 0.06
+      },
+      "within_pool_recall_tolerance": false
+    },
+    {
+      "admissible": false,
+      "fold_stability": {
+        "mean_session_pool_recall": 0.81875,
+        "mean_technical_score": 0.552327,
+        "minimum_hit_rate_at_10": 0.575,
+        "minimum_session_pool_recall": 0.725,
+        "minimum_technical_score": 0.472771,
+        "session_pool_recall_pstdev": 0.05694,
+        "technical_score_pstdev": 0.071164
+      },
+      "improves_official_objective": true,
+      "metrics": {
+        "efficiency": 0.50875,
+        "hit_rate_at_10": 0.65625,
+        "mrr": 0.408172,
+        "mttc": 5.9125,
+        "recommended_technical_score": 0.552327,
+        "session_count": 160
+      },
+      "plateau_neighbor_count": 0,
+      "pool_recall": {
+        "session_pool_recall": 0.81875,
+        "turn_pool_recall": 0.20331
+      },
+      "recall_to_hit_conversion": 0.801527,
+      "scenario_guardrail": {
+        "maximum_allowed_drop": 0.05,
+        "passed": true,
+        "scenarios": {
+          "boundary": {
+            "baseline_hit_rate_at_10": 0.625,
+            "candidate_hit_rate_at_10": 0.625,
+            "delta": 0.0,
+            "passed": true
+          },
+          "browsing": {
+            "baseline_hit_rate_at_10": 0.78125,
+            "candidate_hit_rate_at_10": 0.78125,
+            "delta": 0.0,
+            "passed": true
+          },
+          "buying": {
+            "baseline_hit_rate_at_10": 0.59375,
+            "candidate_hit_rate_at_10": 0.59375,
+            "delta": 0.0,
+            "passed": true
+          },
+          "intent_override": {
+            "baseline_hit_rate_at_10": 0.375,
+            "candidate_hit_rate_at_10": 0.5,
+            "delta": 0.125,
+            "passed": true
+          }
+        }
+      },
+      "weights": {
+        "bm25": 0.64,
+        "dense": 0.3,
+        "structured": 0.06
+      },
+      "within_pool_recall_tolerance": false
+    },
+    {
+      "admissible": false,
+      "fold_stability": {
+        "mean_session_pool_recall": 0.81875,
+        "mean_technical_score": 0.552282,
+        "minimum_hit_rate_at_10": 0.575,
+        "minimum_session_pool_recall": 0.725,
+        "minimum_technical_score": 0.472771,
+        "session_pool_recall_pstdev": 0.05694,
+        "technical_score_pstdev": 0.071099
+      },
+      "improves_official_objective": true,
+      "metrics": {
+        "efficiency": 0.50875,
+        "hit_rate_at_10": 0.65625,
+        "mrr": 0.408023,
+        "mttc": 5.9125,
+        "recommended_technical_score": 0.552282,
+        "session_count": 160
+      },
+      "plateau_neighbor_count": 0,
+      "pool_recall": {
+        "session_pool_recall": 0.81875,
+        "turn_pool_recall": 0.204492
+      },
+      "recall_to_hit_conversion": 0.801527,
+      "scenario_guardrail": {
+        "maximum_allowed_drop": 0.05,
+        "passed": true,
+        "scenarios": {
+          "boundary": {
+            "baseline_hit_rate_at_10": 0.625,
+            "candidate_hit_rate_at_10": 0.625,
+            "delta": 0.0,
+            "passed": true
+          },
+          "browsing": {
+            "baseline_hit_rate_at_10": 0.78125,
+            "candidate_hit_rate_at_10": 0.78125,
+            "delta": 0.0,
+            "passed": true
+          },
+          "buying": {
+            "baseline_hit_rate_at_10": 0.59375,
+            "candidate_hit_rate_at_10": 0.59375,
+            "delta": 0.0,
+            "passed": true
+          },
+          "intent_override": {
+            "baseline_hit_rate_at_10": 0.375,
+            "candidate_hit_rate_at_10": 0.5,
+            "delta": 0.125,
+            "passed": true
+          }
+        }
+      },
+      "weights": {
+        "bm25": 0.66,
+        "dense": 0.28,
+        "structured": 0.06
+      },
+      "within_pool_recall_tolerance": false
+    },
+    {
+      "admissible": false,
+      "fold_stability": {
+        "mean_session_pool_recall": 0.81875,
+        "mean_technical_score": 0.555589,
+        "minimum_hit_rate_at_10": 0.575,
+        "minimum_session_pool_recall": 0.725,
+        "minimum_technical_score": 0.4725,
+        "session_pool_recall_pstdev": 0.05694,
+        "technical_score_pstdev": 0.068032
+      },
+      "improves_official_objective": true,
+      "metrics": {
+        "efficiency": 0.516875,
+        "hit_rate_at_10": 0.6625,
+        "mrr": 0.403214,
+        "mttc": 5.83125,
+        "recommended_technical_score": 0.555589,
+        "session_count": 160
+      },
+      "plateau_neighbor_count": 0,
+      "pool_recall": {
+        "session_pool_recall": 0.81875,
+        "turn_pool_recall": 0.205674
+      },
+      "recall_to_hit_conversion": 0.80916,
+      "scenario_guardrail": {
+        "maximum_allowed_drop": 0.05,
+        "passed": true,
+        "scenarios": {
+          "boundary": {
+            "baseline_hit_rate_at_10": 0.625,
+            "candidate_hit_rate_at_10": 0.625,
+            "delta": 0.0,
+            "passed": true
+          },
+          "browsing": {
+            "baseline_hit_rate_at_10": 0.78125,
+            "candidate_hit_rate_at_10": 0.796875,
+            "delta": 0.015625,
+            "passed": true
+          },
+          "buying": {
+            "baseline_hit_rate_at_10": 0.59375,
+            "candidate_hit_rate_at_10": 0.59375,
+            "delta": 0.0,
+            "passed": true
+          },
+          "intent_override": {
+            "baseline_hit_rate_at_10": 0.375,
+            "candidate_hit_rate_at_10": 0.5,
+            "delta": 0.125,
+            "passed": true
+          }
+        }
+      },
+      "weights": {
+        "bm25": 0.68,
+        "dense": 0.26,
+        "structured": 0.06
+      },
+      "within_pool_recall_tolerance": false
+    },
+    {
+      "admissible": false,
+      "fold_stability": {
+        "mean_session_pool_recall": 0.81875,
+        "mean_technical_score": 0.555522,
+        "minimum_hit_rate_at_10": 0.575,
+        "minimum_session_pool_recall": 0.725,
+        "minimum_technical_score": 0.471896,
+        "session_pool_recall_pstdev": 0.05694,
+        "technical_score_pstdev": 0.068298
+      },
+      "improves_official_objective": true,
+      "metrics": {
+        "efficiency": 0.51625,
+        "hit_rate_at_10": 0.6625,
+        "mrr": 0.403405,
+        "mttc": 5.8375,
+        "recommended_technical_score": 0.555522,
+        "session_count": 160
+      },
+      "plateau_neighbor_count": 0,
+      "pool_recall": {
+        "session_pool_recall": 0.81875,
+        "turn_pool_recall": 0.204492
+      },
+      "recall_to_hit_conversion": 0.80916,
+      "scenario_guardrail": {
+        "maximum_allowed_drop": 0.05,
+        "passed": true,
+        "scenarios": {
+          "boundary": {
+            "baseline_hit_rate_at_10": 0.625,
+            "candidate_hit_rate_at_10": 0.625,
+            "delta": 0.0,
+            "passed": true
+          },
+          "browsing": {
+            "baseline_hit_rate_at_10": 0.78125,
+            "candidate_hit_rate_at_10": 0.796875,
+            "delta": 0.015625,
+            "passed": true
+          },
+          "buying": {
+            "baseline_hit_rate_at_10": 0.59375,
+            "candidate_hit_rate_at_10": 0.59375,
+            "delta": 0.0,
+            "passed": true
+          },
+          "intent_override": {
+            "baseline_hit_rate_at_10": 0.375,
+            "candidate_hit_rate_at_10": 0.5,
+            "delta": 0.125,
+            "passed": true
+          }
+        }
+      },
+      "weights": {
+        "bm25": 0.7,
+        "dense": 0.24,
+        "structured": 0.06
+      },
+      "within_pool_recall_tolerance": false
+    },
+    {
+      "admissible": false,
+      "fold_stability": {
+        "mean_session_pool_recall": 0.8,
+        "mean_technical_score": 0.547294,
+        "minimum_hit_rate_at_10": 0.575,
+        "minimum_session_pool_recall": 0.725,
+        "minimum_technical_score": 0.483298,
+        "session_pool_recall_pstdev": 0.046771,
+        "technical_score_pstdev": 0.064681
+      },
+      "improves_official_objective": true,
+      "metrics": {
+        "efficiency": 0.505625,
+        "hit_rate_at_10": 0.65,
+        "mrr": 0.403896,
+        "mttc": 5.94375,
+        "recommended_technical_score": 0.547294,
+        "session_count": 160
+      },
+      "plateau_neighbor_count": 0,
+      "pool_recall": {
+        "session_pool_recall": 0.8,
+        "turn_pool_recall": 0.20331
+      },
+      "recall_to_hit_conversion": 0.8125,
+      "scenario_guardrail": {
+        "maximum_allowed_drop": 0.05,
+        "passed": true,
+        "scenarios": {
+          "boundary": {
+            "baseline_hit_rate_at_10": 0.625,
+            "candidate_hit_rate_at_10": 0.625,
+            "delta": 0.0,
+            "passed": true
+          },
+          "browsing": {
+            "baseline_hit_rate_at_10": 0.78125,
+            "candidate_hit_rate_at_10": 0.765625,
+            "delta": -0.015625,
+            "passed": true
+          },
+          "buying": {
+            "baseline_hit_rate_at_10": 0.59375,
+            "candidate_hit_rate_at_10": 0.59375,
+            "delta": 0.0,
+            "passed": true
+          },
+          "intent_override": {
+            "baseline_hit_rate_at_10": 0.375,
+            "candidate_hit_rate_at_10": 0.5,
+            "delta": 0.125,
+            "passed": true
+          }
+        }
+      },
+      "weights": {
+        "bm25": 0.52,
+        "dense": 0.4,
+        "structured": 0.08
+      },
+      "within_pool_recall_tolerance": false
+    },
+    {
+      "admissible": false,
+      "fold_stability": {
+        "mean_session_pool_recall": 0.80625,
+        "mean_technical_score": 0.552507,
+        "minimum_hit_rate_at_10": 0.6,
+        "minimum_session_pool_recall": 0.75,
+        "minimum_technical_score": 0.490351,
+        "session_pool_recall_pstdev": 0.036975,
+        "technical_score_pstdev": 0.060005
+      },
+      "improves_official_objective": true,
+      "metrics": {
+        "efficiency": 0.5075,
+        "hit_rate_at_10": 0.65625,
+        "mrr": 0.409608,
+        "mttc": 5.925,
+        "recommended_technical_score": 0.552507,
+        "session_count": 160
+      },
+      "plateau_neighbor_count": 0,
+      "pool_recall": {
+        "session_pool_recall": 0.80625,
+        "turn_pool_recall": 0.200946
+      },
+      "recall_to_hit_conversion": 0.813953,
+      "scenario_guardrail": {
+        "maximum_allowed_drop": 0.05,
+        "passed": true,
+        "scenarios": {
+          "boundary": {
+            "baseline_hit_rate_at_10": 0.625,
+            "candidate_hit_rate_at_10": 0.625,
+            "delta": 0.0,
+            "passed": true
+          },
+          "browsing": {
+            "baseline_hit_rate_at_10": 0.78125,
+            "candidate_hit_rate_at_10": 0.765625,
+            "delta": -0.015625,
+            "passed": true
+          },
+          "buying": {
+            "baseline_hit_rate_at_10": 0.59375,
+            "candidate_hit_rate_at_10": 0.59375,
+            "delta": 0.0,
+            "passed": true
+          },
+          "intent_override": {
+            "baseline_hit_rate_at_10": 0.375,
+            "candidate_hit_rate_at_10": 0.541667,
+            "delta": 0.166667,
+            "passed": true
+          }
+        }
+      },
+      "weights": {
+        "bm25": 0.54,
+        "dense": 0.38,
+        "structured": 0.08
+      },
+      "within_pool_recall_tolerance": false
+    },
+    {
+      "admissible": false,
+      "fold_stability": {
+        "mean_session_pool_recall": 0.8125,
+        "mean_technical_score": 0.55226,
+        "minimum_hit_rate_at_10": 0.575,
+        "minimum_session_pool_recall": 0.75,
+        "minimum_technical_score": 0.471613,
+        "session_pool_recall_pstdev": 0.045069,
+        "technical_score_pstdev": 0.071527
+      },
+      "improves_official_objective": true,
+      "metrics": {
+        "efficiency": 0.508125,
+        "hit_rate_at_10": 0.65625,
+        "mrr": 0.408368,
+        "mttc": 5.91875,
+        "recommended_technical_score": 0.55226,
+        "session_count": 160
+      },
+      "plateau_neighbor_count": 0,
+      "pool_recall": {
+        "session_pool_recall": 0.8125,
+        "turn_pool_recall": 0.199764
+      },
+      "recall_to_hit_conversion": 0.807692,
+      "scenario_guardrail": {
+        "maximum_allowed_drop": 0.05,
+        "passed": true,
+        "scenarios": {
+          "boundary": {
+            "baseline_hit_rate_at_10": 0.625,
+            "candidate_hit_rate_at_10": 0.625,
+            "delta": 0.0,
+            "passed": true
+          },
+          "browsing": {
+            "baseline_hit_rate_at_10": 0.78125,
+            "candidate_hit_rate_at_10": 0.78125,
+            "delta": 0.0,
+            "passed": true
+          },
+          "buying": {
+            "baseline_hit_rate_at_10": 0.59375,
+            "candidate_hit_rate_at_10": 0.59375,
+            "delta": 0.0,
+            "passed": true
+          },
+          "intent_override": {
+            "baseline_hit_rate_at_10": 0.375,
+            "candidate_hit_rate_at_10": 0.5,
+            "delta": 0.125,
+            "passed": true
+          }
+        }
+      },
+      "weights": {
+        "bm25": 0.56,
+        "dense": 0.36,
+        "structured": 0.08
+      },
+      "within_pool_recall_tolerance": false
+    },
+    {
+      "admissible": false,
+      "fold_stability": {
+        "mean_session_pool_recall": 0.81875,
+        "mean_technical_score": 0.552083,
+        "minimum_hit_rate_at_10": 0.575,
+        "minimum_session_pool_recall": 0.75,
+        "minimum_technical_score": 0.47153,
+        "session_pool_recall_pstdev": 0.044634,
+        "technical_score_pstdev": 0.071323
+      },
+      "improves_official_objective": true,
+      "metrics": {
+        "efficiency": 0.508125,
+        "hit_rate_at_10": 0.65625,
+        "mrr": 0.407778,
+        "mttc": 5.91875,
+        "recommended_technical_score": 0.552083,
+        "session_count": 160
+      },
+      "plateau_neighbor_count": 0,
+      "pool_recall": {
+        "session_pool_recall": 0.81875,
+        "turn_pool_recall": 0.200946
+      },
+      "recall_to_hit_conversion": 0.801527,
+      "scenario_guardrail": {
+        "maximum_allowed_drop": 0.05,
+        "passed": true,
+        "scenarios": {
+          "boundary": {
+            "baseline_hit_rate_at_10": 0.625,
+            "candidate_hit_rate_at_10": 0.625,
+            "delta": 0.0,
+            "passed": true
+          },
+          "browsing": {
+            "baseline_hit_rate_at_10": 0.78125,
+            "candidate_hit_rate_at_10": 0.78125,
+            "delta": 0.0,
+            "passed": true
+          },
+          "buying": {
+            "baseline_hit_rate_at_10": 0.59375,
+            "candidate_hit_rate_at_10": 0.59375,
+            "delta": 0.0,
+            "passed": true
+          },
+          "intent_override": {
+            "baseline_hit_rate_at_10": 0.375,
+            "candidate_hit_rate_at_10": 0.5,
+            "delta": 0.125,
+            "passed": true
+          }
+        }
+      },
+      "weights": {
+        "bm25": 0.58,
+        "dense": 0.34,
+        "structured": 0.08
+      },
+      "within_pool_recall_tolerance": false
+    },
+    {
+      "admissible": false,
+      "fold_stability": {
+        "mean_session_pool_recall": 0.81875,
+        "mean_technical_score": 0.552239,
+        "minimum_hit_rate_at_10": 0.575,
+        "minimum_session_pool_recall": 0.725,
+        "minimum_technical_score": 0.47153,
+        "session_pool_recall_pstdev": 0.05694,
+        "technical_score_pstdev": 0.071216
+      },
+      "improves_official_objective": true,
+      "metrics": {
+        "efficiency": 0.508125,
+        "hit_rate_at_10": 0.65625,
+        "mrr": 0.408299,
+        "mttc": 5.91875,
+        "recommended_technical_score": 0.55224,
+        "session_count": 160
+      },
+      "plateau_neighbor_count": 0,
+      "pool_recall": {
+        "session_pool_recall": 0.81875,
+        "turn_pool_recall": 0.200946
+      },
+      "recall_to_hit_conversion": 0.801527,
+      "scenario_guardrail": {
+        "maximum_allowed_drop": 0.05,
+        "passed": true,
+        "scenarios": {
+          "boundary": {
+            "baseline_hit_rate_at_10": 0.625,
+            "candidate_hit_rate_at_10": 0.625,
+            "delta": 0.0,
+            "passed": true
+          },
+          "browsing": {
+            "baseline_hit_rate_at_10": 0.78125,
+            "candidate_hit_rate_at_10": 0.78125,
+            "delta": 0.0,
+            "passed": true
+          },
+          "buying": {
+            "baseline_hit_rate_at_10": 0.59375,
+            "candidate_hit_rate_at_10": 0.59375,
+            "delta": 0.0,
+            "passed": true
+          },
+          "intent_override": {
+            "baseline_hit_rate_at_10": 0.375,
+            "candidate_hit_rate_at_10": 0.5,
+            "delta": 0.125,
+            "passed": true
+          }
+        }
+      },
+      "weights": {
+        "bm25": 0.6,
+        "dense": 0.32,
+        "structured": 0.08
+      },
+      "within_pool_recall_tolerance": false
+    },
+    {
+      "admissible": false,
+      "fold_stability": {
+        "mean_session_pool_recall": 0.81875,
+        "mean_technical_score": 0.552452,
+        "minimum_hit_rate_at_10": 0.575,
+        "minimum_session_pool_recall": 0.725,
+        "minimum_technical_score": 0.472396,
+        "session_pool_recall_pstdev": 0.05694,
+        "technical_score_pstdev": 0.071117
+      },
+      "improves_official_objective": true,
+      "metrics": {
+        "efficiency": 0.50875,
+        "hit_rate_at_10": 0.65625,
+        "mrr": 0.408589,
+        "mttc": 5.9125,
+        "recommended_technical_score": 0.552452,
+        "session_count": 160
+      },
+      "plateau_neighbor_count": 0,
+      "pool_recall": {
+        "session_pool_recall": 0.81875,
+        "turn_pool_recall": 0.202128
+      },
+      "recall_to_hit_conversion": 0.801527,
+      "scenario_guardrail": {
+        "maximum_allowed_drop": 0.05,
+        "passed": true,
+        "scenarios": {
+          "boundary": {
+            "baseline_hit_rate_at_10": 0.625,
+            "candidate_hit_rate_at_10": 0.625,
+            "delta": 0.0,
+            "passed": true
+          },
+          "browsing": {
+            "baseline_hit_rate_at_10": 0.78125,
+            "candidate_hit_rate_at_10": 0.78125,
+            "delta": 0.0,
+            "passed": true
+          },
+          "buying": {
+            "baseline_hit_rate_at_10": 0.59375,
+            "candidate_hit_rate_at_10": 0.59375,
+            "delta": 0.0,
+            "passed": true
+          },
+          "intent_override": {
+            "baseline_hit_rate_at_10": 0.375,
+            "candidate_hit_rate_at_10": 0.5,
+            "delta": 0.125,
+            "passed": true
+          }
+        }
+      },
+      "weights": {
+        "bm25": 0.62,
+        "dense": 0.3,
+        "structured": 0.08
+      },
+      "within_pool_recall_tolerance": false
+    },
+    {
+      "admissible": false,
+      "fold_stability": {
+        "mean_session_pool_recall": 0.81875,
+        "mean_technical_score": 0.552407,
+        "minimum_hit_rate_at_10": 0.575,
+        "minimum_session_pool_recall": 0.725,
+        "minimum_technical_score": 0.472396,
+        "session_pool_recall_pstdev": 0.05694,
+        "technical_score_pstdev": 0.071052
+      },
+      "improves_official_objective": true,
+      "metrics": {
+        "efficiency": 0.50875,
+        "hit_rate_at_10": 0.65625,
+        "mrr": 0.40844,
+        "mttc": 5.9125,
+        "recommended_technical_score": 0.552407,
+        "session_count": 160
+      },
+      "plateau_neighbor_count": 0,
+      "pool_recall": {
+        "session_pool_recall": 0.81875,
+        "turn_pool_recall": 0.204492
+      },
+      "recall_to_hit_conversion": 0.801527,
+      "scenario_guardrail": {
+        "maximum_allowed_drop": 0.05,
+        "passed": true,
+        "scenarios": {
+          "boundary": {
+            "baseline_hit_rate_at_10": 0.625,
+            "candidate_hit_rate_at_10": 0.625,
+            "delta": 0.0,
+            "passed": true
+          },
+          "browsing": {
+            "baseline_hit_rate_at_10": 0.78125,
+            "candidate_hit_rate_at_10": 0.78125,
+            "delta": 0.0,
+            "passed": true
+          },
+          "buying": {
+            "baseline_hit_rate_at_10": 0.59375,
+            "candidate_hit_rate_at_10": 0.59375,
+            "delta": 0.0,
+            "passed": true
+          },
+          "intent_override": {
+            "baseline_hit_rate_at_10": 0.375,
+            "candidate_hit_rate_at_10": 0.5,
+            "delta": 0.125,
+            "passed": true
+          }
+        }
+      },
+      "weights": {
+        "bm25": 0.64,
+        "dense": 0.28,
+        "structured": 0.08
+      },
+      "within_pool_recall_tolerance": false
+    },
+    {
+      "admissible": false,
+      "fold_stability": {
+        "mean_session_pool_recall": 0.81875,
+        "mean_technical_score": 0.555589,
+        "minimum_hit_rate_at_10": 0.575,
+        "minimum_session_pool_recall": 0.725,
+        "minimum_technical_score": 0.4725,
+        "session_pool_recall_pstdev": 0.05694,
+        "technical_score_pstdev": 0.068032
+      },
+      "improves_official_objective": true,
+      "metrics": {
+        "efficiency": 0.516875,
+        "hit_rate_at_10": 0.6625,
+        "mrr": 0.403214,
+        "mttc": 5.83125,
+        "recommended_technical_score": 0.555589,
+        "session_count": 160
+      },
+      "plateau_neighbor_count": 0,
+      "pool_recall": {
+        "session_pool_recall": 0.81875,
+        "turn_pool_recall": 0.205674
+      },
+      "recall_to_hit_conversion": 0.80916,
+      "scenario_guardrail": {
+        "maximum_allowed_drop": 0.05,
+        "passed": true,
+        "scenarios": {
+          "boundary": {
+            "baseline_hit_rate_at_10": 0.625,
+            "candidate_hit_rate_at_10": 0.625,
+            "delta": 0.0,
+            "passed": true
+          },
+          "browsing": {
+            "baseline_hit_rate_at_10": 0.78125,
+            "candidate_hit_rate_at_10": 0.796875,
+            "delta": 0.015625,
+            "passed": true
+          },
+          "buying": {
+            "baseline_hit_rate_at_10": 0.59375,
+            "candidate_hit_rate_at_10": 0.59375,
+            "delta": 0.0,
+            "passed": true
+          },
+          "intent_override": {
+            "baseline_hit_rate_at_10": 0.375,
+            "candidate_hit_rate_at_10": 0.5,
+            "delta": 0.125,
+            "passed": true
+          }
+        }
+      },
+      "weights": {
+        "bm25": 0.66,
+        "dense": 0.26,
+        "structured": 0.08
+      },
+      "within_pool_recall_tolerance": false
+    },
+    {
+      "admissible": false,
+      "fold_stability": {
+        "mean_session_pool_recall": 0.81875,
+        "mean_technical_score": 0.555428,
+        "minimum_hit_rate_at_10": 0.575,
+        "minimum_session_pool_recall": 0.725,
+        "minimum_technical_score": 0.471521,
+        "session_pool_recall_pstdev": 0.05694,
+        "technical_score_pstdev": 0.068413
+      },
+      "improves_official_objective": true,
+      "metrics": {
+        "efficiency": 0.51625,
+        "hit_rate_at_10": 0.6625,
+        "mrr": 0.403093,
+        "mttc": 5.8375,
+        "recommended_technical_score": 0.555428,
+        "session_count": 160
+      },
+      "plateau_neighbor_count": 0,
+      "pool_recall": {
+        "session_pool_recall": 0.81875,
+        "turn_pool_recall": 0.204492
+      },
+      "recall_to_hit_conversion": 0.80916,
+      "scenario_guardrail": {
+        "maximum_allowed_drop": 0.05,
+        "passed": true,
+        "scenarios": {
+          "boundary": {
+            "baseline_hit_rate_at_10": 0.625,
+            "candidate_hit_rate_at_10": 0.625,
+            "delta": 0.0,
+            "passed": true
+          },
+          "browsing": {
+            "baseline_hit_rate_at_10": 0.78125,
+            "candidate_hit_rate_at_10": 0.796875,
+            "delta": 0.015625,
+            "passed": true
+          },
+          "buying": {
+            "baseline_hit_rate_at_10": 0.59375,
+            "candidate_hit_rate_at_10": 0.59375,
+            "delta": 0.0,
+            "passed": true
+          },
+          "intent_override": {
+            "baseline_hit_rate_at_10": 0.375,
+            "candidate_hit_rate_at_10": 0.5,
+            "delta": 0.125,
+            "passed": true
+          }
+        }
+      },
+      "weights": {
+        "bm25": 0.68,
+        "dense": 0.24,
+        "structured": 0.08
+      },
+      "within_pool_recall_tolerance": false
+    },
+    {
+      "admissible": false,
+      "fold_stability": {
+        "mean_session_pool_recall": 0.8125,
+        "mean_technical_score": 0.555428,
+        "minimum_hit_rate_at_10": 0.575,
+        "minimum_session_pool_recall": 0.725,
+        "minimum_technical_score": 0.471521,
+        "session_pool_recall_pstdev": 0.054486,
+        "technical_score_pstdev": 0.068413
+      },
+      "improves_official_objective": true,
+      "metrics": {
+        "efficiency": 0.51625,
+        "hit_rate_at_10": 0.6625,
+        "mrr": 0.403093,
+        "mttc": 5.8375,
+        "recommended_technical_score": 0.555428,
+        "session_count": 160
+      },
+      "plateau_neighbor_count": 0,
+      "pool_recall": {
+        "session_pool_recall": 0.8125,
+        "turn_pool_recall": 0.20331
+      },
+      "recall_to_hit_conversion": 0.815385,
+      "scenario_guardrail": {
+        "maximum_allowed_drop": 0.05,
+        "passed": true,
+        "scenarios": {
+          "boundary": {
+            "baseline_hit_rate_at_10": 0.625,
+            "candidate_hit_rate_at_10": 0.625,
+            "delta": 0.0,
+            "passed": true
+          },
+          "browsing": {
+            "baseline_hit_rate_at_10": 0.78125,
+            "candidate_hit_rate_at_10": 0.796875,
+            "delta": 0.015625,
+            "passed": true
+          },
+          "buying": {
+            "baseline_hit_rate_at_10": 0.59375,
+            "candidate_hit_rate_at_10": 0.59375,
+            "delta": 0.0,
+            "passed": true
+          },
+          "intent_override": {
+            "baseline_hit_rate_at_10": 0.375,
+            "candidate_hit_rate_at_10": 0.5,
+            "delta": 0.125,
+            "passed": true
+          }
+        }
+      },
+      "weights": {
+        "bm25": 0.7,
+        "dense": 0.22,
+        "structured": 0.08
+      },
+      "within_pool_recall_tolerance": false
+    },
+    {
+      "admissible": false,
+      "fold_stability": {
+        "mean_session_pool_recall": 0.79375,
+        "mean_technical_score": 0.543107,
+        "minimum_hit_rate_at_10": 0.575,
+        "minimum_session_pool_recall": 0.725,
+        "minimum_technical_score": 0.483298,
+        "session_pool_recall_pstdev": 0.040984,
+        "technical_score_pstdev": 0.058558
+      },
+      "improves_official_objective": true,
+      "metrics": {
+        "efficiency": 0.501875,
+        "hit_rate_at_10": 0.64375,
+        "mrr": 0.402855,
+        "mttc": 5.98125,
+        "recommended_technical_score": 0.543107,
+        "session_count": 160
+      },
+      "plateau_neighbor_count": 0,
+      "pool_recall": {
+        "session_pool_recall": 0.79375,
+        "turn_pool_recall": 0.199764
+      },
+      "recall_to_hit_conversion": 0.811024,
+      "scenario_guardrail": {
+        "maximum_allowed_drop": 0.05,
+        "passed": true,
+        "scenarios": {
+          "boundary": {
+            "baseline_hit_rate_at_10": 0.625,
+            "candidate_hit_rate_at_10": 0.625,
+            "delta": 0.0,
+            "passed": true
+          },
+          "browsing": {
+            "baseline_hit_rate_at_10": 0.78125,
+            "candidate_hit_rate_at_10": 0.765625,
+            "delta": -0.015625,
+            "passed": true
+          },
+          "buying": {
+            "baseline_hit_rate_at_10": 0.59375,
+            "candidate_hit_rate_at_10": 0.59375,
+            "delta": 0.0,
+            "passed": true
+          },
+          "intent_override": {
+            "baseline_hit_rate_at_10": 0.375,
+            "candidate_hit_rate_at_10": 0.458333,
+            "delta": 0.083333,
+            "passed": true
+          }
+        }
+      },
+      "weights": {
+        "bm25": 0.5,
+        "dense": 0.4,
+        "structured": 0.1
+      },
+      "within_pool_recall_tolerance": false
+    },
+    {
+      "admissible": false,
+      "fold_stability": {
+        "mean_session_pool_recall": 0.80625,
+        "mean_technical_score": 0.551544,
+        "minimum_hit_rate_at_10": 0.6,
+        "minimum_session_pool_recall": 0.75,
+        "minimum_technical_score": 0.489423,
+        "session_pool_recall_pstdev": 0.036975,
+        "technical_score_pstdev": 0.060777
+      },
+      "improves_official_objective": true,
+      "metrics": {
+        "efficiency": 0.509375,
+        "hit_rate_at_10": 0.65625,
+        "mrr": 0.405146,
+        "mttc": 5.90625,
+        "recommended_technical_score": 0.551544,
+        "session_count": 160
+      },
+      "plateau_neighbor_count": 0,
+      "pool_recall": {
+        "session_pool_recall": 0.80625,
+        "turn_pool_recall": 0.202128
+      },
+      "recall_to_hit_conversion": 0.813953,
+      "scenario_guardrail": {
+        "maximum_allowed_drop": 0.05,
+        "passed": true,
+        "scenarios": {
+          "boundary": {
+            "baseline_hit_rate_at_10": 0.625,
+            "candidate_hit_rate_at_10": 0.625,
+            "delta": 0.0,
+            "passed": true
+          },
+          "browsing": {
+            "baseline_hit_rate_at_10": 0.78125,
+            "candidate_hit_rate_at_10": 0.765625,
+            "delta": -0.015625,
+            "passed": true
+          },
+          "buying": {
+            "baseline_hit_rate_at_10": 0.59375,
+            "candidate_hit_rate_at_10": 0.59375,
+            "delta": 0.0,
+            "passed": true
+          },
+          "intent_override": {
+            "baseline_hit_rate_at_10": 0.375,
+            "candidate_hit_rate_at_10": 0.541667,
+            "delta": 0.166667,
+            "passed": true
+          }
+        }
+      },
+      "weights": {
+        "bm25": 0.52,
+        "dense": 0.38,
+        "structured": 0.1
+      },
+      "within_pool_recall_tolerance": false
+    },
+    {
+      "admissible": false,
+      "fold_stability": {
+        "mean_session_pool_recall": 0.8125,
+        "mean_technical_score": 0.557153,
+        "minimum_hit_rate_at_10": 0.6,
+        "minimum_session_pool_recall": 0.75,
+        "minimum_technical_score": 0.488685,
+        "session_pool_recall_pstdev": 0.045069,
+        "technical_score_pstdev": 0.066459
+      },
+      "improves_official_objective": true,
+      "metrics": {
+        "efficiency": 0.51125,
+        "hit_rate_at_10": 0.6625,
+        "mrr": 0.412178,
+        "mttc": 5.8875,
+        "recommended_technical_score": 0.557153,
+        "session_count": 160
+      },
+      "plateau_neighbor_count": 0,
+      "pool_recall": {
+        "session_pool_recall": 0.8125,
+        "turn_pool_recall": 0.1974
+      },
+      "recall_to_hit_conversion": 0.815385,
+      "scenario_guardrail": {
+        "maximum_allowed_drop": 0.05,
+        "passed": true,
+        "scenarios": {
+          "boundary": {
+            "baseline_hit_rate_at_10": 0.625,
+            "candidate_hit_rate_at_10": 0.625,
+            "delta": 0.0,
+            "passed": true
+          },
+          "browsing": {
+            "baseline_hit_rate_at_10": 0.78125,
+            "candidate_hit_rate_at_10": 0.78125,
+            "delta": 0.0,
+            "passed": true
+          },
+          "buying": {
+            "baseline_hit_rate_at_10": 0.59375,
+            "candidate_hit_rate_at_10": 0.59375,
+            "delta": 0.0,
+            "passed": true
+          },
+          "intent_override": {
+            "baseline_hit_rate_at_10": 0.375,
+            "candidate_hit_rate_at_10": 0.541667,
+            "delta": 0.166667,
+            "passed": true
+          }
+        }
+      },
+      "weights": {
+        "bm25": 0.54,
+        "dense": 0.36,
+        "structured": 0.1
+      },
+      "within_pool_recall_tolerance": false
+    },
+    {
+      "admissible": false,
+      "fold_stability": {
+        "mean_session_pool_recall": 0.8125,
+        "mean_technical_score": 0.552476,
+        "minimum_hit_rate_at_10": 0.575,
+        "minimum_session_pool_recall": 0.75,
+        "minimum_technical_score": 0.470601,
+        "session_pool_recall_pstdev": 0.045069,
+        "technical_score_pstdev": 0.071167
+      },
+      "improves_official_objective": true,
+      "metrics": {
+        "efficiency": 0.5075,
+        "hit_rate_at_10": 0.65625,
+        "mrr": 0.409504,
+        "mttc": 5.925,
+        "recommended_technical_score": 0.552476,
+        "session_count": 160
+      },
+      "plateau_neighbor_count": 0,
+      "pool_recall": {
+        "session_pool_recall": 0.8125,
+        "turn_pool_recall": 0.196217
+      },
+      "recall_to_hit_conversion": 0.807692,
+      "scenario_guardrail": {
+        "maximum_allowed_drop": 0.05,
+        "passed": true,
+        "scenarios": {
+          "boundary": {
+            "baseline_hit_rate_at_10": 0.625,
+            "candidate_hit_rate_at_10": 0.625,
+            "delta": 0.0,
+            "passed": true
+          },
+          "browsing": {
+            "baseline_hit_rate_at_10": 0.78125,
+            "candidate_hit_rate_at_10": 0.78125,
+            "delta": 0.0,
+            "passed": true
+          },
+          "buying": {
+            "baseline_hit_rate_at_10": 0.59375,
+            "candidate_hit_rate_at_10": 0.59375,
+            "delta": 0.0,
+            "passed": true
+          },
+          "intent_override": {
+            "baseline_hit_rate_at_10": 0.375,
+            "candidate_hit_rate_at_10": 0.5,
+            "delta": 0.125,
+            "passed": true
+          }
+        }
+      },
+      "weights": {
+        "bm25": 0.56,
+        "dense": 0.34,
+        "structured": 0.1
+      },
+      "within_pool_recall_tolerance": false
+    },
+    {
+      "admissible": false,
+      "fold_stability": {
+        "mean_session_pool_recall": 0.81875,
+        "mean_technical_score": 0.552521,
+        "minimum_hit_rate_at_10": 0.575,
+        "minimum_session_pool_recall": 0.725,
+        "minimum_technical_score": 0.47078,
+        "session_pool_recall_pstdev": 0.05694,
+        "technical_score_pstdev": 0.071115
+      },
+      "improves_official_objective": true,
+      "metrics": {
+        "efficiency": 0.5075,
+        "hit_rate_at_10": 0.65625,
+        "mrr": 0.409653,
+        "mttc": 5.925,
+        "recommended_technical_score": 0.552521,
+        "session_count": 160
+      },
+      "plateau_neighbor_count": 0,
+      "pool_recall": {
+        "session_pool_recall": 0.81875,
+        "turn_pool_recall": 0.1974
+      },
+      "recall_to_hit_conversion": 0.801527,
+      "scenario_guardrail": {
+        "maximum_allowed_drop": 0.05,
+        "passed": true,
+        "scenarios": {
+          "boundary": {
+            "baseline_hit_rate_at_10": 0.625,
+            "candidate_hit_rate_at_10": 0.625,
+            "delta": 0.0,
+            "passed": true
+          },
+          "browsing": {
+            "baseline_hit_rate_at_10": 0.78125,
+            "candidate_hit_rate_at_10": 0.78125,
+            "delta": 0.0,
+            "passed": true
+          },
+          "buying": {
+            "baseline_hit_rate_at_10": 0.59375,
+            "candidate_hit_rate_at_10": 0.59375,
+            "delta": 0.0,
+            "passed": true
+          },
+          "intent_override": {
+            "baseline_hit_rate_at_10": 0.375,
+            "candidate_hit_rate_at_10": 0.5,
+            "delta": 0.125,
+            "passed": true
+          }
+        }
+      },
+      "weights": {
+        "bm25": 0.58,
+        "dense": 0.32,
+        "structured": 0.1
+      },
+      "within_pool_recall_tolerance": false
+    },
+    {
+      "admissible": false,
+      "fold_stability": {
+        "mean_session_pool_recall": 0.81875,
+        "mean_technical_score": 0.552693,
+        "minimum_hit_rate_at_10": 0.575,
+        "minimum_session_pool_recall": 0.725,
+        "minimum_technical_score": 0.471467,
+        "session_pool_recall_pstdev": 0.05694,
+        "technical_score_pstdev": 0.070918
+      },
+      "improves_official_objective": true,
+      "metrics": {
+        "efficiency": 0.508125,
+        "hit_rate_at_10": 0.65625,
+        "mrr": 0.409809,
+        "mttc": 5.91875,
+        "recommended_technical_score": 0.552693,
+        "session_count": 160
+      },
+      "plateau_neighbor_count": 0,
+      "pool_recall": {
+        "session_pool_recall": 0.81875,
+        "turn_pool_recall": 0.198582
+      },
+      "recall_to_hit_conversion": 0.801527,
+      "scenario_guardrail": {
+        "maximum_allowed_drop": 0.05,
+        "passed": true,
+        "scenarios": {
+          "boundary": {
+            "baseline_hit_rate_at_10": 0.625,
+            "candidate_hit_rate_at_10": 0.625,
+            "delta": 0.0,
+            "passed": true
+          },
+          "browsing": {
+            "baseline_hit_rate_at_10": 0.78125,
+            "candidate_hit_rate_at_10": 0.78125,
+            "delta": 0.0,
+            "passed": true
+          },
+          "buying": {
+            "baseline_hit_rate_at_10": 0.59375,
+            "candidate_hit_rate_at_10": 0.59375,
+            "delta": 0.0,
+            "passed": true
+          },
+          "intent_override": {
+            "baseline_hit_rate_at_10": 0.375,
+            "candidate_hit_rate_at_10": 0.5,
+            "delta": 0.125,
+            "passed": true
+          }
+        }
+      },
+      "weights": {
+        "bm25": 0.6,
+        "dense": 0.3,
+        "structured": 0.1
+      },
+      "within_pool_recall_tolerance": false
+    },
+    {
+      "admissible": false,
+      "fold_stability": {
+        "mean_session_pool_recall": 0.81875,
+        "mean_technical_score": 0.552808,
+        "minimum_hit_rate_at_10": 0.575,
+        "minimum_session_pool_recall": 0.725,
+        "minimum_technical_score": 0.471571,
+        "session_pool_recall_pstdev": 0.05694,
+        "technical_score_pstdev": 0.07097
+      },
+      "improves_official_objective": true,
+      "metrics": {
+        "efficiency": 0.508125,
+        "hit_rate_at_10": 0.65625,
+        "mrr": 0.410193,
+        "mttc": 5.91875,
+        "recommended_technical_score": 0.552808,
+        "session_count": 160
+      },
+      "plateau_neighbor_count": 0,
+      "pool_recall": {
+        "session_pool_recall": 0.81875,
+        "turn_pool_recall": 0.202128
+      },
+      "recall_to_hit_conversion": 0.801527,
+      "scenario_guardrail": {
+        "maximum_allowed_drop": 0.05,
+        "passed": true,
+        "scenarios": {
+          "boundary": {
+            "baseline_hit_rate_at_10": 0.625,
+            "candidate_hit_rate_at_10": 0.625,
+            "delta": 0.0,
+            "passed": true
+          },
+          "browsing": {
+            "baseline_hit_rate_at_10": 0.78125,
+            "candidate_hit_rate_at_10": 0.78125,
+            "delta": 0.0,
+            "passed": true
+          },
+          "buying": {
+            "baseline_hit_rate_at_10": 0.59375,
+            "candidate_hit_rate_at_10": 0.59375,
+            "delta": 0.0,
+            "passed": true
+          },
+          "intent_override": {
+            "baseline_hit_rate_at_10": 0.375,
+            "candidate_hit_rate_at_10": 0.5,
+            "delta": 0.125,
+            "passed": true
+          }
+        }
+      },
+      "weights": {
+        "bm25": 0.62,
+        "dense": 0.28,
+        "structured": 0.1
+      },
+      "within_pool_recall_tolerance": false
+    },
+    {
+      "admissible": false,
+      "fold_stability": {
+        "mean_session_pool_recall": 0.81875,
+        "mean_technical_score": 0.555982,
+        "minimum_hit_rate_at_10": 0.575,
+        "minimum_session_pool_recall": 0.725,
+        "minimum_technical_score": 0.471571,
+        "session_pool_recall_pstdev": 0.05694,
+        "technical_score_pstdev": 0.068007
+      },
+      "improves_official_objective": true,
+      "metrics": {
+        "efficiency": 0.51625,
+        "hit_rate_at_10": 0.6625,
+        "mrr": 0.40494,
+        "mttc": 5.8375,
+        "recommended_technical_score": 0.555982,
+        "session_count": 160
+      },
+      "plateau_neighbor_count": 0,
+      "pool_recall": {
+        "session_pool_recall": 0.81875,
+        "turn_pool_recall": 0.20331
+      },
+      "recall_to_hit_conversion": 0.80916,
+      "scenario_guardrail": {
+        "maximum_allowed_drop": 0.05,
+        "passed": true,
+        "scenarios": {
+          "boundary": {
+            "baseline_hit_rate_at_10": 0.625,
+            "candidate_hit_rate_at_10": 0.625,
+            "delta": 0.0,
+            "passed": true
+          },
+          "browsing": {
+            "baseline_hit_rate_at_10": 0.78125,
+            "candidate_hit_rate_at_10": 0.796875,
+            "delta": 0.015625,
+            "passed": true
+          },
+          "buying": {
+            "baseline_hit_rate_at_10": 0.59375,
+            "candidate_hit_rate_at_10": 0.59375,
+            "delta": 0.0,
+            "passed": true
+          },
+          "intent_override": {
+            "baseline_hit_rate_at_10": 0.375,
+            "candidate_hit_rate_at_10": 0.5,
+            "delta": 0.125,
+            "passed": true
+          }
+        }
+      },
+      "weights": {
+        "bm25": 0.64,
+        "dense": 0.26,
+        "structured": 0.1
+      },
+      "within_pool_recall_tolerance": false
+    },
+    {
+      "admissible": false,
+      "fold_stability": {
+        "mean_session_pool_recall": 0.8125,
+        "mean_technical_score": 0.555594,
+        "minimum_hit_rate_at_10": 0.575,
+        "minimum_session_pool_recall": 0.725,
+        "minimum_technical_score": 0.471896,
+        "session_pool_recall_pstdev": 0.054486,
+        "technical_score_pstdev": 0.068138
+      },
+      "improves_official_objective": true,
+      "metrics": {
+        "efficiency": 0.51625,
+        "hit_rate_at_10": 0.6625,
+        "mrr": 0.403648,
+        "mttc": 5.8375,
+        "recommended_technical_score": 0.555594,
+        "session_count": 160
+      },
+      "plateau_neighbor_count": 0,
+      "pool_recall": {
+        "session_pool_recall": 0.8125,
+        "turn_pool_recall": 0.202128
+      },
+      "recall_to_hit_conversion": 0.815385,
+      "scenario_guardrail": {
+        "maximum_allowed_drop": 0.05,
+        "passed": true,
+        "scenarios": {
+          "boundary": {
+            "baseline_hit_rate_at_10": 0.625,
+            "candidate_hit_rate_at_10": 0.625,
+            "delta": 0.0,
+            "passed": true
+          },
+          "browsing": {
+            "baseline_hit_rate_at_10": 0.78125,
+            "candidate_hit_rate_at_10": 0.796875,
+            "delta": 0.015625,
+            "passed": true
+          },
+          "buying": {
+            "baseline_hit_rate_at_10": 0.59375,
+            "candidate_hit_rate_at_10": 0.59375,
+            "delta": 0.0,
+            "passed": true
+          },
+          "intent_override": {
+            "baseline_hit_rate_at_10": 0.375,
+            "candidate_hit_rate_at_10": 0.5,
+            "delta": 0.125,
+            "passed": true
+          }
+        }
+      },
+      "weights": {
+        "bm25": 0.66,
+        "dense": 0.24,
+        "structured": 0.1
+      },
+      "within_pool_recall_tolerance": false
+    },
+    {
+      "admissible": false,
+      "fold_stability": {
+        "mean_session_pool_recall": 0.8125,
+        "mean_technical_score": 0.555678,
+        "minimum_hit_rate_at_10": 0.575,
+        "minimum_session_pool_recall": 0.725,
+        "minimum_technical_score": 0.471896,
+        "session_pool_recall_pstdev": 0.054486,
+        "technical_score_pstdev": 0.068219
+      },
+      "improves_official_objective": true,
+      "metrics": {
+        "efficiency": 0.51625,
+        "hit_rate_at_10": 0.6625,
+        "mrr": 0.403926,
+        "mttc": 5.8375,
+        "recommended_technical_score": 0.555678,
+        "session_count": 160
+      },
+      "plateau_neighbor_count": 0,
+      "pool_recall": {
+        "session_pool_recall": 0.8125,
+        "turn_pool_recall": 0.202128
+      },
+      "recall_to_hit_conversion": 0.815385,
+      "scenario_guardrail": {
+        "maximum_allowed_drop": 0.05,
+        "passed": true,
+        "scenarios": {
+          "boundary": {
+            "baseline_hit_rate_at_10": 0.625,
+            "candidate_hit_rate_at_10": 0.625,
+            "delta": 0.0,
+            "passed": true
+          },
+          "browsing": {
+            "baseline_hit_rate_at_10": 0.78125,
+            "candidate_hit_rate_at_10": 0.796875,
+            "delta": 0.015625,
+            "passed": true
+          },
+          "buying": {
+            "baseline_hit_rate_at_10": 0.59375,
+            "candidate_hit_rate_at_10": 0.59375,
+            "delta": 0.0,
+            "passed": true
+          },
+          "intent_override": {
+            "baseline_hit_rate_at_10": 0.375,
+            "candidate_hit_rate_at_10": 0.5,
+            "delta": 0.125,
+            "passed": true
+          }
+        }
+      },
+      "weights": {
+        "bm25": 0.68,
+        "dense": 0.22,
+        "structured": 0.1
+      },
+      "within_pool_recall_tolerance": false
+    },
+    {
+      "admissible": false,
+      "fold_stability": {
+        "mean_session_pool_recall": 0.80625,
+        "mean_technical_score": 0.560267,
+        "minimum_hit_rate_at_10": 0.6,
+        "minimum_session_pool_recall": 0.725,
+        "minimum_technical_score": 0.490146,
+        "session_pool_recall_pstdev": 0.048007,
+        "technical_score_pstdev": 0.062848
+      },
+      "improves_official_objective": true,
+      "metrics": {
+        "efficiency": 0.5225,
+        "hit_rate_at_10": 0.66875,
+        "mrr": 0.404638,
+        "mttc": 5.775,
+        "recommended_technical_score": 0.560266,
+        "session_count": 160
+      },
+      "plateau_neighbor_count": 0,
+      "pool_recall": {
+        "session_pool_recall": 0.80625,
+        "turn_pool_recall": 0.202128
+      },
+      "recall_to_hit_conversion": 0.829457,
+      "scenario_guardrail": {
+        "maximum_allowed_drop": 0.05,
+        "passed": true,
+        "scenarios": {
+          "boundary": {
+            "baseline_hit_rate_at_10": 0.625,
+            "candidate_hit_rate_at_10": 0.625,
+            "delta": 0.0,
+            "passed": true
+          },
+          "browsing": {
+            "baseline_hit_rate_at_10": 0.78125,
+            "candidate_hit_rate_at_10": 0.8125,
+            "delta": 0.03125,
+            "passed": true
+          },
+          "buying": {
+            "baseline_hit_rate_at_10": 0.59375,
+            "candidate_hit_rate_at_10": 0.59375,
+            "delta": 0.0,
+            "passed": true
+          },
+          "intent_override": {
+            "baseline_hit_rate_at_10": 0.375,
+            "candidate_hit_rate_at_10": 0.5,
+            "delta": 0.125,
+            "passed": true
+          }
+        }
+      },
+      "weights": {
+        "bm25": 0.7,
+        "dense": 0.2,
+        "structured": 0.1
+      },
+      "within_pool_recall_tolerance": false
+    },
+    {
+      "admissible": false,
+      "fold_stability": {
+        "mean_session_pool_recall": 0.79375,
+        "mean_technical_score": 0.539849,
+        "minimum_hit_rate_at_10": 0.575,
+        "minimum_session_pool_recall": 0.725,
+        "minimum_technical_score": 0.483923,
+        "session_pool_recall_pstdev": 0.040984,
+        "technical_score_pstdev": 0.053979
+      },
+      "improves_official_objective": true,
+      "metrics": {
+        "efficiency": 0.498125,
+        "hit_rate_at_10": 0.6375,
+        "mrr": 0.404913,
+        "mttc": 6.01875,
+        "recommended_technical_score": 0.539849,
+        "session_count": 160
+      },
+      "plateau_neighbor_count": 0,
+      "pool_recall": {
+        "session_pool_recall": 0.79375,
+        "turn_pool_recall": 0.198582
+      },
+      "recall_to_hit_conversion": 0.80315,
+      "scenario_guardrail": {
+        "maximum_allowed_drop": 0.05,
+        "passed": true,
+        "scenarios": {
+          "boundary": {
+            "baseline_hit_rate_at_10": 0.625,
+            "candidate_hit_rate_at_10": 0.625,
+            "delta": 0.0,
+            "passed": true
+          },
+          "browsing": {
+            "baseline_hit_rate_at_10": 0.78125,
+            "candidate_hit_rate_at_10": 0.765625,
+            "delta": -0.015625,
+            "passed": true
+          },
+          "buying": {
+            "baseline_hit_rate_at_10": 0.59375,
+            "candidate_hit_rate_at_10": 0.59375,
+            "delta": 0.0,
+            "passed": true
+          },
+          "intent_override": {
+            "baseline_hit_rate_at_10": 0.375,
+            "candidate_hit_rate_at_10": 0.416667,
+            "delta": 0.041667,
+            "passed": true
+          }
+        }
+      },
+      "weights": {
+        "bm25": 0.5,
+        "dense": 0.38,
+        "structured": 0.12
+      },
+      "within_pool_recall_tolerance": false
+    },
+    {
+      "admissible": false,
+      "fold_stability": {
+        "mean_session_pool_recall": 0.80625,
+        "mean_technical_score": 0.549486,
+        "minimum_hit_rate_at_10": 0.6,
+        "minimum_session_pool_recall": 0.75,
+        "minimum_technical_score": 0.490018,
+        "session_pool_recall_pstdev": 0.036975,
+        "technical_score_pstdev": 0.054561
+      },
+      "improves_official_objective": true,
+      "metrics": {
+        "efficiency": 0.503125,
+        "hit_rate_at_10": 0.65,
+        "mrr": 0.412872,
+        "mttc": 5.96875,
+        "recommended_technical_score": 0.549487,
+        "session_count": 160
+      },
+      "plateau_neighbor_count": 0,
+      "pool_recall": {
+        "session_pool_recall": 0.80625,
+        "turn_pool_recall": 0.196217
+      },
+      "recall_to_hit_conversion": 0.806202,
+      "scenario_guardrail": {
+        "maximum_allowed_drop": 0.05,
+        "passed": true,
+        "scenarios": {
+          "boundary": {
+            "baseline_hit_rate_at_10": 0.625,
+            "candidate_hit_rate_at_10": 0.625,
+            "delta": 0.0,
+            "passed": true
+          },
+          "browsing": {
+            "baseline_hit_rate_at_10": 0.78125,
+            "candidate_hit_rate_at_10": 0.765625,
+            "delta": -0.015625,
+            "passed": true
+          },
+          "buying": {
+            "baseline_hit_rate_at_10": 0.59375,
+            "candidate_hit_rate_at_10": 0.59375,
+            "delta": 0.0,
+            "passed": true
+          },
+          "intent_override": {
+            "baseline_hit_rate_at_10": 0.375,
+            "candidate_hit_rate_at_10": 0.5,
+            "delta": 0.125,
+            "passed": true
+          }
+        }
+      },
+      "weights": {
+        "bm25": 0.52,
+        "dense": 0.36,
+        "structured": 0.12
+      },
+      "within_pool_recall_tolerance": false
+    },
+    {
+      "admissible": false,
+      "fold_stability": {
+        "mean_session_pool_recall": 0.8125,
+        "mean_technical_score": 0.549102,
+        "minimum_hit_rate_at_10": 0.575,
+        "minimum_session_pool_recall": 0.75,
+        "minimum_technical_score": 0.471354,
+        "session_pool_recall_pstdev": 0.045069,
+        "technical_score_pstdev": 0.065846
+      },
+      "improves_official_objective": true,
+      "metrics": {
+        "efficiency": 0.50375,
+        "hit_rate_at_10": 0.65,
+        "mrr": 0.411173,
+        "mttc": 5.9625,
+        "recommended_technical_score": 0.549102,
+        "session_count": 160
+      },
+      "plateau_neighbor_count": 0,
+      "pool_recall": {
+        "session_pool_recall": 0.8125,
+        "turn_pool_recall": 0.195035
+      },
+      "recall_to_hit_conversion": 0.8,
+      "scenario_guardrail": {
+        "maximum_allowed_drop": 0.05,
+        "passed": true,
+        "scenarios": {
+          "boundary": {
+            "baseline_hit_rate_at_10": 0.625,
+            "candidate_hit_rate_at_10": 0.625,
+            "delta": 0.0,
+            "passed": true
+          },
+          "browsing": {
+            "baseline_hit_rate_at_10": 0.78125,
+            "candidate_hit_rate_at_10": 0.78125,
+            "delta": 0.0,
+            "passed": true
+          },
+          "buying": {
+            "baseline_hit_rate_at_10": 0.59375,
+            "candidate_hit_rate_at_10": 0.59375,
+            "delta": 0.0,
+            "passed": true
+          },
+          "intent_override": {
+            "baseline_hit_rate_at_10": 0.375,
+            "candidate_hit_rate_at_10": 0.458333,
+            "delta": 0.083333,
+            "passed": true
+          }
+        }
+      },
+      "weights": {
+        "bm25": 0.54,
+        "dense": 0.34,
+        "structured": 0.12
+      },
+      "within_pool_recall_tolerance": false
+    },
+    {
+      "admissible": true,
+      "fold_stability": {
+        "mean_session_pool_recall": 0.825,
+        "mean_technical_score": 0.549081,
+        "minimum_hit_rate_at_10": 0.575,
+        "minimum_session_pool_recall": 0.75,
+        "minimum_technical_score": 0.471271,
+        "session_pool_recall_pstdev": 0.046771,
+        "technical_score_pstdev": 0.06587
+      },
+      "improves_official_objective": true,
+      "metrics": {
+        "efficiency": 0.50375,
+        "hit_rate_at_10": 0.65,
+        "mrr": 0.411104,
+        "mttc": 5.9625,
+        "recommended_technical_score": 0.549081,
+        "session_count": 160
+      },
+      "plateau_neighbor_count": 0,
+      "pool_recall": {
+        "session_pool_recall": 0.825,
+        "turn_pool_recall": 0.1974
+      },
+      "recall_to_hit_conversion": 0.787879,
+      "scenario_guardrail": {
+        "maximum_allowed_drop": 0.05,
+        "passed": true,
+        "scenarios": {
+          "boundary": {
+            "baseline_hit_rate_at_10": 0.625,
+            "candidate_hit_rate_at_10": 0.625,
+            "delta": 0.0,
+            "passed": true
+          },
+          "browsing": {
+            "baseline_hit_rate_at_10": 0.78125,
+            "candidate_hit_rate_at_10": 0.78125,
+            "delta": 0.0,
+            "passed": true
+          },
+          "buying": {
+            "baseline_hit_rate_at_10": 0.59375,
+            "candidate_hit_rate_at_10": 0.59375,
+            "delta": 0.0,
+            "passed": true
+          },
+          "intent_override": {
+            "baseline_hit_rate_at_10": 0.375,
+            "candidate_hit_rate_at_10": 0.458333,
+            "delta": 0.083333,
+            "passed": true
+          }
+        }
+      },
+      "weights": {
+        "bm25": 0.56,
+        "dense": 0.32,
+        "structured": 0.12
+      },
+      "within_pool_recall_tolerance": true
+    },
+    {
+      "admissible": false,
+      "fold_stability": {
+        "mean_session_pool_recall": 0.81875,
+        "mean_technical_score": 0.549107,
+        "minimum_hit_rate_at_10": 0.575,
+        "minimum_session_pool_recall": 0.725,
+        "minimum_technical_score": 0.471509,
+        "session_pool_recall_pstdev": 0.05694,
+        "technical_score_pstdev": 0.065753
+      },
+      "improves_official_objective": true,
+      "metrics": {
+        "efficiency": 0.50375,
+        "hit_rate_at_10": 0.65,
+        "mrr": 0.41119,
+        "mttc": 5.9625,
+        "recommended_technical_score": 0.549107,
+        "session_count": 160
+      },
+      "plateau_neighbor_count": 0,
+      "pool_recall": {
+        "session_pool_recall": 0.81875,
+        "turn_pool_recall": 0.196217
+      },
+      "recall_to_hit_conversion": 0.793893,
+      "scenario_guardrail": {
+        "maximum_allowed_drop": 0.05,
+        "passed": true,
+        "scenarios": {
+          "boundary": {
+            "baseline_hit_rate_at_10": 0.625,
+            "candidate_hit_rate_at_10": 0.625,
+            "delta": 0.0,
+            "passed": true
+          },
+          "browsing": {
+            "baseline_hit_rate_at_10": 0.78125,
+            "candidate_hit_rate_at_10": 0.78125,
+            "delta": 0.0,
+            "passed": true
+          },
+          "buying": {
+            "baseline_hit_rate_at_10": 0.59375,
+            "candidate_hit_rate_at_10": 0.59375,
+            "delta": 0.0,
+            "passed": true
+          },
+          "intent_override": {
+            "baseline_hit_rate_at_10": 0.375,
+            "candidate_hit_rate_at_10": 0.458333,
+            "delta": 0.083333,
+            "passed": true
+          }
+        }
+      },
+      "weights": {
+        "bm25": 0.58,
+        "dense": 0.3,
+        "structured": 0.12
+      },
+      "within_pool_recall_tolerance": false
+    },
+    {
+      "admissible": false,
+      "fold_stability": {
+        "mean_session_pool_recall": 0.8125,
+        "mean_technical_score": 0.55293,
+        "minimum_hit_rate_at_10": 0.575,
+        "minimum_session_pool_recall": 0.725,
+        "minimum_technical_score": 0.472196,
+        "session_pool_recall_pstdev": 0.054486,
+        "technical_score_pstdev": 0.070742
+      },
+      "improves_official_objective": true,
+      "metrics": {
+        "efficiency": 0.508125,
+        "hit_rate_at_10": 0.65625,
+        "mrr": 0.410603,
+        "mttc": 5.91875,
+        "recommended_technical_score": 0.552931,
+        "session_count": 160
+      },
+      "plateau_neighbor_count": 0,
+      "pool_recall": {
+        "session_pool_recall": 0.8125,
+        "turn_pool_recall": 0.1974
+      },
+      "recall_to_hit_conversion": 0.807692,
+      "scenario_guardrail": {
+        "maximum_allowed_drop": 0.05,
+        "passed": true,
+        "scenarios": {
+          "boundary": {
+            "baseline_hit_rate_at_10": 0.625,
+            "candidate_hit_rate_at_10": 0.625,
+            "delta": 0.0,
+            "passed": true
+          },
+          "browsing": {
+            "baseline_hit_rate_at_10": 0.78125,
+            "candidate_hit_rate_at_10": 0.78125,
+            "delta": 0.0,
+            "passed": true
+          },
+          "buying": {
+            "baseline_hit_rate_at_10": 0.59375,
+            "candidate_hit_rate_at_10": 0.59375,
+            "delta": 0.0,
+            "passed": true
+          },
+          "intent_override": {
+            "baseline_hit_rate_at_10": 0.375,
+            "candidate_hit_rate_at_10": 0.5,
+            "delta": 0.125,
+            "passed": true
+          }
+        }
+      },
+      "weights": {
+        "bm25": 0.6,
+        "dense": 0.28,
+        "structured": 0.12
+      },
+      "within_pool_recall_tolerance": false
+    },
+    {
+      "admissible": false,
+      "fold_stability": {
+        "mean_session_pool_recall": 0.8125,
+        "mean_technical_score": 0.557136,
+        "minimum_hit_rate_at_10": 0.575,
+        "minimum_session_pool_recall": 0.725,
+        "minimum_technical_score": 0.471571,
+        "session_pool_recall_pstdev": 0.054486,
+        "technical_score_pstdev": 0.067986
+      },
+      "improves_official_objective": true,
+      "metrics": {
+        "efficiency": 0.514375,
+        "hit_rate_at_10": 0.6625,
+        "mrr": 0.410037,
+        "mttc": 5.85625,
+        "recommended_technical_score": 0.557136,
+        "session_count": 160
+      },
+      "plateau_neighbor_count": 0,
+      "pool_recall": {
+        "session_pool_recall": 0.8125,
+        "turn_pool_recall": 0.198582
+      },
+      "recall_to_hit_conversion": 0.815385,
+      "scenario_guardrail": {
+        "maximum_allowed_drop": 0.05,
+        "passed": true,
+        "scenarios": {
+          "boundary": {
+            "baseline_hit_rate_at_10": 0.625,
+            "candidate_hit_rate_at_10": 0.625,
+            "delta": 0.0,
+            "passed": true
+          },
+          "browsing": {
+            "baseline_hit_rate_at_10": 0.78125,
+            "candidate_hit_rate_at_10": 0.796875,
+            "delta": 0.015625,
+            "passed": true
+          },
+          "buying": {
+            "baseline_hit_rate_at_10": 0.59375,
+            "candidate_hit_rate_at_10": 0.59375,
+            "delta": 0.0,
+            "passed": true
+          },
+          "intent_override": {
+            "baseline_hit_rate_at_10": 0.375,
+            "candidate_hit_rate_at_10": 0.5,
+            "delta": 0.125,
+            "passed": true
+          }
+        }
+      },
+      "weights": {
+        "bm25": 0.62,
+        "dense": 0.26,
+        "structured": 0.12
+      },
+      "within_pool_recall_tolerance": false
+    },
+    {
+      "admissible": false,
+      "fold_stability": {
+        "mean_session_pool_recall": 0.8125,
+        "mean_technical_score": 0.556985,
+        "minimum_hit_rate_at_10": 0.575,
+        "minimum_session_pool_recall": 0.725,
+        "minimum_technical_score": 0.470967,
+        "session_pool_recall_pstdev": 0.054486,
+        "technical_score_pstdev": 0.068478
+      },
+      "improves_official_objective": true,
+      "metrics": {
+        "efficiency": 0.51375,
+        "hit_rate_at_10": 0.6625,
+        "mrr": 0.40995,
+        "mttc": 5.8625,
+        "recommended_technical_score": 0.556985,
+        "session_count": 160
+      },
+      "plateau_neighbor_count": 0,
+      "pool_recall": {
+        "session_pool_recall": 0.8125,
+        "turn_pool_recall": 0.1974
+      },
+      "recall_to_hit_conversion": 0.815385,
+      "scenario_guardrail": {
+        "maximum_allowed_drop": 0.05,
+        "passed": true,
+        "scenarios": {
+          "boundary": {
+            "baseline_hit_rate_at_10": 0.625,
+            "candidate_hit_rate_at_10": 0.625,
+            "delta": 0.0,
+            "passed": true
+          },
+          "browsing": {
+            "baseline_hit_rate_at_10": 0.78125,
+            "candidate_hit_rate_at_10": 0.796875,
+            "delta": 0.015625,
+            "passed": true
+          },
+          "buying": {
+            "baseline_hit_rate_at_10": 0.59375,
+            "candidate_hit_rate_at_10": 0.59375,
+            "delta": 0.0,
+            "passed": true
+          },
+          "intent_override": {
+            "baseline_hit_rate_at_10": 0.375,
+            "candidate_hit_rate_at_10": 0.5,
+            "delta": 0.125,
+            "passed": true
+          }
+        }
+      },
+      "weights": {
+        "bm25": 0.64,
+        "dense": 0.24,
+        "structured": 0.12
+      },
+      "within_pool_recall_tolerance": false
+    },
+    {
+      "admissible": false,
+      "fold_stability": {
+        "mean_session_pool_recall": 0.8,
+        "mean_technical_score": 0.55185,
+        "minimum_hit_rate_at_10": 0.55,
+        "minimum_session_pool_recall": 0.725,
+        "minimum_technical_score": 0.453592,
+        "session_pool_recall_pstdev": 0.053033,
+        "technical_score_pstdev": 0.073702
+      },
+      "improves_official_objective": true,
+      "metrics": {
+        "efficiency": 0.511875,
+        "hit_rate_at_10": 0.65625,
+        "mrr": 0.404499,
+        "mttc": 5.88125,
+        "recommended_technical_score": 0.55185,
+        "session_count": 160
+      },
+      "plateau_neighbor_count": 0,
+      "pool_recall": {
+        "session_pool_recall": 0.8,
+        "turn_pool_recall": 0.196217
+      },
+      "recall_to_hit_conversion": 0.820312,
+      "scenario_guardrail": {
+        "maximum_allowed_drop": 0.05,
+        "passed": true,
+        "scenarios": {
+          "boundary": {
+            "baseline_hit_rate_at_10": 0.625,
+            "candidate_hit_rate_at_10": 0.625,
+            "delta": 0.0,
+            "passed": true
+          },
+          "browsing": {
+            "baseline_hit_rate_at_10": 0.78125,
+            "candidate_hit_rate_at_10": 0.796875,
+            "delta": 0.015625,
+            "passed": true
+          },
+          "buying": {
+            "baseline_hit_rate_at_10": 0.59375,
+            "candidate_hit_rate_at_10": 0.59375,
+            "delta": 0.0,
+            "passed": true
+          },
+          "intent_override": {
+            "baseline_hit_rate_at_10": 0.375,
+            "candidate_hit_rate_at_10": 0.458333,
+            "delta": 0.083333,
+            "passed": true
+          }
+        }
+      },
+      "weights": {
+        "bm25": 0.66,
+        "dense": 0.22,
+        "structured": 0.12
+      },
+      "within_pool_recall_tolerance": false
+    },
+    {
+      "admissible": false,
+      "fold_stability": {
+        "mean_session_pool_recall": 0.79375,
+        "mean_technical_score": 0.55185,
+        "minimum_hit_rate_at_10": 0.55,
+        "minimum_session_pool_recall": 0.725,
+        "minimum_technical_score": 0.453592,
+        "session_pool_recall_pstdev": 0.044634,
+        "technical_score_pstdev": 0.073702
+      },
+      "improves_official_objective": true,
+      "metrics": {
+        "efficiency": 0.511875,
+        "hit_rate_at_10": 0.65625,
+        "mrr": 0.404499,
+        "mttc": 5.88125,
+        "recommended_technical_score": 0.55185,
+        "session_count": 160
+      },
+      "plateau_neighbor_count": 0,
+      "pool_recall": {
+        "session_pool_recall": 0.79375,
+        "turn_pool_recall": 0.195035
+      },
+      "recall_to_hit_conversion": 0.826772,
+      "scenario_guardrail": {
+        "maximum_allowed_drop": 0.05,
+        "passed": true,
+        "scenarios": {
+          "boundary": {
+            "baseline_hit_rate_at_10": 0.625,
+            "candidate_hit_rate_at_10": 0.625,
+            "delta": 0.0,
+            "passed": true
+          },
+          "browsing": {
+            "baseline_hit_rate_at_10": 0.78125,
+            "candidate_hit_rate_at_10": 0.796875,
+            "delta": 0.015625,
+            "passed": true
+          },
+          "buying": {
+            "baseline_hit_rate_at_10": 0.59375,
+            "candidate_hit_rate_at_10": 0.59375,
+            "delta": 0.0,
+            "passed": true
+          },
+          "intent_override": {
+            "baseline_hit_rate_at_10": 0.375,
+            "candidate_hit_rate_at_10": 0.458333,
+            "delta": 0.083333,
+            "passed": true
+          }
+        }
+      },
+      "weights": {
+        "bm25": 0.68,
+        "dense": 0.2,
+        "structured": 0.12
+      },
+      "within_pool_recall_tolerance": false
+    },
+    {
+      "admissible": false,
+      "fold_stability": {
+        "mean_session_pool_recall": 0.775,
+        "mean_technical_score": 0.530166,
+        "minimum_hit_rate_at_10": 0.55,
+        "minimum_session_pool_recall": 0.7,
+        "minimum_technical_score": 0.462923,
+        "session_pool_recall_pstdev": 0.046771,
+        "technical_score_pstdev": 0.064138
+      },
+      "improves_official_objective": false,
+      "metrics": {
+        "efficiency": 0.49,
+        "hit_rate_at_10": 0.625,
+        "mrr": 0.398886,
+        "mttc": 6.1,
+        "recommended_technical_score": 0.530166,
+        "session_count": 160
+      },
+      "plateau_neighbor_count": 0,
+      "pool_recall": {
+        "session_pool_recall": 0.775,
+        "turn_pool_recall": 0.195035
+      },
+      "recall_to_hit_conversion": 0.806452,
+      "scenario_guardrail": {
+        "maximum_allowed_drop": 0.05,
+        "passed": true,
+        "scenarios": {
+          "boundary": {
+            "baseline_hit_rate_at_10": 0.625,
+            "candidate_hit_rate_at_10": 0.625,
+            "delta": 0.0,
+            "passed": true
+          },
+          "browsing": {
+            "baseline_hit_rate_at_10": 0.78125,
+            "candidate_hit_rate_at_10": 0.765625,
+            "delta": -0.015625,
+            "passed": true
+          },
+          "buying": {
+            "baseline_hit_rate_at_10": 0.59375,
+            "candidate_hit_rate_at_10": 0.578125,
+            "delta": -0.015625,
+            "passed": true
+          },
+          "intent_override": {
+            "baseline_hit_rate_at_10": 0.375,
+            "candidate_hit_rate_at_10": 0.375,
+            "delta": 0.0,
+            "passed": true
+          }
+        }
+      },
+      "weights": {
+        "bm25": 0.5,
+        "dense": 0.36,
+        "structured": 0.14
+      },
+      "within_pool_recall_tolerance": false
+    },
+    {
+      "admissible": false,
+      "fold_stability": {
+        "mean_session_pool_recall": 0.79375,
+        "mean_technical_score": 0.541288,
+        "minimum_hit_rate_at_10": 0.55,
+        "minimum_session_pool_recall": 0.75,
+        "minimum_technical_score": 0.452298,
+        "session_pool_recall_pstdev": 0.044634,
+        "technical_score_pstdev": 0.066305
+      },
+      "improves_official_objective": true,
+      "metrics": {
+        "efficiency": 0.49625,
+        "hit_rate_at_10": 0.6375,
+        "mrr": 0.410962,
+        "mttc": 6.0375,
+        "recommended_technical_score": 0.541289,
+        "session_count": 160
+      },
+      "plateau_neighbor_count": 0,
+      "pool_recall": {
+        "session_pool_recall": 0.79375,
+        "turn_pool_recall": 0.191489
+      },
+      "recall_to_hit_conversion": 0.80315,
+      "scenario_guardrail": {
+        "maximum_allowed_drop": 0.05,
+        "passed": true,
+        "scenarios": {
+          "boundary": {
+            "baseline_hit_rate_at_10": 0.625,
+            "candidate_hit_rate_at_10": 0.625,
+            "delta": 0.0,
+            "passed": true
+          },
+          "browsing": {
+            "baseline_hit_rate_at_10": 0.78125,
+            "candidate_hit_rate_at_10": 0.78125,
+            "delta": 0.0,
+            "passed": true
+          },
+          "buying": {
+            "baseline_hit_rate_at_10": 0.59375,
+            "candidate_hit_rate_at_10": 0.59375,
+            "delta": 0.0,
+            "passed": true
+          },
+          "intent_override": {
+            "baseline_hit_rate_at_10": 0.375,
+            "candidate_hit_rate_at_10": 0.375,
+            "delta": 0.0,
+            "passed": true
+          }
+        }
+      },
+      "weights": {
+        "bm25": 0.52,
+        "dense": 0.34,
+        "structured": 0.14
+      },
+      "within_pool_recall_tolerance": false
+    },
+    {
+      "admissible": false,
+      "fold_stability": {
+        "mean_session_pool_recall": 0.79375,
+        "mean_technical_score": 0.541445,
+        "minimum_hit_rate_at_10": 0.55,
+        "minimum_session_pool_recall": 0.75,
+        "minimum_technical_score": 0.453548,
+        "session_pool_recall_pstdev": 0.044634,
+        "technical_score_pstdev": 0.065687
+      },
+      "improves_official_objective": true,
+      "metrics": {
+        "efficiency": 0.49625,
+        "hit_rate_at_10": 0.6375,
+        "mrr": 0.411483,
+        "mttc": 6.0375,
+        "recommended_technical_score": 0.541445,
+        "session_count": 160
+      },
+      "plateau_neighbor_count": 0,
+      "pool_recall": {
+        "session_pool_recall": 0.79375,
+        "turn_pool_recall": 0.191489
+      },
+      "recall_to_hit_conversion": 0.80315,
+      "scenario_guardrail": {
+        "maximum_allowed_drop": 0.05,
+        "passed": true,
+        "scenarios": {
+          "boundary": {
+            "baseline_hit_rate_at_10": 0.625,
+            "candidate_hit_rate_at_10": 0.625,
+            "delta": 0.0,
+            "passed": true
+          },
+          "browsing": {
+            "baseline_hit_rate_at_10": 0.78125,
+            "candidate_hit_rate_at_10": 0.78125,
+            "delta": 0.0,
+            "passed": true
+          },
+          "buying": {
+            "baseline_hit_rate_at_10": 0.59375,
+            "candidate_hit_rate_at_10": 0.59375,
+            "delta": 0.0,
+            "passed": true
+          },
+          "intent_override": {
+            "baseline_hit_rate_at_10": 0.375,
+            "candidate_hit_rate_at_10": 0.375,
+            "delta": 0.0,
+            "passed": true
+          }
+        }
+      },
+      "weights": {
+        "bm25": 0.54,
+        "dense": 0.32,
+        "structured": 0.14
+      },
+      "within_pool_recall_tolerance": false
+    },
+    {
+      "admissible": false,
+      "fold_stability": {
+        "mean_session_pool_recall": 0.79375,
+        "mean_technical_score": 0.541201,
+        "minimum_hit_rate_at_10": 0.55,
+        "minimum_session_pool_recall": 0.725,
+        "minimum_technical_score": 0.453643,
+        "session_pool_recall_pstdev": 0.048007,
+        "technical_score_pstdev": 0.065842
+      },
+      "improves_official_objective": true,
+      "metrics": {
+        "efficiency": 0.49625,
+        "hit_rate_at_10": 0.6375,
+        "mrr": 0.41067,
+        "mttc": 6.0375,
+        "recommended_technical_score": 0.541201,
+        "session_count": 160
+      },
+      "plateau_neighbor_count": 0,
+      "pool_recall": {
+        "session_pool_recall": 0.79375,
+        "turn_pool_recall": 0.191489
+      },
+      "recall_to_hit_conversion": 0.80315,
+      "scenario_guardrail": {
+        "maximum_allowed_drop": 0.05,
+        "passed": true,
+        "scenarios": {
+          "boundary": {
+            "baseline_hit_rate_at_10": 0.625,
+            "candidate_hit_rate_at_10": 0.625,
+            "delta": 0.0,
+            "passed": true
+          },
+          "browsing": {
+            "baseline_hit_rate_at_10": 0.78125,
+            "candidate_hit_rate_at_10": 0.78125,
+            "delta": 0.0,
+            "passed": true
+          },
+          "buying": {
+            "baseline_hit_rate_at_10": 0.59375,
+            "candidate_hit_rate_at_10": 0.59375,
+            "delta": 0.0,
+            "passed": true
+          },
+          "intent_override": {
+            "baseline_hit_rate_at_10": 0.375,
+            "candidate_hit_rate_at_10": 0.375,
+            "delta": 0.0,
+            "passed": true
+          }
+        }
+      },
+      "weights": {
+        "bm25": 0.56,
+        "dense": 0.3,
+        "structured": 0.14
+      },
+      "within_pool_recall_tolerance": false
+    },
+    {
+      "admissible": false,
+      "fold_stability": {
+        "mean_session_pool_recall": 0.79375,
+        "mean_technical_score": 0.549701,
+        "minimum_hit_rate_at_10": 0.55,
+        "minimum_session_pool_recall": 0.725,
+        "minimum_technical_score": 0.454196,
+        "session_pool_recall_pstdev": 0.054127,
+        "technical_score_pstdev": 0.073455
+      },
+      "improves_official_objective": true,
+      "metrics": {
+        "efficiency": 0.505,
+        "hit_rate_at_10": 0.65,
+        "mrr": 0.412339,
+        "mttc": 5.95,
+        "recommended_technical_score": 0.549702,
+        "session_count": 160
+      },
+      "plateau_neighbor_count": 0,
+      "pool_recall": {
+        "session_pool_recall": 0.79375,
+        "turn_pool_recall": 0.192671
+      },
+      "recall_to_hit_conversion": 0.818898,
+      "scenario_guardrail": {
+        "maximum_allowed_drop": 0.05,
+        "passed": true,
+        "scenarios": {
+          "boundary": {
+            "baseline_hit_rate_at_10": 0.625,
+            "candidate_hit_rate_at_10": 0.625,
+            "delta": 0.0,
+            "passed": true
+          },
+          "browsing": {
+            "baseline_hit_rate_at_10": 0.78125,
+            "candidate_hit_rate_at_10": 0.78125,
+            "delta": 0.0,
+            "passed": true
+          },
+          "buying": {
+            "baseline_hit_rate_at_10": 0.59375,
+            "candidate_hit_rate_at_10": 0.609375,
+            "delta": 0.015625,
+            "passed": true
+          },
+          "intent_override": {
+            "baseline_hit_rate_at_10": 0.375,
+            "candidate_hit_rate_at_10": 0.416667,
+            "delta": 0.041667,
+            "passed": true
+          }
+        }
+      },
+      "weights": {
+        "bm25": 0.58,
+        "dense": 0.28,
+        "structured": 0.14
+      },
+      "within_pool_recall_tolerance": false
+    },
+    {
+      "admissible": false,
+      "fold_stability": {
+        "mean_session_pool_recall": 0.79375,
+        "mean_technical_score": 0.549344,
+        "minimum_hit_rate_at_10": 0.55,
+        "minimum_session_pool_recall": 0.725,
+        "minimum_technical_score": 0.454196,
+        "session_pool_recall_pstdev": 0.054127,
+        "technical_score_pstdev": 0.073204
+      },
+      "improves_official_objective": true,
+      "metrics": {
+        "efficiency": 0.505,
+        "hit_rate_at_10": 0.65,
+        "mrr": 0.411148,
+        "mttc": 5.95,
+        "recommended_technical_score": 0.549344,
+        "session_count": 160
+      },
+      "plateau_neighbor_count": 0,
+      "pool_recall": {
+        "session_pool_recall": 0.79375,
+        "turn_pool_recall": 0.192671
+      },
+      "recall_to_hit_conversion": 0.818898,
+      "scenario_guardrail": {
+        "maximum_allowed_drop": 0.05,
+        "passed": true,
+        "scenarios": {
+          "boundary": {
+            "baseline_hit_rate_at_10": 0.625,
+            "candidate_hit_rate_at_10": 0.625,
+            "delta": 0.0,
+            "passed": true
+          },
+          "browsing": {
+            "baseline_hit_rate_at_10": 0.78125,
+            "candidate_hit_rate_at_10": 0.78125,
+            "delta": 0.0,
+            "passed": true
+          },
+          "buying": {
+            "baseline_hit_rate_at_10": 0.59375,
+            "candidate_hit_rate_at_10": 0.609375,
+            "delta": 0.015625,
+            "passed": true
+          },
+          "intent_override": {
+            "baseline_hit_rate_at_10": 0.375,
+            "candidate_hit_rate_at_10": 0.416667,
+            "delta": 0.041667,
+            "passed": true
+          }
+        }
+      },
+      "weights": {
+        "bm25": 0.6,
+        "dense": 0.26,
+        "structured": 0.14
+      },
+      "within_pool_recall_tolerance": false
+    },
+    {
+      "admissible": false,
+      "fold_stability": {
+        "mean_session_pool_recall": 0.8,
+        "mean_technical_score": 0.558313,
+        "minimum_hit_rate_at_10": 0.55,
+        "minimum_session_pool_recall": 0.725,
+        "minimum_technical_score": 0.454196,
+        "session_pool_recall_pstdev": 0.053033,
+        "technical_score_pstdev": 0.076581
+      },
+      "improves_official_objective": true,
+      "metrics": {
+        "efficiency": 0.515,
+        "hit_rate_at_10": 0.6625,
+        "mrr": 0.413544,
+        "mttc": 5.85,
+        "recommended_technical_score": 0.558313,
+        "session_count": 160
+      },
+      "plateau_neighbor_count": 0,
+      "pool_recall": {
+        "session_pool_recall": 0.8,
+        "turn_pool_recall": 0.195035
+      },
+      "recall_to_hit_conversion": 0.828125,
+      "scenario_guardrail": {
+        "maximum_allowed_drop": 0.05,
+        "passed": true,
+        "scenarios": {
+          "boundary": {
+            "baseline_hit_rate_at_10": 0.625,
+            "candidate_hit_rate_at_10": 0.625,
+            "delta": 0.0,
+            "passed": true
+          },
+          "browsing": {
+            "baseline_hit_rate_at_10": 0.78125,
+            "candidate_hit_rate_at_10": 0.796875,
+            "delta": 0.015625,
+            "passed": true
+          },
+          "buying": {
+            "baseline_hit_rate_at_10": 0.59375,
+            "candidate_hit_rate_at_10": 0.609375,
+            "delta": 0.015625,
+            "passed": true
+          },
+          "intent_override": {
+            "baseline_hit_rate_at_10": 0.375,
+            "candidate_hit_rate_at_10": 0.458333,
+            "delta": 0.083333,
+            "passed": true
+          }
+        }
+      },
+      "weights": {
+        "bm25": 0.62,
+        "dense": 0.24,
+        "structured": 0.14
+      },
+      "within_pool_recall_tolerance": false
+    },
+    {
+      "admissible": false,
+      "fold_stability": {
+        "mean_session_pool_recall": 0.8,
+        "mean_technical_score": 0.556962,
+        "minimum_hit_rate_at_10": 0.55,
+        "minimum_session_pool_recall": 0.725,
+        "minimum_technical_score": 0.453458,
+        "session_pool_recall_pstdev": 0.053033,
+        "technical_score_pstdev": 0.076284
+      },
+      "improves_official_objective": true,
+      "metrics": {
+        "efficiency": 0.51625,
+        "hit_rate_at_10": 0.6625,
+        "mrr": 0.408207,
+        "mttc": 5.8375,
+        "recommended_technical_score": 0.556962,
+        "session_count": 160
+      },
+      "plateau_neighbor_count": 0,
+      "pool_recall": {
+        "session_pool_recall": 0.8,
+        "turn_pool_recall": 0.195035
+      },
+      "recall_to_hit_conversion": 0.828125,
+      "scenario_guardrail": {
+        "maximum_allowed_drop": 0.05,
+        "passed": true,
+        "scenarios": {
+          "boundary": {
+            "baseline_hit_rate_at_10": 0.625,
+            "candidate_hit_rate_at_10": 0.625,
+            "delta": 0.0,
+            "passed": true
+          },
+          "browsing": {
+            "baseline_hit_rate_at_10": 0.78125,
+            "candidate_hit_rate_at_10": 0.796875,
+            "delta": 0.015625,
+            "passed": true
+          },
+          "buying": {
+            "baseline_hit_rate_at_10": 0.59375,
+            "candidate_hit_rate_at_10": 0.609375,
+            "delta": 0.015625,
+            "passed": true
+          },
+          "intent_override": {
+            "baseline_hit_rate_at_10": 0.375,
+            "candidate_hit_rate_at_10": 0.458333,
+            "delta": 0.083333,
+            "passed": true
+          }
+        }
+      },
+      "weights": {
+        "bm25": 0.64,
+        "dense": 0.22,
+        "structured": 0.14
+      },
+      "within_pool_recall_tolerance": false
+    },
+    {
+      "admissible": false,
+      "fold_stability": {
+        "mean_session_pool_recall": 0.79375,
+        "mean_technical_score": 0.557212,
+        "minimum_hit_rate_at_10": 0.55,
+        "minimum_session_pool_recall": 0.725,
+        "minimum_technical_score": 0.453458,
+        "session_pool_recall_pstdev": 0.044634,
+        "technical_score_pstdev": 0.07662
+      },
+      "improves_official_objective": true,
+      "metrics": {
+        "efficiency": 0.51625,
+        "hit_rate_at_10": 0.6625,
+        "mrr": 0.40904,
+        "mttc": 5.8375,
+        "recommended_technical_score": 0.557212,
+        "session_count": 160
+      },
+      "plateau_neighbor_count": 0,
+      "pool_recall": {
+        "session_pool_recall": 0.79375,
+        "turn_pool_recall": 0.193853
+      },
+      "recall_to_hit_conversion": 0.834646,
+      "scenario_guardrail": {
+        "maximum_allowed_drop": 0.05,
+        "passed": true,
+        "scenarios": {
+          "boundary": {
+            "baseline_hit_rate_at_10": 0.625,
+            "candidate_hit_rate_at_10": 0.625,
+            "delta": 0.0,
+            "passed": true
+          },
+          "browsing": {
+            "baseline_hit_rate_at_10": 0.78125,
+            "candidate_hit_rate_at_10": 0.796875,
+            "delta": 0.015625,
+            "passed": true
+          },
+          "buying": {
+            "baseline_hit_rate_at_10": 0.59375,
+            "candidate_hit_rate_at_10": 0.609375,
+            "delta": 0.015625,
+            "passed": true
+          },
+          "intent_override": {
+            "baseline_hit_rate_at_10": 0.375,
+            "candidate_hit_rate_at_10": 0.458333,
+            "delta": 0.083333,
+            "passed": true
+          }
+        }
+      },
+      "weights": {
+        "bm25": 0.66,
+        "dense": 0.2,
+        "structured": 0.14
+      },
+      "within_pool_recall_tolerance": false
+    },
+    {
+      "admissible": false,
+      "fold_stability": {
+        "mean_session_pool_recall": 0.76875,
+        "mean_technical_score": 0.535609,
+        "minimum_hit_rate_at_10": 0.55,
+        "minimum_session_pool_recall": 0.675,
+        "minimum_technical_score": 0.467589,
+        "session_pool_recall_pstdev": 0.05694,
+        "technical_score_pstdev": 0.066514
+      },
+      "improves_official_objective": false,
+      "metrics": {
+        "efficiency": 0.491875,
+        "hit_rate_at_10": 0.63125,
+        "mrr": 0.405365,
+        "mttc": 6.08125,
+        "recommended_technical_score": 0.535609,
+        "session_count": 160
+      },
+      "plateau_neighbor_count": 0,
+      "pool_recall": {
+        "session_pool_recall": 0.76875,
+        "turn_pool_recall": 0.184397
+      },
+      "recall_to_hit_conversion": 0.821138,
+      "scenario_guardrail": {
+        "maximum_allowed_drop": 0.05,
+        "passed": true,
+        "scenarios": {
+          "boundary": {
+            "baseline_hit_rate_at_10": 0.625,
+            "candidate_hit_rate_at_10": 0.625,
+            "delta": 0.0,
+            "passed": true
+          },
+          "browsing": {
+            "baseline_hit_rate_at_10": 0.78125,
+            "candidate_hit_rate_at_10": 0.765625,
+            "delta": -0.015625,
+            "passed": true
+          },
+          "buying": {
+            "baseline_hit_rate_at_10": 0.59375,
+            "candidate_hit_rate_at_10": 0.59375,
+            "delta": 0.0,
+            "passed": true
+          },
+          "intent_override": {
+            "baseline_hit_rate_at_10": 0.375,
+            "candidate_hit_rate_at_10": 0.375,
+            "delta": 0.0,
+            "passed": true
+          }
+        }
+      },
+      "weights": {
+        "bm25": 0.5,
+        "dense": 0.34,
+        "structured": 0.16
+      },
+      "within_pool_recall_tolerance": false
+    },
+    {
+      "admissible": false,
+      "fold_stability": {
+        "mean_session_pool_recall": 0.76875,
+        "mean_technical_score": 0.535227,
+        "minimum_hit_rate_at_10": 0.55,
+        "minimum_session_pool_recall": 0.7,
+        "minimum_technical_score": 0.452164,
+        "session_pool_recall_pstdev": 0.048007,
+        "technical_score_pstdev": 0.076252
+      },
+      "improves_official_objective": false,
+      "metrics": {
+        "efficiency": 0.4925,
+        "hit_rate_at_10": 0.63125,
+        "mrr": 0.403673,
+        "mttc": 6.075,
+        "recommended_technical_score": 0.535227,
+        "session_count": 160
+      },
+      "plateau_neighbor_count": 0,
+      "pool_recall": {
+        "session_pool_recall": 0.76875,
+        "turn_pool_recall": 0.186761
+      },
+      "recall_to_hit_conversion": 0.821138,
+      "scenario_guardrail": {
+        "maximum_allowed_drop": 0.05,
+        "passed": true,
+        "scenarios": {
+          "boundary": {
+            "baseline_hit_rate_at_10": 0.625,
+            "candidate_hit_rate_at_10": 0.625,
+            "delta": 0.0,
+            "passed": true
+          },
+          "browsing": {
+            "baseline_hit_rate_at_10": 0.78125,
+            "candidate_hit_rate_at_10": 0.78125,
+            "delta": 0.0,
+            "passed": true
+          },
+          "buying": {
+            "baseline_hit_rate_at_10": 0.59375,
+            "candidate_hit_rate_at_10": 0.59375,
+            "delta": 0.0,
+            "passed": true
+          },
+          "intent_override": {
+            "baseline_hit_rate_at_10": 0.375,
+            "candidate_hit_rate_at_10": 0.333333,
+            "delta": -0.041667,
+            "passed": true
+          }
+        }
+      },
+      "weights": {
+        "bm25": 0.52,
+        "dense": 0.32,
+        "structured": 0.16
+      },
+      "within_pool_recall_tolerance": false
+    },
+    {
+      "admissible": false,
+      "fold_stability": {
+        "mean_session_pool_recall": 0.76875,
+        "mean_technical_score": 0.535227,
+        "minimum_hit_rate_at_10": 0.55,
+        "minimum_session_pool_recall": 0.675,
+        "minimum_technical_score": 0.452164,
+        "session_pool_recall_pstdev": 0.05694,
+        "technical_score_pstdev": 0.076252
+      },
+      "improves_official_objective": false,
+      "metrics": {
+        "efficiency": 0.4925,
+        "hit_rate_at_10": 0.63125,
+        "mrr": 0.403673,
+        "mttc": 6.075,
+        "recommended_technical_score": 0.535227,
+        "session_count": 160
+      },
+      "plateau_neighbor_count": 0,
+      "pool_recall": {
+        "session_pool_recall": 0.76875,
+        "turn_pool_recall": 0.186761
+      },
+      "recall_to_hit_conversion": 0.821138,
+      "scenario_guardrail": {
+        "maximum_allowed_drop": 0.05,
+        "passed": true,
+        "scenarios": {
+          "boundary": {
+            "baseline_hit_rate_at_10": 0.625,
+            "candidate_hit_rate_at_10": 0.625,
+            "delta": 0.0,
+            "passed": true
+          },
+          "browsing": {
+            "baseline_hit_rate_at_10": 0.78125,
+            "candidate_hit_rate_at_10": 0.78125,
+            "delta": 0.0,
+            "passed": true
+          },
+          "buying": {
+            "baseline_hit_rate_at_10": 0.59375,
+            "candidate_hit_rate_at_10": 0.59375,
+            "delta": 0.0,
+            "passed": true
+          },
+          "intent_override": {
+            "baseline_hit_rate_at_10": 0.375,
+            "candidate_hit_rate_at_10": 0.333333,
+            "delta": -0.041667,
+            "passed": true
+          }
+        }
+      },
+      "weights": {
+        "bm25": 0.54,
+        "dense": 0.3,
+        "structured": 0.16
+      },
+      "within_pool_recall_tolerance": false
+    },
+    {
+      "admissible": false,
+      "fold_stability": {
+        "mean_session_pool_recall": 0.76875,
+        "mean_technical_score": 0.53544,
+        "minimum_hit_rate_at_10": 0.55,
+        "minimum_session_pool_recall": 0.675,
+        "minimum_technical_score": 0.452768,
+        "session_pool_recall_pstdev": 0.05694,
+        "technical_score_pstdev": 0.076161
+      },
+      "improves_official_objective": false,
+      "metrics": {
+        "efficiency": 0.493125,
+        "hit_rate_at_10": 0.63125,
+        "mrr": 0.403968,
+        "mttc": 6.06875,
+        "recommended_technical_score": 0.53544,
+        "session_count": 160
+      },
+      "plateau_neighbor_count": 0,
+      "pool_recall": {
+        "session_pool_recall": 0.76875,
+        "turn_pool_recall": 0.187943
+      },
+      "recall_to_hit_conversion": 0.821138,
+      "scenario_guardrail": {
+        "maximum_allowed_drop": 0.05,
+        "passed": true,
+        "scenarios": {
+          "boundary": {
+            "baseline_hit_rate_at_10": 0.625,
+            "candidate_hit_rate_at_10": 0.625,
+            "delta": 0.0,
+            "passed": true
+          },
+          "browsing": {
+            "baseline_hit_rate_at_10": 0.78125,
+            "candidate_hit_rate_at_10": 0.78125,
+            "delta": 0.0,
+            "passed": true
+          },
+          "buying": {
+            "baseline_hit_rate_at_10": 0.59375,
+            "candidate_hit_rate_at_10": 0.59375,
+            "delta": 0.0,
+            "passed": true
+          },
+          "intent_override": {
+            "baseline_hit_rate_at_10": 0.375,
+            "candidate_hit_rate_at_10": 0.333333,
+            "delta": -0.041667,
+            "passed": true
+          }
+        }
+      },
+      "weights": {
+        "bm25": 0.56,
+        "dense": 0.28,
+        "structured": 0.16
+      },
+      "within_pool_recall_tolerance": false
+    },
+    {
+      "admissible": false,
+      "fold_stability": {
+        "mean_session_pool_recall": 0.775,
+        "mean_technical_score": 0.538208,
+        "minimum_hit_rate_at_10": 0.55,
+        "minimum_session_pool_recall": 0.7,
+        "minimum_technical_score": 0.452768,
+        "session_pool_recall_pstdev": 0.046771,
+        "technical_score_pstdev": 0.070925
+      },
+      "improves_official_objective": false,
+      "metrics": {
+        "efficiency": 0.498125,
+        "hit_rate_at_10": 0.6375,
+        "mrr": 0.399444,
+        "mttc": 6.01875,
+        "recommended_technical_score": 0.538208,
+        "session_count": 160
+      },
+      "plateau_neighbor_count": 0,
+      "pool_recall": {
+        "session_pool_recall": 0.775,
+        "turn_pool_recall": 0.189125
+      },
+      "recall_to_hit_conversion": 0.822581,
+      "scenario_guardrail": {
+        "maximum_allowed_drop": 0.05,
+        "passed": true,
+        "scenarios": {
+          "boundary": {
+            "baseline_hit_rate_at_10": 0.625,
+            "candidate_hit_rate_at_10": 0.625,
+            "delta": 0.0,
+            "passed": true
+          },
+          "browsing": {
+            "baseline_hit_rate_at_10": 0.78125,
+            "candidate_hit_rate_at_10": 0.78125,
+            "delta": 0.0,
+            "passed": true
+          },
+          "buying": {
+            "baseline_hit_rate_at_10": 0.59375,
+            "candidate_hit_rate_at_10": 0.59375,
+            "delta": 0.0,
+            "passed": true
+          },
+          "intent_override": {
+            "baseline_hit_rate_at_10": 0.375,
+            "candidate_hit_rate_at_10": 0.375,
+            "delta": 0.0,
+            "passed": true
+          }
+        }
+      },
+      "weights": {
+        "bm25": 0.58,
+        "dense": 0.26,
+        "structured": 0.16
+      },
+      "within_pool_recall_tolerance": false
+    },
+    {
+      "admissible": false,
+      "fold_stability": {
+        "mean_session_pool_recall": 0.7875,
+        "mean_technical_score": 0.548679,
+        "minimum_hit_rate_at_10": 0.55,
+        "minimum_session_pool_recall": 0.725,
+        "minimum_technical_score": 0.452902,
+        "session_pool_recall_pstdev": 0.045069,
+        "technical_score_pstdev": 0.06505
+      },
+      "improves_official_objective": true,
+      "metrics": {
+        "efficiency": 0.50875,
+        "hit_rate_at_10": 0.65,
+        "mrr": 0.406431,
+        "mttc": 5.9125,
+        "recommended_technical_score": 0.548679,
+        "session_count": 160
+      },
+      "plateau_neighbor_count": 0,
+      "pool_recall": {
+        "session_pool_recall": 0.7875,
+        "turn_pool_recall": 0.191489
+      },
+      "recall_to_hit_conversion": 0.825397,
+      "scenario_guardrail": {
+        "maximum_allowed_drop": 0.05,
+        "passed": true,
+        "scenarios": {
+          "boundary": {
+            "baseline_hit_rate_at_10": 0.625,
+            "candidate_hit_rate_at_10": 0.625,
+            "delta": 0.0,
+            "passed": true
+          },
+          "browsing": {
+            "baseline_hit_rate_at_10": 0.78125,
+            "candidate_hit_rate_at_10": 0.796875,
+            "delta": 0.015625,
+            "passed": true
+          },
+          "buying": {
+            "baseline_hit_rate_at_10": 0.59375,
+            "candidate_hit_rate_at_10": 0.609375,
+            "delta": 0.015625,
+            "passed": true
+          },
+          "intent_override": {
+            "baseline_hit_rate_at_10": 0.375,
+            "candidate_hit_rate_at_10": 0.375,
+            "delta": 0.0,
+            "passed": true
+          }
+        }
+      },
+      "weights": {
+        "bm25": 0.6,
+        "dense": 0.24,
+        "structured": 0.16
+      },
+      "within_pool_recall_tolerance": false
+    },
+    {
+      "admissible": false,
+      "fold_stability": {
+        "mean_session_pool_recall": 0.7875,
+        "mean_technical_score": 0.547768,
+        "minimum_hit_rate_at_10": 0.55,
+        "minimum_session_pool_recall": 0.725,
+        "minimum_technical_score": 0.453548,
+        "session_pool_recall_pstdev": 0.045069,
+        "technical_score_pstdev": 0.064074
+      },
+      "improves_official_objective": true,
+      "metrics": {
+        "efficiency": 0.51,
+        "hit_rate_at_10": 0.65,
+        "mrr": 0.40256,
+        "mttc": 5.9,
+        "recommended_technical_score": 0.547768,
+        "session_count": 160
+      },
+      "plateau_neighbor_count": 0,
+      "pool_recall": {
+        "session_pool_recall": 0.7875,
+        "turn_pool_recall": 0.191489
+      },
+      "recall_to_hit_conversion": 0.825397,
+      "scenario_guardrail": {
+        "maximum_allowed_drop": 0.05,
+        "passed": true,
+        "scenarios": {
+          "boundary": {
+            "baseline_hit_rate_at_10": 0.625,
+            "candidate_hit_rate_at_10": 0.625,
+            "delta": 0.0,
+            "passed": true
+          },
+          "browsing": {
+            "baseline_hit_rate_at_10": 0.78125,
+            "candidate_hit_rate_at_10": 0.796875,
+            "delta": 0.015625,
+            "passed": true
+          },
+          "buying": {
+            "baseline_hit_rate_at_10": 0.59375,
+            "candidate_hit_rate_at_10": 0.609375,
+            "delta": 0.015625,
+            "passed": true
+          },
+          "intent_override": {
+            "baseline_hit_rate_at_10": 0.375,
+            "candidate_hit_rate_at_10": 0.375,
+            "delta": 0.0,
+            "passed": true
+          }
+        }
+      },
+      "weights": {
+        "bm25": 0.62,
+        "dense": 0.22,
+        "structured": 0.16
+      },
+      "within_pool_recall_tolerance": false
+    },
+    {
+      "admissible": false,
+      "fold_stability": {
+        "mean_session_pool_recall": 0.7875,
+        "mean_technical_score": 0.547656,
+        "minimum_hit_rate_at_10": 0.55,
+        "minimum_session_pool_recall": 0.725,
+        "minimum_technical_score": 0.453726,
+        "session_pool_recall_pstdev": 0.045069,
+        "technical_score_pstdev": 0.064292
+      },
+      "improves_official_objective": true,
+      "metrics": {
+        "efficiency": 0.51,
+        "hit_rate_at_10": 0.65,
+        "mrr": 0.402187,
+        "mttc": 5.9,
+        "recommended_technical_score": 0.547656,
+        "session_count": 160
+      },
+      "plateau_neighbor_count": 0,
+      "pool_recall": {
+        "session_pool_recall": 0.7875,
+        "turn_pool_recall": 0.191489
+      },
+      "recall_to_hit_conversion": 0.825397,
+      "scenario_guardrail": {
+        "maximum_allowed_drop": 0.05,
+        "passed": true,
+        "scenarios": {
+          "boundary": {
+            "baseline_hit_rate_at_10": 0.625,
+            "candidate_hit_rate_at_10": 0.625,
+            "delta": 0.0,
+            "passed": true
+          },
+          "browsing": {
+            "baseline_hit_rate_at_10": 0.78125,
+            "candidate_hit_rate_at_10": 0.796875,
+            "delta": 0.015625,
+            "passed": true
+          },
+          "buying": {
+            "baseline_hit_rate_at_10": 0.59375,
+            "candidate_hit_rate_at_10": 0.609375,
+            "delta": 0.015625,
+            "passed": true
+          },
+          "intent_override": {
+            "baseline_hit_rate_at_10": 0.375,
+            "candidate_hit_rate_at_10": 0.375,
+            "delta": 0.0,
+            "passed": true
+          }
+        }
+      },
+      "weights": {
+        "bm25": 0.64,
+        "dense": 0.2,
+        "structured": 0.16
+      },
+      "within_pool_recall_tolerance": false
+    },
+    {
+      "admissible": false,
+      "fold_stability": {
+        "mean_session_pool_recall": 0.74375,
+        "mean_technical_score": 0.509456,
+        "minimum_hit_rate_at_10": 0.525,
+        "minimum_session_pool_recall": 0.65,
+        "minimum_technical_score": 0.428664,
+        "session_pool_recall_pstdev": 0.062187,
+        "technical_score_pstdev": 0.075693
+      },
+      "improves_official_objective": false,
+      "metrics": {
+        "efficiency": 0.47875,
+        "hit_rate_at_10": 0.60625,
+        "mrr": 0.368604,
+        "mttc": 6.2125,
+        "recommended_technical_score": 0.509456,
+        "session_count": 160
+      },
+      "plateau_neighbor_count": 0,
+      "pool_recall": {
+        "session_pool_recall": 0.74375,
+        "turn_pool_recall": 0.172577
+      },
+      "recall_to_hit_conversion": 0.815126,
+      "scenario_guardrail": {
+        "maximum_allowed_drop": 0.05,
+        "passed": true,
+        "scenarios": {
+          "boundary": {
+            "baseline_hit_rate_at_10": 0.625,
+            "candidate_hit_rate_at_10": 0.625,
+            "delta": 0.0,
+            "passed": true
+          },
+          "browsing": {
+            "baseline_hit_rate_at_10": 0.78125,
+            "candidate_hit_rate_at_10": 0.75,
+            "delta": -0.03125,
+            "passed": true
+          },
+          "buying": {
+            "baseline_hit_rate_at_10": 0.59375,
+            "candidate_hit_rate_at_10": 0.5625,
+            "delta": -0.03125,
+            "passed": true
+          },
+          "intent_override": {
+            "baseline_hit_rate_at_10": 0.375,
+            "candidate_hit_rate_at_10": 0.333333,
+            "delta": -0.041667,
+            "passed": true
+          }
+        }
+      },
+      "weights": {
+        "bm25": 0.5,
+        "dense": 0.32,
+        "structured": 0.18
+      },
+      "within_pool_recall_tolerance": false
+    },
+    {
+      "admissible": false,
+      "fold_stability": {
+        "mean_session_pool_recall": 0.75625,
+        "mean_technical_score": 0.51506,
+        "minimum_hit_rate_at_10": 0.525,
+        "minimum_session_pool_recall": 0.65,
+        "minimum_technical_score": 0.428664,
+        "session_pool_recall_pstdev": 0.064651,
+        "technical_score_pstdev": 0.079274
+      },
+      "improves_official_objective": false,
+      "metrics": {
+        "efficiency": 0.481875,
+        "hit_rate_at_10": 0.6125,
+        "mrr": 0.374784,
+        "mttc": 6.18125,
+        "recommended_technical_score": 0.51506,
+        "session_count": 160
+      },
+      "plateau_neighbor_count": 0,
+      "pool_recall": {
+        "session_pool_recall": 0.75625,
+        "turn_pool_recall": 0.174941
+      },
+      "recall_to_hit_conversion": 0.809917,
+      "scenario_guardrail": {
+        "maximum_allowed_drop": 0.05,
+        "passed": true,
+        "scenarios": {
+          "boundary": {
+            "baseline_hit_rate_at_10": 0.625,
+            "candidate_hit_rate_at_10": 0.625,
+            "delta": 0.0,
+            "passed": true
+          },
+          "browsing": {
+            "baseline_hit_rate_at_10": 0.78125,
+            "candidate_hit_rate_at_10": 0.765625,
+            "delta": -0.015625,
+            "passed": true
+          },
+          "buying": {
+            "baseline_hit_rate_at_10": 0.59375,
+            "candidate_hit_rate_at_10": 0.5625,
+            "delta": -0.03125,
+            "passed": true
+          },
+          "intent_override": {
+            "baseline_hit_rate_at_10": 0.375,
+            "candidate_hit_rate_at_10": 0.333333,
+            "delta": -0.041667,
+            "passed": true
+          }
+        }
+      },
+      "weights": {
+        "bm25": 0.52,
+        "dense": 0.3,
+        "structured": 0.18
+      },
+      "within_pool_recall_tolerance": false
+    },
+    {
+      "admissible": false,
+      "fold_stability": {
+        "mean_session_pool_recall": 0.75625,
+        "mean_technical_score": 0.535935,
+        "minimum_hit_rate_at_10": 0.55,
+        "minimum_session_pool_recall": 0.65,
+        "minimum_technical_score": 0.452164,
+        "session_pool_recall_pstdev": 0.064651,
+        "technical_score_pstdev": 0.078904
+      },
+      "improves_official_objective": false,
+      "metrics": {
+        "efficiency": 0.499375,
+        "hit_rate_at_10": 0.6375,
+        "mrr": 0.391034,
+        "mttc": 6.00625,
+        "recommended_technical_score": 0.535935,
+        "session_count": 160
+      },
+      "plateau_neighbor_count": 0,
+      "pool_recall": {
+        "session_pool_recall": 0.75625,
+        "turn_pool_recall": 0.182033
+      },
+      "recall_to_hit_conversion": 0.842975,
+      "scenario_guardrail": {
+        "maximum_allowed_drop": 0.05,
+        "passed": true,
+        "scenarios": {
+          "boundary": {
+            "baseline_hit_rate_at_10": 0.625,
+            "candidate_hit_rate_at_10": 0.625,
+            "delta": 0.0,
+            "passed": true
+          },
+          "browsing": {
+            "baseline_hit_rate_at_10": 0.78125,
+            "candidate_hit_rate_at_10": 0.78125,
+            "delta": 0.0,
+            "passed": true
+          },
+          "buying": {
+            "baseline_hit_rate_at_10": 0.59375,
+            "candidate_hit_rate_at_10": 0.609375,
+            "delta": 0.015625,
+            "passed": true
+          },
+          "intent_override": {
+            "baseline_hit_rate_at_10": 0.375,
+            "candidate_hit_rate_at_10": 0.333333,
+            "delta": -0.041667,
+            "passed": true
+          }
+        }
+      },
+      "weights": {
+        "bm25": 0.54,
+        "dense": 0.28,
+        "structured": 0.18
+      },
+      "within_pool_recall_tolerance": false
+    },
+    {
+      "admissible": false,
+      "fold_stability": {
+        "mean_session_pool_recall": 0.7625,
+        "mean_technical_score": 0.533493,
+        "minimum_hit_rate_at_10": 0.55,
+        "minimum_session_pool_recall": 0.65,
+        "minimum_technical_score": 0.452268,
+        "session_pool_recall_pstdev": 0.067315,
+        "technical_score_pstdev": 0.075201
+      },
+      "improves_official_objective": false,
+      "metrics": {
+        "efficiency": 0.495,
+        "hit_rate_at_10": 0.63125,
+        "mrr": 0.396225,
+        "mttc": 6.05,
+        "recommended_technical_score": 0.533492,
+        "session_count": 160
+      },
+      "plateau_neighbor_count": 0,
+      "pool_recall": {
+        "session_pool_recall": 0.7625,
+        "turn_pool_recall": 0.184397
+      },
+      "recall_to_hit_conversion": 0.827869,
+      "scenario_guardrail": {
+        "maximum_allowed_drop": 0.05,
+        "passed": true,
+        "scenarios": {
+          "boundary": {
+            "baseline_hit_rate_at_10": 0.625,
+            "candidate_hit_rate_at_10": 0.625,
+            "delta": 0.0,
+            "passed": true
+          },
+          "browsing": {
+            "baseline_hit_rate_at_10": 0.78125,
+            "candidate_hit_rate_at_10": 0.78125,
+            "delta": 0.0,
+            "passed": true
+          },
+          "buying": {
+            "baseline_hit_rate_at_10": 0.59375,
+            "candidate_hit_rate_at_10": 0.59375,
+            "delta": 0.0,
+            "passed": true
+          },
+          "intent_override": {
+            "baseline_hit_rate_at_10": 0.375,
+            "candidate_hit_rate_at_10": 0.333333,
+            "delta": -0.041667,
+            "passed": true
+          }
+        }
+      },
+      "weights": {
+        "bm25": 0.56,
+        "dense": 0.26,
+        "structured": 0.18
+      },
+      "within_pool_recall_tolerance": false
+    },
+    {
+      "admissible": false,
+      "fold_stability": {
+        "mean_session_pool_recall": 0.7625,
+        "mean_technical_score": 0.536849,
+        "minimum_hit_rate_at_10": 0.55,
+        "minimum_session_pool_recall": 0.65,
+        "minimum_technical_score": 0.452164,
+        "session_pool_recall_pstdev": 0.067315,
+        "technical_score_pstdev": 0.070052
+      },
+      "improves_official_objective": false,
+      "metrics": {
+        "efficiency": 0.503125,
+        "hit_rate_at_10": 0.6375,
+        "mrr": 0.39158,
+        "mttc": 5.96875,
+        "recommended_technical_score": 0.536849,
+        "session_count": 160
+      },
+      "plateau_neighbor_count": 0,
+      "pool_recall": {
+        "session_pool_recall": 0.7625,
+        "turn_pool_recall": 0.185579
+      },
+      "recall_to_hit_conversion": 0.836066,
+      "scenario_guardrail": {
+        "maximum_allowed_drop": 0.05,
+        "passed": true,
+        "scenarios": {
+          "boundary": {
+            "baseline_hit_rate_at_10": 0.625,
+            "candidate_hit_rate_at_10": 0.625,
+            "delta": 0.0,
+            "passed": true
+          },
+          "browsing": {
+            "baseline_hit_rate_at_10": 0.78125,
+            "candidate_hit_rate_at_10": 0.796875,
+            "delta": 0.015625,
+            "passed": true
+          },
+          "buying": {
+            "baseline_hit_rate_at_10": 0.59375,
+            "candidate_hit_rate_at_10": 0.59375,
+            "delta": 0.0,
+            "passed": true
+          },
+          "intent_override": {
+            "baseline_hit_rate_at_10": 0.375,
+            "candidate_hit_rate_at_10": 0.333333,
+            "delta": -0.041667,
+            "passed": true
+          }
+        }
+      },
+      "weights": {
+        "bm25": 0.58,
+        "dense": 0.24,
+        "structured": 0.18
+      },
+      "within_pool_recall_tolerance": false
+    },
+    {
+      "admissible": false,
+      "fold_stability": {
+        "mean_session_pool_recall": 0.76875,
+        "mean_technical_score": 0.535995,
+        "minimum_hit_rate_at_10": 0.55,
+        "minimum_session_pool_recall": 0.675,
+        "minimum_technical_score": 0.452164,
+        "session_pool_recall_pstdev": 0.05694,
+        "technical_score_pstdev": 0.069376
+      },
+      "improves_official_objective": false,
+      "metrics": {
+        "efficiency": 0.506875,
+        "hit_rate_at_10": 0.6375,
+        "mrr": 0.386233,
+        "mttc": 5.93125,
+        "recommended_technical_score": 0.535995,
+        "session_count": 160
+      },
+      "plateau_neighbor_count": 0,
+      "pool_recall": {
+        "session_pool_recall": 0.76875,
+        "turn_pool_recall": 0.189125
+      },
+      "recall_to_hit_conversion": 0.829268,
+      "scenario_guardrail": {
+        "maximum_allowed_drop": 0.05,
+        "passed": true,
+        "scenarios": {
+          "boundary": {
+            "baseline_hit_rate_at_10": 0.625,
+            "candidate_hit_rate_at_10": 0.625,
+            "delta": 0.0,
+            "passed": true
+          },
+          "browsing": {
+            "baseline_hit_rate_at_10": 0.78125,
+            "candidate_hit_rate_at_10": 0.796875,
+            "delta": 0.015625,
+            "passed": true
+          },
+          "buying": {
+            "baseline_hit_rate_at_10": 0.59375,
+            "candidate_hit_rate_at_10": 0.59375,
+            "delta": 0.0,
+            "passed": true
+          },
+          "intent_override": {
+            "baseline_hit_rate_at_10": 0.375,
+            "candidate_hit_rate_at_10": 0.333333,
+            "delta": -0.041667,
+            "passed": true
+          }
+        }
+      },
+      "weights": {
+        "bm25": 0.6,
+        "dense": 0.22,
+        "structured": 0.18
+      },
+      "within_pool_recall_tolerance": false
+    },
+    {
+      "admissible": false,
+      "fold_stability": {
+        "mean_session_pool_recall": 0.76875,
+        "mean_technical_score": 0.536516,
+        "minimum_hit_rate_at_10": 0.55,
+        "minimum_session_pool_recall": 0.675,
+        "minimum_technical_score": 0.452164,
+        "session_pool_recall_pstdev": 0.05694,
+        "technical_score_pstdev": 0.068989
+      },
+      "improves_official_objective": false,
+      "metrics": {
+        "efficiency": 0.505625,
+        "hit_rate_at_10": 0.6375,
+        "mrr": 0.388802,
+        "mttc": 5.94375,
+        "recommended_technical_score": 0.536516,
+        "session_count": 160
+      },
+      "plateau_neighbor_count": 0,
+      "pool_recall": {
+        "session_pool_recall": 0.76875,
+        "turn_pool_recall": 0.189125
+      },
+      "recall_to_hit_conversion": 0.829268,
+      "scenario_guardrail": {
+        "maximum_allowed_drop": 0.05,
+        "passed": true,
+        "scenarios": {
+          "boundary": {
+            "baseline_hit_rate_at_10": 0.625,
+            "candidate_hit_rate_at_10": 0.625,
+            "delta": 0.0,
+            "passed": true
+          },
+          "browsing": {
+            "baseline_hit_rate_at_10": 0.78125,
+            "candidate_hit_rate_at_10": 0.796875,
+            "delta": 0.015625,
+            "passed": true
+          },
+          "buying": {
+            "baseline_hit_rate_at_10": 0.59375,
+            "candidate_hit_rate_at_10": 0.59375,
+            "delta": 0.0,
+            "passed": true
+          },
+          "intent_override": {
+            "baseline_hit_rate_at_10": 0.375,
+            "candidate_hit_rate_at_10": 0.333333,
+            "delta": -0.041667,
+            "passed": true
+          }
+        }
+      },
+      "weights": {
+        "bm25": 0.62,
+        "dense": 0.2,
+        "structured": 0.18
+      },
+      "within_pool_recall_tolerance": false
+    },
+    {
+      "admissible": false,
+      "fold_stability": {
+        "mean_session_pool_recall": 0.7125,
+        "mean_technical_score": 0.493525,
+        "minimum_hit_rate_at_10": 0.475,
+        "minimum_session_pool_recall": 0.65,
+        "minimum_technical_score": 0.395759,
+        "session_pool_recall_pstdev": 0.045069,
+        "technical_score_pstdev": 0.077866
+      },
+      "improves_official_objective": false,
+      "metrics": {
+        "efficiency": 0.4625,
+        "hit_rate_at_10": 0.58125,
+        "mrr": 0.367999,
+        "mttc": 6.375,
+        "recommended_technical_score": 0.493525,
+        "session_count": 160
+      },
+      "plateau_neighbor_count": 0,
+      "pool_recall": {
+        "session_pool_recall": 0.7125,
+        "turn_pool_recall": 0.164303
+      },
+      "recall_to_hit_conversion": 0.815789,
+      "scenario_guardrail": {
+        "maximum_allowed_drop": 0.05,
+        "passed": false,
+        "scenarios": {
+          "boundary": {
+            "baseline_hit_rate_at_10": 0.625,
+            "candidate_hit_rate_at_10": 0.625,
+            "delta": 0.0,
+            "passed": true
+          },
+          "browsing": {
+            "baseline_hit_rate_at_10": 0.78125,
+            "candidate_hit_rate_at_10": 0.6875,
+            "delta": -0.09375,
+            "passed": false
+          },
+          "buying": {
+            "baseline_hit_rate_at_10": 0.59375,
+            "candidate_hit_rate_at_10": 0.578125,
+            "delta": -0.015625,
+            "passed": true
+          },
+          "intent_override": {
+            "baseline_hit_rate_at_10": 0.375,
+            "candidate_hit_rate_at_10": 0.291667,
+            "delta": -0.083333,
+            "passed": false
+          }
+        }
+      },
+      "weights": {
+        "bm25": 0.5,
+        "dense": 0.3,
+        "structured": 0.2
+      },
+      "within_pool_recall_tolerance": false
+    },
+    {
+      "admissible": false,
+      "fold_stability": {
+        "mean_session_pool_recall": 0.73125,
+        "mean_technical_score": 0.505973,
+        "minimum_hit_rate_at_10": 0.475,
+        "minimum_session_pool_recall": 0.625,
+        "minimum_technical_score": 0.395655,
+        "session_pool_recall_pstdev": 0.071535,
+        "technical_score_pstdev": 0.091507
+      },
+      "improves_official_objective": false,
+      "metrics": {
+        "efficiency": 0.4775,
+        "hit_rate_at_10": 0.6,
+        "mrr": 0.368242,
+        "mttc": 6.225,
+        "recommended_technical_score": 0.505973,
+        "session_count": 160
+      },
+      "plateau_neighbor_count": 0,
+      "pool_recall": {
+        "session_pool_recall": 0.73125,
+        "turn_pool_recall": 0.169031
+      },
+      "recall_to_hit_conversion": 0.820513,
+      "scenario_guardrail": {
+        "maximum_allowed_drop": 0.05,
+        "passed": false,
+        "scenarios": {
+          "boundary": {
+            "baseline_hit_rate_at_10": 0.625,
+            "candidate_hit_rate_at_10": 0.625,
+            "delta": 0.0,
+            "passed": true
+          },
+          "browsing": {
+            "baseline_hit_rate_at_10": 0.78125,
+            "candidate_hit_rate_at_10": 0.71875,
+            "delta": -0.0625,
+            "passed": false
+          },
+          "buying": {
+            "baseline_hit_rate_at_10": 0.59375,
+            "candidate_hit_rate_at_10": 0.578125,
+            "delta": -0.015625,
+            "passed": true
+          },
+          "intent_override": {
+            "baseline_hit_rate_at_10": 0.375,
+            "candidate_hit_rate_at_10": 0.333333,
+            "delta": -0.041667,
+            "passed": true
+          }
+        }
+      },
+      "weights": {
+        "bm25": 0.52,
+        "dense": 0.28,
+        "structured": 0.2
+      },
+      "within_pool_recall_tolerance": false
+    },
+    {
+      "admissible": false,
+      "fold_stability": {
+        "mean_session_pool_recall": 0.73125,
+        "mean_technical_score": 0.506438,
+        "minimum_hit_rate_at_10": 0.475,
+        "minimum_session_pool_recall": 0.625,
+        "minimum_technical_score": 0.395655,
+        "session_pool_recall_pstdev": 0.071535,
+        "technical_score_pstdev": 0.091925
+      },
+      "improves_official_objective": false,
+      "metrics": {
+        "efficiency": 0.479375,
+        "hit_rate_at_10": 0.6,
+        "mrr": 0.368544,
+        "mttc": 6.20625,
+        "recommended_technical_score": 0.506438,
+        "session_count": 160
+      },
+      "plateau_neighbor_count": 0,
+      "pool_recall": {
+        "session_pool_recall": 0.73125,
+        "turn_pool_recall": 0.170213
+      },
+      "recall_to_hit_conversion": 0.820513,
+      "scenario_guardrail": {
+        "maximum_allowed_drop": 0.05,
+        "passed": false,
+        "scenarios": {
+          "boundary": {
+            "baseline_hit_rate_at_10": 0.625,
+            "candidate_hit_rate_at_10": 0.625,
+            "delta": 0.0,
+            "passed": true
+          },
+          "browsing": {
+            "baseline_hit_rate_at_10": 0.78125,
+            "candidate_hit_rate_at_10": 0.71875,
+            "delta": -0.0625,
+            "passed": false
+          },
+          "buying": {
+            "baseline_hit_rate_at_10": 0.59375,
+            "candidate_hit_rate_at_10": 0.578125,
+            "delta": -0.015625,
+            "passed": true
+          },
+          "intent_override": {
+            "baseline_hit_rate_at_10": 0.375,
+            "candidate_hit_rate_at_10": 0.333333,
+            "delta": -0.041667,
+            "passed": true
+          }
+        }
+      },
+      "weights": {
+        "bm25": 0.54,
+        "dense": 0.26,
+        "structured": 0.2
+      },
+      "within_pool_recall_tolerance": false
+    },
+    {
+      "admissible": false,
+      "fold_stability": {
+        "mean_session_pool_recall": 0.7375,
+        "mean_technical_score": 0.510404,
+        "minimum_hit_rate_at_10": 0.5,
+        "minimum_session_pool_recall": 0.625,
+        "minimum_technical_score": 0.411697,
+        "session_pool_recall_pstdev": 0.071807,
+        "technical_score_pstdev": 0.087172
+      },
+      "improves_official_objective": false,
+      "metrics": {
+        "efficiency": 0.4825,
+        "hit_rate_at_10": 0.60625,
+        "mrr": 0.369263,
+        "mttc": 6.175,
+        "recommended_technical_score": 0.510404,
+        "session_count": 160
+      },
+      "plateau_neighbor_count": 0,
+      "pool_recall": {
+        "session_pool_recall": 0.7375,
+        "turn_pool_recall": 0.172577
+      },
+      "recall_to_hit_conversion": 0.822034,
+      "scenario_guardrail": {
+        "maximum_allowed_drop": 0.05,
+        "passed": true,
+        "scenarios": {
+          "boundary": {
+            "baseline_hit_rate_at_10": 0.625,
+            "candidate_hit_rate_at_10": 0.625,
+            "delta": 0.0,
+            "passed": true
+          },
+          "browsing": {
+            "baseline_hit_rate_at_10": 0.78125,
+            "candidate_hit_rate_at_10": 0.734375,
+            "delta": -0.046875,
+            "passed": true
+          },
+          "buying": {
+            "baseline_hit_rate_at_10": 0.59375,
+            "candidate_hit_rate_at_10": 0.578125,
+            "delta": -0.015625,
+            "passed": true
+          },
+          "intent_override": {
+            "baseline_hit_rate_at_10": 0.375,
+            "candidate_hit_rate_at_10": 0.333333,
+            "delta": -0.041667,
+            "passed": true
+          }
+        }
+      },
+      "weights": {
+        "bm25": 0.56,
+        "dense": 0.24,
+        "structured": 0.2
+      },
+      "within_pool_recall_tolerance": false
+    },
+    {
+      "admissible": false,
+      "fold_stability": {
+        "mean_session_pool_recall": 0.74375,
+        "mean_technical_score": 0.524774,
+        "minimum_hit_rate_at_10": 0.5,
+        "minimum_session_pool_recall": 0.625,
+        "minimum_technical_score": 0.411592,
+        "session_pool_recall_pstdev": 0.073686,
+        "technical_score_pstdev": 0.08999
+      },
+      "improves_official_objective": false,
+      "metrics": {
+        "efficiency": 0.49625,
+        "hit_rate_at_10": 0.625,
+        "mrr": 0.376746,
+        "mttc": 6.0375,
+        "recommended_technical_score": 0.524774,
+        "session_count": 160
+      },
+      "plateau_neighbor_count": 0,
+      "pool_recall": {
+        "session_pool_recall": 0.74375,
+        "turn_pool_recall": 0.176123
+      },
+      "recall_to_hit_conversion": 0.840336,
+      "scenario_guardrail": {
+        "maximum_allowed_drop": 0.05,
+        "passed": true,
+        "scenarios": {
+          "boundary": {
+            "baseline_hit_rate_at_10": 0.625,
+            "candidate_hit_rate_at_10": 0.625,
+            "delta": 0.0,
+            "passed": true
+          },
+          "browsing": {
+            "baseline_hit_rate_at_10": 0.78125,
+            "candidate_hit_rate_at_10": 0.765625,
+            "delta": -0.015625,
+            "passed": true
+          },
+          "buying": {
+            "baseline_hit_rate_at_10": 0.59375,
+            "candidate_hit_rate_at_10": 0.59375,
+            "delta": 0.0,
+            "passed": true
+          },
+          "intent_override": {
+            "baseline_hit_rate_at_10": 0.375,
+            "candidate_hit_rate_at_10": 0.333333,
+            "delta": -0.041667,
+            "passed": true
+          }
+        }
+      },
+      "weights": {
+        "bm25": 0.58,
+        "dense": 0.22,
+        "structured": 0.2
+      },
+      "within_pool_recall_tolerance": false
+    },
+    {
+      "admissible": false,
+      "fold_stability": {
+        "mean_session_pool_recall": 0.75,
+        "mean_technical_score": 0.535679,
+        "minimum_hit_rate_at_10": 0.525,
+        "minimum_session_pool_recall": 0.65,
+        "minimum_technical_score": 0.435092,
+        "session_pool_recall_pstdev": 0.063738,
+        "technical_score_pstdev": 0.079354
+      },
+      "improves_official_objective": false,
+      "metrics": {
+        "efficiency": 0.505,
+        "hit_rate_at_10": 0.6375,
+        "mrr": 0.386431,
+        "mttc": 5.95,
+        "recommended_technical_score": 0.535679,
+        "session_count": 160
+      },
+      "plateau_neighbor_count": 0,
+      "pool_recall": {
+        "session_pool_recall": 0.75,
+        "turn_pool_recall": 0.182033
+      },
+      "recall_to_hit_conversion": 0.85,
+      "scenario_guardrail": {
+        "maximum_allowed_drop": 0.05,
+        "passed": true,
+        "scenarios": {
+          "boundary": {
+            "baseline_hit_rate_at_10": 0.625,
+            "candidate_hit_rate_at_10": 0.625,
+            "delta": 0.0,
+            "passed": true
+          },
+          "browsing": {
+            "baseline_hit_rate_at_10": 0.78125,
+            "candidate_hit_rate_at_10": 0.78125,
+            "delta": 0.0,
+            "passed": true
+          },
+          "buying": {
+            "baseline_hit_rate_at_10": 0.59375,
+            "candidate_hit_rate_at_10": 0.609375,
+            "delta": 0.015625,
+            "passed": true
+          },
+          "intent_override": {
+            "baseline_hit_rate_at_10": 0.375,
+            "candidate_hit_rate_at_10": 0.333333,
+            "delta": -0.041667,
+            "passed": true
+          }
+        }
+      },
+      "weights": {
+        "bm25": 0.6,
+        "dense": 0.2,
+        "structured": 0.2
+      },
+      "within_pool_recall_tolerance": false
+    }
+  ],
+  "dataset": {
+    "fold_count": 4,
+    "fold_seed": 20260830,
+    "folds": [
+      {
+        "fold": 1,
+        "scenario_counts": {
+          "boundary": 2,
+          "browsing": 16,
+          "buying": 16,
+          "intent_override": 6
+        },
+        "session_count": 40,
+        "session_ids_sha256": "b85aa073cedcef9b6dabda18847dd2488c01dc8d40107ac60bb10b6bc045935d",
+        "turn_count": 212
+      },
+      {
+        "fold": 2,
+        "scenario_counts": {
+          "boundary": 2,
+          "browsing": 16,
+          "buying": 16,
+          "intent_override": 6
+        },
+        "session_count": 40,
+        "session_ids_sha256": "e7d8c05d5446d1e7055051a4567cdbfd5341dfb3d83293a333a7c53a33906954",
+        "turn_count": 253
+      },
+      {
+        "fold": 3,
+        "scenario_counts": {
+          "boundary": 2,
+          "browsing": 16,
+          "buying": 16,
+          "intent_override": 6
+        },
+        "session_count": 40,
+        "session_ids_sha256": "bbf45e04fdf89c0f3d1c2801e0791dafc7afab94e30b33758e23b907a131eba0",
+        "turn_count": 198
+      },
+      {
+        "fold": 4,
+        "scenario_counts": {
+          "boundary": 2,
+          "browsing": 16,
+          "buying": 16,
+          "intent_override": 6
+        },
+        "session_count": 40,
+        "session_ids_sha256": "6922aeffb143ac601628bfe69c54925e97d9e9590a930f2e19a1c5f3ad4d516b",
+        "turn_count": 245
+      }
+    ],
+    "holdout_opened": false,
+    "holdout_session_count": 40,
+    "session_count": 160,
+    "turn_count": 908
+  },
+  "decision": "freeze_and_activate",
+  "frozen_configuration": {
+    "catalog": {
+      "path": "data/catalog.jsonl",
+      "sha256": "da979b05a68af864cb0dcf9ee6a81c010c7e66a57978ad286c7a2e005fc69a67"
+    },
+    "dense_catalog": {
+      "content_sha256": "4619d67659c46ae8130205e586da19de05f1fb2af659513cef68ced041841183",
+      "file_name": "catalog.jsonl",
+      "file_sha256": "da979b05a68af864cb0dcf9ee6a81c010c7e66a57978ad286c7a2e005fc69a67",
+      "product_count": 50000
+    },
+    "dense_vector_store": {
+      "collection": "catalog_dense",
+      "directory": "qdrant",
+      "directory_sha256": "19cf21ba7063f8bfce474207fbe5126fded7afa00cfc4e9a7e7a010f4d891c9a",
+      "distance": "cosine",
+      "engine": "qdrant-local",
+      "ids_file": "ids.json",
+      "ids_sha256": "e83003837c6780aa48ee39e1a4d1ea29bd911bf6fbce31f59c4c71136d0fe02a",
+      "point_id_scheme": "sorted_parent_asin_row_index"
+    },
+    "embedding_checksum": "caaaf9d3075e53ec15a1f6ef996108948da172d7c954ecd05f970962431a9fce",
+    "embedding_model": {
+      "dimensions": 384,
+      "fingerprint_sha256": "ca8f4c28964cbcb918cda59f5e5aeb6b8f18f40e76c617babdcf82f65179131d",
+      "identity": "sentence-transformers/all-MiniLM-L6-v2",
+      "max_sequence_length": 256,
+      "normalize": true,
+      "pooling": "mean",
+      "query_prefix": "",
+      "revision": "1110a243fdf4706b3f48f1d95db1a4f5529b4d41"
+    },
+    "normalizer": "per-route-min-max-v1",
+    "planning": {
+      "connected_model_version": null,
+      "prompt_sha256": "5f48763e134016e0bfc2046039407b9adb9f62ce474b90f2175bc85825424f5b",
+      "prompt_version": "shopping-turn-planner-v1",
+      "provider": null
+    },
+    "policy_version": "pool-aware-global-v2",
+    "rerank_deadline_seconds": 1.5,
+    "rerank_depth": 50,
+    "reranker": {
+      "directory_sha256": "92df7334846cb53cf56721bf1c44f5f8dd9f7068b818940ef9b5646c6333e502",
+      "identity": "cross-encoder/ms-marco-MiniLM-L-6-v2",
+      "revision": "233902d25c440f23af6f7d6e94d2946bac0bee0a"
+    },
+    "route_depth": 100,
+    "weights": {
+      "bm25": 0.64,
+      "dense": 0.34,
+      "structured": 0.02
+    }
+  },
+  "gap_closure": {
+    "current_depth_50_pool_recall": 0.775,
+    "current_depth_50_to_union_gap_closed": 0.4,
+    "full_union_pool_recall": 0.9,
+    "fused_30_pool_recall": 0.725,
+    "fused_30_to_union_gap_closed": 0.571429,
+    "minimum_required_fraction": 0.25,
+    "selected_depth_50_pool_recall": 0.825
+  },
+  "gates": {
+    "maximum_scenario_hit_rate_drop": 0.05,
+    "minimum_gap_closure": 0.25,
+    "pool_recall_tolerance": 0.0,
+    "rerank_p95_budget_seconds": 1.5,
+    "runtime_budget_seconds_200_sessions": 900.0
+  },
+  "intent_override": {
+    "metrics": {
+      "efficiency": 0.3,
+      "hit_rate_at_10": 0.5,
+      "mrr": 0.31875,
+      "mttc": 8.0,
+      "recommended_technical_score": 0.405625,
+      "session_count": 24
+    },
+    "pool_recall": {
+      "session_pool_recall": 0.666667,
+      "turn_pool_recall": 0.142857
+    },
+    "recall_to_hit_conversion": 0.75,
+    "recall_to_hit_gap": 0.166667
+  },
+  "provenance": {
+    "artifact_configuration_sha256": "dc2f02b4af6bf8455eb5b826a6e2774808ad0ddcd4774edec9eefb3793aa4835",
+    "artifact_identities_sha256": "2c577a75c345dc30f21b933694d47237c33a1769cf95482770176631d1677e1f",
+    "artifact_report_sha256": "d754cd25bcc1f673732cee678ab2a7d5aa369ef0cfba52b6b31bf0af26b5c8e8",
+    "artifact_sha256": "712378b277e1bb3fa7543828f101312725dab727f0bf1c59756ed2d253c4cd31",
+    "runtime_report_sha256": "1054e6bc0f9264a76340dc59a063936f3cee413e6019bae3b188ccf2cd46015b",
+    "training_report_sha256": "72938ba34ab39630e0dd79e46ec2b7838fccd60572b5c32ff967a406402774a8"
+  },
+  "runtime_evidence": {
+    "passed": true,
+    "projected_wall_seconds_200_sessions": 545.437,
+    "rerank_latency_p95_seconds": 0.31475950000458397,
+    "rerank_query_count": 892,
+    "turn_count": 892
+  },
+  "selected": {
+    "admissible": true,
+    "fold_stability": {
+      "mean_session_pool_recall": 0.825,
+      "mean_technical_score": 0.551831,
+      "minimum_hit_rate_at_10": 0.575,
+      "minimum_session_pool_recall": 0.75,
+      "minimum_technical_score": 0.47253,
+      "session_pool_recall_pstdev": 0.046771,
+      "technical_score_pstdev": 0.070718
+    },
+    "folds": [
+      {
+        "depth": 50,
+        "metrics": {
+          "efficiency": 0.5225,
+          "hit_rate_at_10": 0.675,
+          "mrr": 0.452321,
+          "mttc": 5.775,
+          "recommended_technical_score": 0.577696,
+          "session_count": 40
+        },
+        "pool_recall": {
+          "session_pool_recall": 0.825,
+          "turn_pool_recall": 0.214286
+        },
+        "recall_to_hit_conversion": 0.818182,
+        "reranked": true,
+        "scenario_metrics": {
+          "boundary": {
+            "metrics": {
+              "efficiency": 0.9,
+              "hit_rate_at_10": 1.0,
+              "mrr": 0.666667,
+              "mttc": 2.0,
+              "recommended_technical_score": 0.88,
+              "session_count": 2
+            },
+            "pool_recall": {
+              "session_pool_recall": 1.0,
+              "turn_pool_recall": 0.75
+            },
+            "recall_to_hit_conversion": 1.0
+          },
+          "browsing": {
+            "metrics": {
+              "efficiency": 0.61875,
+              "hit_rate_at_10": 0.8125,
+              "mrr": 0.519345,
+              "mttc": 4.8125,
+              "recommended_technical_score": 0.685804,
+              "session_count": 16
+            },
+            "pool_recall": {
+              "session_pool_recall": 0.875,
+              "turn_pool_recall": 0.243243
+            },
+            "recall_to_hit_conversion": 0.928571
+          },
+          "buying": {
+            "metrics": {
+              "efficiency": 0.41875,
+              "hit_rate_at_10": 0.5,
+              "mrr": 0.278125,
+              "mttc": 6.8125,
+              "recommended_technical_score": 0.417187,
+              "session_count": 16
+            },
+            "pool_recall": {
+              "session_pool_recall": 0.8125,
+              "turn_pool_recall": 0.178947
+            },
+            "recall_to_hit_conversion": 0.615385
+          },
+          "intent_override": {
+            "metrics": {
+              "efficiency": 0.416667,
+              "hit_rate_at_10": 0.666667,
+              "mrr": 0.666667,
+              "mttc": 6.833333,
+              "recommended_technical_score": 0.616667,
+              "session_count": 6
+            },
+            "pool_recall": {
+              "session_pool_recall": 0.666667,
+              "turn_pool_recall": 0.173913
+            },
+            "recall_to_hit_conversion": 1.0
+          }
+        },
+        "weights": {
+          "bm25": 0.64,
+          "dense": 0.34,
+          "structured": 0.02
+        }
+      },
+      {
+        "depth": 50,
+        "metrics": {
+          "efficiency": 0.44,
+          "hit_rate_at_10": 0.575,
+          "mrr": 0.323433,
+          "mttc": 6.6,
+          "recommended_technical_score": 0.47253,
+          "session_count": 40
+        },
+        "pool_recall": {
+          "session_pool_recall": 0.85,
+          "turn_pool_recall": 0.180672
+        },
+        "recall_to_hit_conversion": 0.676471,
+        "reranked": true,
+        "scenario_metrics": {
+          "boundary": {
+            "metrics": {
+              "efficiency": 0.0,
+              "hit_rate_at_10": 0.0,
+              "mrr": 0.0,
+              "mttc": 11.0,
+              "recommended_technical_score": 0.0,
+              "session_count": 2
+            },
+            "pool_recall": {
+              "session_pool_recall": 0.0,
+              "turn_pool_recall": 0.0
+            },
+            "recall_to_hit_conversion": 0.0
+          },
+          "browsing": {
+            "metrics": {
+              "efficiency": 0.55625,
+              "hit_rate_at_10": 0.75,
+              "mrr": 0.383581,
+              "mttc": 5.4375,
+              "recommended_technical_score": 0.601324,
+              "session_count": 16
+            },
+            "pool_recall": {
+              "session_pool_recall": 1.0,
+              "turn_pool_recall": 0.25
+            },
+            "recall_to_hit_conversion": 0.75
+          },
+          "buying": {
+            "metrics": {
+              "efficiency": 0.46875,
+              "hit_rate_at_10": 0.5625,
+              "mrr": 0.396875,
+              "mttc": 6.3125,
+              "recommended_technical_score": 0.494062,
+              "session_count": 16
+            },
+            "pool_recall": {
+              "session_pool_recall": 0.875,
+              "turn_pool_recall": 0.180851
+            },
+            "recall_to_hit_conversion": 0.642857
+          },
+          "intent_override": {
+            "metrics": {
+              "efficiency": 0.2,
+              "hit_rate_at_10": 0.333333,
+              "mrr": 0.075,
+              "mttc": 9.0,
+              "recommended_technical_score": 0.229166,
+              "session_count": 6
+            },
+            "pool_recall": {
+              "session_pool_recall": 0.666667,
+              "turn_pool_recall": 0.125
+            },
+            "recall_to_hit_conversion": 0.499999
+          }
+        },
+        "weights": {
+          "bm25": 0.64,
+          "dense": 0.34,
+          "structured": 0.02
+        }
+      },
+      {
+        "depth": 50,
+        "metrics": {
+          "efficiency": 0.6075,
+          "hit_rate_at_10": 0.775,
+          "mrr": 0.485893,
+          "mttc": 4.925,
+          "recommended_technical_score": 0.654768,
+          "session_count": 40
+        },
+        "pool_recall": {
+          "session_pool_recall": 0.875,
+          "turn_pool_recall": 0.263736
+        },
+        "recall_to_hit_conversion": 0.885714,
+        "reranked": true,
+        "scenario_metrics": {
+          "boundary": {
+            "metrics": {
+              "efficiency": 0.7,
+              "hit_rate_at_10": 1.0,
+              "mrr": 0.75,
+              "mttc": 4.0,
+              "recommended_technical_score": 0.865,
+              "session_count": 2
+            },
+            "pool_recall": {
+              "session_pool_recall": 1.0,
+              "turn_pool_recall": 0.25
+            },
+            "recall_to_hit_conversion": 1.0
+          },
+          "browsing": {
+            "metrics": {
+              "efficiency": 0.5875,
+              "hit_rate_at_10": 0.8125,
+              "mrr": 0.583333,
+              "mttc": 5.125,
+              "recommended_technical_score": 0.69875,
+              "session_count": 16
+            },
+            "pool_recall": {
+              "session_pool_recall": 0.875,
+              "turn_pool_recall": 0.240506
+            },
+            "recall_to_hit_conversion": 0.928571
+          },
+          "buying": {
+            "metrics": {
+              "efficiency": 0.76875,
+              "hit_rate_at_10": 0.875,
+              "mrr": 0.506399,
+              "mttc": 3.3125,
+              "recommended_technical_score": 0.74317,
+              "session_count": 16
+            },
+            "pool_recall": {
+              "session_pool_recall": 0.9375,
+              "turn_pool_recall": 0.411765
+            },
+            "recall_to_hit_conversion": 0.933333
+          },
+          "intent_override": {
+            "metrics": {
+              "efficiency": 0.2,
+              "hit_rate_at_10": 0.333333,
+              "mrr": 0.083333,
+              "mttc": 9.0,
+              "recommended_technical_score": 0.231666,
+              "session_count": 6
+            },
+            "pool_recall": {
+              "session_pool_recall": 0.666667,
+              "turn_pool_recall": 0.136364
+            },
+            "recall_to_hit_conversion": 0.499999
+          }
+        },
+        "weights": {
+          "bm25": 0.64,
+          "dense": 0.34,
+          "structured": 0.02
+        }
+      },
+      {
+        "depth": 50,
+        "metrics": {
+          "efficiency": 0.4625,
+          "hit_rate_at_10": 0.6,
+          "mrr": 0.366101,
+          "mttc": 6.375,
+          "recommended_technical_score": 0.50233,
+          "session_count": 40
+        },
+        "pool_recall": {
+          "session_pool_recall": 0.75,
+          "turn_pool_recall": 0.169565
+        },
+        "recall_to_hit_conversion": 0.8,
+        "reranked": true,
+        "scenario_metrics": {
+          "boundary": {
+            "metrics": {
+              "efficiency": 0.3,
+              "hit_rate_at_10": 0.5,
+              "mrr": 0.5,
+              "mttc": 8.0,
+              "recommended_technical_score": 0.46,
+              "session_count": 2
+            },
+            "pool_recall": {
+              "session_pool_recall": 0.5,
+              "turn_pool_recall": 0.133333
+            },
+            "recall_to_hit_conversion": 1.0
+          },
+          "browsing": {
+            "metrics": {
+              "efficiency": 0.5875,
+              "hit_rate_at_10": 0.75,
+              "mrr": 0.352158,
+              "mttc": 5.125,
+              "recommended_technical_score": 0.598147,
+              "session_count": 16
+            },
+            "pool_recall": {
+              "session_pool_recall": 0.875,
+              "turn_pool_recall": 0.230769
+            },
+            "recall_to_hit_conversion": 0.857143
+          },
+          "buying": {
+            "metrics": {
+              "efficiency": 0.3875,
+              "hit_rate_at_10": 0.4375,
+              "mrr": 0.331845,
+              "mttc": 7.125,
+              "recommended_technical_score": 0.395804,
+              "session_count": 16
+            },
+            "pool_recall": {
+              "session_pool_recall": 0.6875,
+              "turn_pool_recall": 0.135135
+            },
+            "recall_to_hit_conversion": 0.636364
+          },
+          "intent_override": {
+            "metrics": {
+              "efficiency": 0.383333,
+              "hit_rate_at_10": 0.666667,
+              "mrr": 0.45,
+              "mttc": 7.166667,
+              "recommended_technical_score": 0.545,
+              "session_count": 6
+            },
+            "pool_recall": {
+              "session_pool_recall": 0.666667,
+              "turn_pool_recall": 0.153846
+            },
+            "recall_to_hit_conversion": 1.0
+          }
+        },
+        "weights": {
+          "bm25": 0.64,
+          "dense": 0.34,
+          "structured": 0.02
+        }
+      }
+    ],
+    "full": {
+      "depth": 50,
+      "metrics": {
+        "efficiency": 0.508125,
+        "hit_rate_at_10": 0.65625,
+        "mrr": 0.406937,
+        "mttc": 5.91875,
+        "recommended_technical_score": 0.551831,
+        "session_count": 160
+      },
+      "pool_recall": {
+        "session_pool_recall": 0.825,
+        "turn_pool_recall": 0.20331
+      },
+      "recall_to_hit_conversion": 0.795455,
+      "reranked": true,
+      "scenario_metrics": {
+        "boundary": {
+          "metrics": {
+            "efficiency": 0.475,
+            "hit_rate_at_10": 0.625,
+            "mrr": 0.479167,
+            "mttc": 6.25,
+            "recommended_technical_score": 0.55125,
+            "session_count": 8
+          },
+          "pool_recall": {
+            "session_pool_recall": 0.625,
+            "turn_pool_recall": 0.148936
+          },
+          "recall_to_hit_conversion": 1.0
+        },
+        "browsing": {
+          "metrics": {
+            "efficiency": 0.5875,
+            "hit_rate_at_10": 0.78125,
+            "mrr": 0.459604,
+            "mttc": 5.125,
+            "recommended_technical_score": 0.646006,
+            "session_count": 64
+          },
+          "pool_recall": {
+            "session_pool_recall": 0.90625,
+            "turn_pool_recall": 0.24127
+          },
+          "recall_to_hit_conversion": 0.862069
+        },
+        "buying": {
+          "metrics": {
+            "efficiency": 0.510938,
+            "hit_rate_at_10": 0.59375,
+            "mrr": 0.378311,
+            "mttc": 5.890625,
+            "recommended_technical_score": 0.512556,
+            "session_count": 64
+          },
+          "pool_recall": {
+            "session_pool_recall": 0.828125,
+            "turn_pool_recall": 0.19943
+          },
+          "recall_to_hit_conversion": 0.716981
+        },
+        "intent_override": {
+          "metrics": {
+            "efficiency": 0.3,
+            "hit_rate_at_10": 0.5,
+            "mrr": 0.31875,
+            "mttc": 8.0,
+            "recommended_technical_score": 0.405625,
+            "session_count": 24
+          },
+          "pool_recall": {
+            "session_pool_recall": 0.666667,
+            "turn_pool_recall": 0.142857
+          },
+          "recall_to_hit_conversion": 0.75
+        }
+      },
+      "weights": {
+        "bm25": 0.64,
+        "dense": 0.34,
+        "structured": 0.02
+      }
+    },
+    "improves_official_objective": true,
+    "plateau_neighbor_count": 5,
+    "scenario_guardrail": {
+      "maximum_allowed_drop": 0.05,
+      "passed": true,
+      "scenarios": {
+        "boundary": {
+          "baseline_hit_rate_at_10": 0.625,
+          "candidate_hit_rate_at_10": 0.625,
+          "delta": 0.0,
+          "passed": true
+        },
+        "browsing": {
+          "baseline_hit_rate_at_10": 0.78125,
+          "candidate_hit_rate_at_10": 0.78125,
+          "delta": 0.0,
+          "passed": true
+        },
+        "buying": {
+          "baseline_hit_rate_at_10": 0.59375,
+          "candidate_hit_rate_at_10": 0.59375,
+          "delta": 0.0,
+          "passed": true
+        },
+        "intent_override": {
+          "baseline_hit_rate_at_10": 0.375,
+          "candidate_hit_rate_at_10": 0.5,
+          "delta": 0.125,
+          "passed": true
+        }
+      }
+    },
+    "weights": {
+      "bm25": 0.64,
+      "dense": 0.34,
+      "structured": 0.02
+    },
+    "within_pool_recall_tolerance": true
+  },
+  "validation_version": "fusion-policy-freeze-v1"
+}

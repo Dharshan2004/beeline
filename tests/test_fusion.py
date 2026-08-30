@@ -6,11 +6,22 @@ import unittest
 from pathlib import Path
 from unittest.mock import patch
 
-from retrieval.fusion import FixedFusionPolicy, build_fusion_policy
+from retrieval.fusion import (
+    FROZEN_GLOBAL_WEIGHTS,
+    FROZEN_POLICY_VERSION,
+    FixedFusionPolicy,
+    build_fusion_policy,
+)
 from tools.evaluate_retrieval import main as evaluate_retrieval_main
 
 
 class FixedFusionPolicyTest(unittest.TestCase):
+    def test_default_policy_is_the_validated_slice11_freeze(self) -> None:
+        policy = FixedFusionPolicy()
+
+        self.assertEqual(dict(policy.weights), FROZEN_GLOBAL_WEIGHTS)
+        self.assertEqual(policy.version, FROZEN_POLICY_VERSION)
+
     def test_weighted_fusion_ranks_from_route_score_fixtures(self) -> None:
         policy = FixedFusionPolicy(
             weights={"structured": 0.5, "bm25": 0.3, "dense": 0.2},

@@ -117,7 +117,8 @@ requires no listening port, no separate vector service, and no runtime download.
 It is a local Python support module for the Shopping Agent, not a website, UI, or
 hosted search service. `starter.Agent` queries the route at depth 100 and
 combines its candidates with independent structured and BM25 evidence through
-`fixed-hybrid-v1`. Hard Constraints govern eligibility before fusion; missing,
+the validated `pool-aware-global-v2` policy. Hard Constraints govern eligibility
+before fusion; missing,
 incompatible, or failed dense assets disable only that route without
 invalidating the response.
 
@@ -172,7 +173,8 @@ mismatch behavior, and live route metrics.
 ## Fixed Hybrid Fusion
 
 The default policy min-max normalizes the three route scores per turn and combines
-them with fixed weights (`structured=0.15`, `bm25=0.55`, `dense=0.30`). The live
+them with the Slice 11 frozen weights (`structured=0.02`, `bm25=0.64`,
+`dense=0.34`). The live
 Agent keeps the strongest 50 fused candidates for local reranking, while the
 transparent no-reranker baseline intentionally preserves its historical depth
 of 30. Constant-score and missing routes have deterministic behavior. Run those
@@ -285,6 +287,21 @@ complete-union comparisons, and
 single-route/RRF controls. This is a training result, not yet the live policy;
 Slice 11 must validate the weight region across folds before activation. See
 `docs/fusion_policy_training.md` for the selection rule and interpretation.
+
+## Frozen Pool-Aware Fusion Policy
+
+Slice 11 validates all 91 locally refined candidates across four deterministic,
+scenario-balanced development folds and activates the center of the supported
+plateau: `structured=0.02`, `bm25=0.64`, and `dense=0.34` at rerank depth 50.
+The Locked Holdout remains unopened.
+
+The frozen policy reaches 0.825 pool recall, 0.65625 HitRate@10, 0.406937 MRR,
+and 0.551831 TechnicalScore. No scenario violates the five-point HitRate@10
+guardrail; Intent Override improves from 0.375 to 0.500. A complete live run
+matches those cached metrics exactly, with 315 ms rerank p95 latency and a
+545.4-second projected 200-session wall time. See
+`docs/fusion_policy_validation.md` and `docs/fusion_policy_freeze.json` for the
+fold evidence, gap closure, checksums, and full frozen runtime identity.
 
 `tools/dataset_split.py` computes the development/holdout partition used by every
 development benchmark. The locked 40-session holdout is opened once, in the final
