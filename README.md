@@ -105,6 +105,7 @@ retrieval/                        Retrieval Routes and their local index artifac
 tools/                            one-time embedding model fetch
 docs/dense_index.md               dense index build, verification, and measured scale
 docs/fixed_hybrid_fusion.md       fixed policy, score normalization, and baselines
+docs/observability.md             fail-open session tracing, trace shape, and redaction
 ```
 
 ## Dense Retrieval Route
@@ -178,6 +179,32 @@ through the same official-scoring wrapper with
 remains unchanged and uses the fixed policy through the default `Agent`. See
 `docs/fixed_hybrid_fusion.md` for the exact policy and commands.
 
+## Session Tracing
+
+Each turn is traced under its `session_id` with nested interpretation, state
+validation, retrieval, fusion, reranking, clarification, and response
+observations carrying structured decisions, confidence, reason codes, candidate
+counts, token usage, latency, and classified failure causes. Traces are buffered
+in memory and exported only at `Agent.flush_telemetry()` or process exit, so
+nothing leaves the process inside the response path.
+
+Tracing is off unless both credentials are present, and it is strictly fail-open.
+Missing credentials, a refused connection, a timeout, a full queue, or a failed
+export leave recommendations, response validity, and scoring behavior unchanged.
+Credentials, the raw user profile, catalog records, customer message text, and
+private chain-of-thought are never recorded.
+
+```bash
+python -m pip install -r requirements-observability.txt
+export LANGFUSE_PUBLIC_KEY=... LANGFUSE_SECRET_KEY=...
+python3 -m evaluator.local_evaluator            # traces flush at process exit
+SHOPPING_AGENT_TELEMETRY=0 python3 -m evaluator.local_evaluator  # tracing off
+python3 -m unittest tests.test_telemetry
+```
+
+See `docs/observability.md` for the trace shape, the redaction rules, and the
+fail-open guarantees.
+
 ### Reproducibility and external assets
 
 The official harness entry point remains:
@@ -195,6 +222,7 @@ be committed:
 | `sentence-transformers/all-MiniLM-L6-v2` (`1110a243…`) | Local 384-dimensional embedding model; no scoring-time API | `python -m tools.fetch_model` |
 | Dense Qdrant index | Derived locally from the frozen catalog and pinned MiniLM model | `python -m retrieval.build_dense_index --catalog data/catalog.jsonl --verify-load` |
 | Qdrant, PyTorch, Transformers, NumPy | Local dense-route runtime dependencies | `pip install -r requirements-dense.txt` |
+| Langfuse | Optional development and runtime observability only; never a scoring dependency | `pip install -r requirements-observability.txt` and export the two Langfuse keys |
 
 The dense route makes no runtime network call, uses no hosted API, and binds no
 listening port. `models/`, `artifacts/`, and `data/catalog.jsonl` are ignored;

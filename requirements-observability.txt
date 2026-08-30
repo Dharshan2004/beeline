@@ -1,0 +1,4 @@
+# Optional Langfuse export dependency. Tracing is fail-open: without this
+# package, or without LANGFUSE_PUBLIC_KEY and LANGFUSE_SECRET_KEY, the Agent
+# buffers nothing, exports nothing, and returns identical recommendations.
+langfuse>=2.36,<3

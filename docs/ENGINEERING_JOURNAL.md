@@ -375,6 +375,42 @@ These reachability figures currently come from the latest analysis/plan review a
 
 **Next experiment:** Produce cached per-turn base-route unions and labels, reproduce recall@30 and full-union recall, then benchmark cross-encoders at several candidate depths against the 248.45-second no-reranker baseline.
 
+### 2026-08-30 — Iteration 11: trace complete sessions with fail-open Langfuse
+
+**Related issue:** #17. Decision record: `docs/adr/0003-fail-open-langfuse-observability.md`.
+
+**Problem or hypothesis:** Slices 12 onward add a connected planner whose failures are only diagnosable with operational evidence, but the competition guarantees no network. Tracing must therefore explain a full multi-turn session without becoming a scoring dependency or a data-disclosure risk.
+
+**Change:** Added `starter/telemetry.py` and wired it into `starter.Agent`. `reset(...)` opens a session with the configuration identity; `respond(...)` opens one `shopping-turn` trace per turn nesting `interpretation`, `state_validation`, `retrieval` (with `retrieval.dense`), `fusion`, `reranking`, `clarification`, and `response` observations. Every observation carries its own latency, status, and classified failure cause. Traces are buffered in a bounded deque and exported only through `Agent.flush_telemetry()` or the `atexit` hook.
+
+**Expected result:** Identical recommendations, `ask_attribute`, message, and usage with tracing enabled, disabled, or failing, and enough structured evidence to separate model, validation, retrieval, and observability failures.
+
+**Commands and environment:** Python 3.11.9, no extra dependency installed.
+
+```bash
+python3 -m unittest tests.test_telemetry
+python3 -m unittest discover -s tests -t .
+```
+
+**Evidence:** 19 new telemetry tests and 114 tests overall pass. `FailOpenTest` asserts response equality between a traced agent and a disabled agent across missing credentials, connection refusal, timeout, queue failure, export failure, and a socket-patched network-disabled run. `TraceRedactionTest` serializes exported traces and asserts that the seeded profile identifier, the seeded credential, catalog text, and customer message text are all absent while `candidate_counts` and `fused_candidate_count` remain.
+
+| Metric | Before | After | Change |
+| --- | ---: | ---: | ---: |
+| Hit Rate@10 | n/a | n/a | unchanged by design |
+| MRR | n/a | n/a | unchanged by design |
+| MTTC | n/a | n/a | unchanged by design |
+| Technical Score | n/a | n/a | unchanged by design |
+
+**Scenario effects:** None. Telemetry adds only in-memory dictionary work to a turn and no network call.
+
+**What failed or surprised us:** The first redaction pass leaked customer phrasing through two indirect fields rather than through obvious ones: `raw_phrase` provenance on each Constraint, and planning rejection messages that quote the message they rejected. Both are now removed at the boundary, the first by the sanitizer denylist and the second by reducing errors to `starter.agent.reason_codes`. Key-name filtering also needed a substring rule, because `openai_api_key` passed an exact-name denylist.
+
+**Decision and rationale:** Buffer traces and export at a flush boundary instead of streaming spans per turn. A background exporter would have to be supervised inside the scored path, while a bounded buffer degrades to counted dropped traces and keeps `respond(...)` free of any client, socket, or queue.
+
+**Known limitations:** `LangfuseSink` targets the Langfuse 2.x `trace()` and `span()` client shape and has been exercised against a fake client only; a real end-to-end export against a live project is still unrecorded. Reranking is traced as requested-but-skipped until Slice 8 lands. A run longer than 512 buffered turns without a flush drops its oldest traces.
+
+**Next experiment:** Export one real Intent Override session to a live Langfuse project and keep it as the demo trace for story 49.
+
 ## Current architectural invariants
 
 ### State
@@ -400,6 +436,8 @@ These reachability figures currently come from the latest analysis/plan review a
 - A malformed connected plan receives at most one bounded correction attempt before deterministic takeover.
 - Fallback begins from the same unchanged state snapshot after a rejected model plan.
 - Recommendations remain ordered, unique, catalog-valid, and bounded by `top_k`.
+- Telemetry is strictly fail-open and never runs an export inside a turn; missing credentials, an outage, or a failed flush cannot change a response.
+- Traces carry structured operational evidence only: never credentials, the raw user profile, catalog records, customer message text, or private chain-of-thought.
 
 ## Open questions and risks
 
