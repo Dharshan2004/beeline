@@ -37,7 +37,7 @@ public sessions. Weak BM25 starter baseline: **0.107**.
 | --- | ---: | ---: | ---: | ---: | ---: | ---: |
 | Offline (default) | **0.756** | 0.910 | 0.588 | 4.79 | 0.8 s | $0 |
 | + gpt-5.4-mini listwise rerank | **0.771** | 0.910 | 0.638 | 4.75 | ~4.6 s | ~$0.02 |
-| + nano ranking tournament | **TBD** | TBD | TBD | TBD | ~4.3 s | ~$0.02 |
+| + nano ranking tournament | **0.793** | 0.955 | 0.593 | 4.13 | 4.2 s | ~$0.01 |
 
 Supplementary anti-overfitting evidence (not the official metric): the same
 unmodified `evaluate()` scorer replayed with every customer message fully
@@ -48,13 +48,13 @@ label. Scores that survive both are competence, not benchmark fit:
 | --- | ---: | ---: | ---: |
 | Offline | 0.756 | 0.725 | 0.718 |
 | + mini rerank | 0.771 | 0.740 | 0.756 |
-| + nano tournament | TBD | TBD | TBD |
+| + nano tournament | 0.793 | 0.765 | 0.757 |
 
 Run-to-run noise is ±0.013, quantified from identical-code runs. Reproduce:
 
 ```bash
 python -m tools.robustness_eval --output benchmarks/robustness.json
-python -m unittest discover -s tests   # 218 tests
+python -m unittest discover -s tests   # 221 tests
 ```
 
 ## Architecture

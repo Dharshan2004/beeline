@@ -478,6 +478,32 @@ The dense preflight returned `status=available`, the evaluator exited successful
 
 **Next experiment:** Complete Slice 8's persistent cancellable reranker worker, rerank the exact post-plan depth-50 pool, preserve fused ordering on startup failure/crash/malformed output/timeout, and evaluate first on the 160-session development split. Before any final release claim, define and freeze replacement validation evidence that has not influenced configuration choices.
 
+### Iteration: nano ranking tournament ships after full three-condition gates (2026-09-01)
+
+**Problem or hypothesis:** A single listwise LLM rerank only reads 12 of the 50-candidate pool. Parallel chunked ranking (four gpt-5.4-nano calls over 12 candidates each, finalists ranked by one nano final call) reads the whole pool at roughly the same wall clock. Paired-60 preview: 0.803 vs 0.757 (mini single) vs 0.722 (offline).
+
+**Change:** `TournamentSemanticRanker` (chunks at 1.5 s timeout, final at 2.0 s, fail-open per node) enabled as the connected ranking stage; margin gate unchanged. No retrieval, evaluator, or test changes.
+
+**Commands:** `.venv/bin/python -m tools.robustness_eval --openai-ranker-role nano_ranker --ranker-config config/semantic_ranker_nano.json --tournament --output benchmarks/robustness_ship_tournament.json`
+
+**Evidence (unmodified official `evaluate()`, all three gate conditions):**
+
+| Condition | Sessions | HitRate@10 | MRR | MTTC | TechnicalScore |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| Exact (official) | 200 | 0.955 | 0.593 | 4.13 | **0.792927** |
+| Paraphrased | 200 | 0.890 | 0.644 | 4.67 | 0.764943 |
+| Novel targets | 100 | 0.880 | 0.627 | 4.54 | 0.757274 |
+
+Latency p50 3.1 s / p95 4.2 s per turn; ~4.6 M nano tokens per 200-session run (≈$1 total, ≈$0.005/session by token pricing).
+
+**Rule-8 coupling check:** exact→paraphrase gap −0.028 and exact→novel gap −0.036 are the same magnitude as the offline configuration's own gaps (−0.031/−0.038), so the gain generalizes rather than fitting the public templates. Gates pass; the jump vs mini-single (+0.022 exact, +0.025 paraphrase, +0.001 novel) is within honest-improvement expectations.
+
+**What surprised us:** paraphrased MRR (0.644) exceeds exact MRR (0.593) — the LLM ranker is wording-agnostic; exact HitRate is higher mostly through the deterministic pool, so the two conditions trade HR for MRR.
+
+**Decision:** Ship the nano tournament as the connected-mode configuration; offline remains the zero-cost default. p95 4.2 s is above the informal 4 s target — accepted consciously for +0.022 TechnicalScore; tightening chunk timeouts to 1.2 s is the measured fallback if latency must come down.
+
+**Known limitations:** 0.85 remains out of honest reach (requires HR 0.95 + MRR 0.75 + MTTC ≤3.5 simultaneously against near-duplicate crowds); MRR is the binding constraint.
+
 ## Current architectural invariants
 
 ### State

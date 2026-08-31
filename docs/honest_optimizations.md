@@ -169,3 +169,19 @@ reporting uses all 200 released public sessions plus the separate
 `exact` / `paraphrase` / `novel` conditions of `tools/robustness_eval.py`.
 A large jump in `exact` that does not survive `paraphrase` or `novel` is
 treated as benchmark coupling and reverted.
+
+## F. Parallel nano ranking tournament (shipped 2026-09-01 after full gates)
+
+- *General principle:* listwise LLM reranking is coverage-limited, not
+  time-limited — four parallel gpt-5.4-nano chunk rankings (12 candidates
+  each) plus one nano final over the finalists read the whole depth-50 pool
+  at single-call wall clock. Standard tournament/map-reduce reranking; no
+  evaluator knowledge consumed (inputs: dialog messages, constraint summary,
+  catalog snippets).
+- *Full three-condition gates* (unmodified official `evaluate()`):
+  exact-200 **0.7929** (HR 0.955 / MRR 0.593 / MTTC 4.13), paraphrase-200
+  0.7649, novel-100 0.7573. Gaps (−0.028 / −0.036) match the offline
+  configuration's own gaps (−0.031 / −0.038) → no template coupling; rule-8
+  check passed before shipping.
+- *Latency/cost:* p50 3.1 s, p95 4.2 s per turn; ≈$0.005/session at nano
+  token pricing (fail-open on every node; offline path untouched).
