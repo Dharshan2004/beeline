@@ -149,7 +149,47 @@ measurement), `docs/competition_specification.md`, `docs/submission_rules.md`.
 
 ## Team contributions
 
-Fill in per-member contributions before submission.
+Work was planned and tracked as vertical slices on this repository's issue
+tracker (issues #1–#19); per-slice assignees:
+
+- **Dharshan2004** — offline agent contract (Slice 01), embedded dense
+  retrieval in live recommendations (05), fixed hybrid fusion (06),
+  replayable fusion-training dataset (09), fusion-weight training and the
+  frozen pool-aware policy (10–11), connected OpenAI model benchmarking (14),
+  conditional second calls and budget enforcement (15, with dylothx),
+  packaging/reproduction (17), plus the honest-optimization wave in this
+  submission (dialog accumulation, information-value asks, popularity
+  priors, robustness gates).
+- **dylothx** — constraint handling end-to-end (02), Intent Overrides and
+  Boundary Responses (03), validated LLM planning for overrides (12),
+  Session Mode and clarification experiments (13), conditional calls (15,
+  with Dharshan2004).
+- **likalight** — versioned dense index (04), reranker benchmarking and
+  deep-pool depth selection (07), live deep-pool reranking (08), fail-open
+  Langfuse session tracing (16).
+
+## Tools, models, and references
+
+- **Development tools:** VS Code; Claude Code (Claude Fable 5) and OpenAI
+  Codex as coding agents for implementation, measurement, and review;
+  GitHub CLI for the issue-tracker workflow; Langfuse for session tracing.
+- **APIs and models:** OpenAI Responses API — `gpt-5.4-mini` (listwise
+  rerank), `gpt-5.4-nano` (chunk ranking, query rewriting), `gpt-5.6-sol` /
+  `gpt-5.6-luna` (planning benchmarks, measured and not retained). Local
+  models: `sentence-transformers/all-MiniLM-L6-v2` embeddings,
+  `cross-encoder/ms-marco-MiniLM-L-6-v2` reranker (pinned revisions).
+- **Libraries:** PyTorch, Hugging Face Transformers, sentence-transformers,
+  embedded Qdrant (local mode), SQLite FTS5, NumPy.
+- **Dataset:** Amazon Reviews 2023 (McAuley Lab, UCSD) — organizer-frozen
+  catalog and sessions; see `DATA_ATTRIBUTION.md`.
+- **Referenced research** (full citations inline in `docs/lever_catalog.md`
+  and `docs/honest_optimizations.md`): conversational query rewriting
+  (LLM4CS, ConvGQR), reciprocal-rank fusion and hybrid retrieval practice,
+  doc2query document expansion, facet/question selection by expected
+  information gain (Vandic et al. CIKM 2013; Interactive Classification;
+  BED-LLM), listwise LLM reranking (RankGPT/RankZephyr lineage), Bayesian-
+  average rating priors and Empirical-Bayes cold-start ranking in product
+  search, and intent-aware result diversification (IA-Select/xQuAD).
 
 ## Data
 
