@@ -33,19 +33,23 @@ python -m tools.demo_session --sample public_0044
 
 ## Results
 
-All numbers from the unmodified official evaluator over all 200 public
-sessions (novel = 100 generated sessions whose targets appear in no public
-label). TechnicalScore = 0.5·HitRate@10 + 0.3·MRR + 0.2·Efficiency.
-Weak BM25 starter baseline: 0.107.
+**The only valid score is the official evaluator's own output** — the
+`python -m evaluator.local_evaluator` command above, which we never modify.
+TechnicalScore = 0.5·HitRate@10 + 0.3·MRR + 0.2·Efficiency, all 200 public
+sessions. Weak BM25 starter baseline: 0.107.
 
-| Configuration | Exact | Paraphrased | Novel targets | p95/turn | Cost |
-| --- | ---: | ---: | ---: | ---: | ---: |
-| Offline (default) | **0.756** | 0.725 | 0.718 | 0.8 s | $0 |
-| + gpt-5.4-mini rerank | **0.771** | 0.740 | 0.756 | ~4.6 s | ~$0.02/session |
+| Official score (unmodified evaluator) | TechnicalScore | HitRate@10 | MRR | MTTC | p95/turn | Cost |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| Offline (default) | **0.756** | 0.910 | 0.588 | 4.79 | 0.8 s | $0 |
+| + gpt-5.4-mini rerank (opt-in) | **0.771** | 0.910 | 0.638 | 4.75 | ~4.6 s | ~$0.02/session |
 
-Run-to-run noise is ±0.013 (quantified from identical-code runs); the
-paraphrase and novel columns are the anti-overfitting evidence — scores that
-survive full rewording and never-seen targets. Regenerate any cell:
+Supplementary anti-overfitting evidence (not the official metric): we replay
+the same unmodified `evaluate()` scorer under two stress conditions —
+customer messages fully reworded before the agent sees them, and 100
+generated sessions whose targets appear in no public label. A score that
+collapses there is benchmark fit, not shopping competence; ours holds
+(offline 0.725 paraphrased / 0.718 novel; connected 0.740 / 0.756).
+Run-to-run noise is ±0.013, quantified from identical-code runs.
 
 ```bash
 python -m tools.robustness_eval --output benchmarks/robustness.json
@@ -54,16 +58,26 @@ python -m unittest discover -s tests   # 218 tests
 
 ## Architecture
 
+```mermaid
+flowchart TD
+    M[Customer message] --> TI[Turn interpreter<br/>deterministic turn plan]
+    TI --> CS[Constraint state<br/>validated, atomic]
+    M --> DE[Dialog evidence<br/>accumulated turns · budget parse · profile hint]
+    CS --> R
+    DE --> R
+    subgraph R[Retrieval routes]
+        S[Structured<br/>attribute index]
+        B[BM25 dual-query<br/>full dialog + latest turn]
+        D[Dense<br/>MiniLM + local Qdrant]
+    end
+    R --> F[Fusion<br/>frozen weights]
+    F --> P[Popularity-aware pool admission<br/>bestseller prior, decays with evidence]
+    P --> CE[Cross-encoder rerank<br/>local, 1.5 s deadline, fail-open]
+    CE --> TB[Popularity tie-break<br/>within score bands, top-10 only]
+    TB --> L{LLM listwise rerank<br/>optional · margin-gated · fail-open}
+    L --> O[Top-10 recommendations +<br/>highest-information-value question]
 ```
-customer message
-  → deterministic turn interpreter → validated constraint state
-  → dialog evidence (accumulated turns, budget parse, profile hint)
-  → structured + BM25 (dual-query) + dense retrieval  → fusion
-  → popularity-aware pool admission (bestseller prior, decays with evidence)
-  → local cross-encoder rerank → popularity tie-break within score bands
-  → [optional] LLM listwise rerank (margin-gated, fail-open)
-  → top-10 recommendations + highest-information-value question
-```
+
 
 Every model stage fails open to a deterministic path: the agent cannot crash,
 hang, or emit an invalid response because a model misbehaved. Key behaviors:
