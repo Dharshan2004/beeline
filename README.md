@@ -1,55 +1,56 @@
-# Shopping Copilot — TechJam 2026 Track 4
+# Beeline
 
-A conversational shopping agent that finds a hidden target product in a
-50,000-item catalog within 10 turns — retrieval conditioned on the whole
-dialog, questions chosen by information value, and every optimization gated
-by adversarial robustness tests instead of benchmark fit.
+**Team TechBros — TikTok TechJam 2026, Track 4 (Shopping Copilot)**
 
-## For judges — run it
+Beeline is a conversational shopping agent that takes a customer from a vague
+"I'm looking for boots" to the exact product they'll buy — in as few turns as
+possible, on commodity hardware, with every optimization proven honest by
+adversarial robustness tests. The name is the thesis: the shortest path
+between a customer's attention and the right product.
 
-Python 3.11.9. No API key needed; the default agent is fully offline.
+## For judges — run it in 4 commands
+
+Python 3.11.9. The default agent is **fully offline** — no API key, no
+network calls, no cost.
 
 ```bash
-python3 -m venv .venv && source .venv/bin/activate
-pip install -r requirements-dense.txt
-
-# catalog: download catalog.jsonl.gz from the GitHub Release, verify SHA256SUMS
-gzip -dk catalog.jsonl.gz && mv catalog.jsonl data/catalog.jsonl
-
-# local models (pinned revisions) + dense index
-python -m tools.fetch_model
-python -m tools.fetch_model \
+python3 -m venv .venv && source .venv/bin/activate && pip install -r requirements-dense.txt
+# catalog: download catalog.jsonl.gz from the GitHub Release, verify SHA256SUMS,
+# then: gzip -dk catalog.jsonl.gz && mv catalog.jsonl data/catalog.jsonl
+python -m tools.fetch_model && python -m tools.fetch_model \
   --identity cross-encoder/ms-marco-MiniLM-L-6-v2 \
   --destination models/cross-encoder__ms-marco-MiniLM-L-6-v2 \
-  --revision 233902d25c440f23af6f7d6e94d2946bac0bee0a
-python -m retrieval.build_dense_index --catalog data/catalog.jsonl --verify-load
-
-# official score, all 200 public sessions
-python -m evaluator.local_evaluator
-
-# one annotated live session
-python -m tools.demo_session --sample public_0044
+  --revision 233902d25c440f23af6f7d6e94d2946bac0bee0a \
+  && python -m retrieval.build_dense_index --catalog data/catalog.jsonl --verify-load
+python -m evaluator.local_evaluator          # official score, all 200 public sessions
+python -m tools.demo_session --sample public_0044   # watch one annotated session
 ```
 
 ## Results
 
-**The only valid score is the official evaluator's own output** — the
-`python -m evaluator.local_evaluator` command above, which we never modify.
-TechnicalScore = 0.5·HitRate@10 + 0.3·MRR + 0.2·Efficiency, all 200 public
-sessions. Weak BM25 starter baseline: 0.107.
+**The only valid score is the official evaluator's own output** (the command
+above; we never modify the evaluator, labels, or scoring).
+TechnicalScore = 0.5·HitRate@10 + 0.3·MRR + 0.2·Efficiency over all 200
+public sessions. Weak BM25 starter baseline: **0.107**.
 
-| Official score (unmodified evaluator) | TechnicalScore | HitRate@10 | MRR | MTTC | p95/turn | Cost |
+| Configuration (official evaluator) | TechnicalScore | HitRate@10 | MRR | MTTC | p95/turn | Cost/session |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: |
 | Offline (default) | **0.756** | 0.910 | 0.588 | 4.79 | 0.8 s | $0 |
-| + gpt-5.4-mini rerank (opt-in) | **0.771** | 0.910 | 0.638 | 4.75 | ~4.6 s | ~$0.02/session |
+| + gpt-5.4-mini listwise rerank | **0.771** | 0.910 | 0.638 | 4.75 | ~4.6 s | ~$0.02 |
+| + nano ranking tournament | **TBD** | TBD | TBD | TBD | ~4.3 s | ~$0.02 |
 
-Supplementary anti-overfitting evidence (not the official metric): we replay
-the same unmodified `evaluate()` scorer under two stress conditions —
-customer messages fully reworded before the agent sees them, and 100
-generated sessions whose targets appear in no public label. A score that
-collapses there is benchmark fit, not shopping competence; ours holds
-(offline 0.725 paraphrased / 0.718 novel; connected 0.740 / 0.756).
-Run-to-run noise is ±0.013, quantified from identical-code runs.
+Supplementary anti-overfitting evidence (not the official metric): the same
+unmodified `evaluate()` scorer replayed with every customer message fully
+reworded, and on 100 generated sessions whose targets appear in no public
+label. Scores that survive both are competence, not benchmark fit:
+
+| Configuration | Exact | Paraphrased | Novel targets |
+| --- | ---: | ---: | ---: |
+| Offline | 0.756 | 0.725 | 0.718 |
+| + mini rerank | 0.771 | 0.740 | 0.756 |
+| + nano tournament | TBD | TBD | TBD |
+
+Run-to-run noise is ±0.013, quantified from identical-code runs. Reproduce:
 
 ```bash
 python -m tools.robustness_eval --output benchmarks/robustness.json
@@ -74,58 +75,92 @@ flowchart TD
     F --> P[Popularity-aware pool admission<br/>bestseller prior, decays with evidence]
     P --> CE[Cross-encoder rerank<br/>local, 1.5 s deadline, fail-open]
     CE --> TB[Popularity tie-break<br/>within score bands, top-10 only]
-    TB --> L{LLM listwise rerank<br/>optional · margin-gated · fail-open}
+    TB --> L{Parallel LLM ranking tournament<br/>optional · margin-gated · fail-open}
     L --> O[Top-10 recommendations +<br/>highest-information-value question]
 ```
 
+Every model stage fails open to a deterministic path: the agent cannot
+crash, hang, or emit an invalid response because a model misbehaved. Key
+behaviors:
 
-Every model stage fails open to a deterministic path: the agent cannot crash,
-hang, or emit an invalid response because a model misbehaved. Key behaviors:
-
-- **Dialog accumulation** — retrieval sees everything the customer said,
-  minus superseded constraints (intent overrides drop replaced terms).
+- **Dialog accumulation** — retrieval conditions on everything the customer
+  has said, minus superseded constraints (intent overrides drop replaced
+  wording, structured state keeps what survives).
 - **Information-value clarification** — each question maximally splits the
   live candidate pool; answered or dismissed attributes are never re-asked.
 - **Popularity prior** — the hidden target is a real purchase; among
   near-identical listings a Bayesian bestseller prior is the honest
-  tie-breaker. Weight decays as the customer states requirements.
+  tie-breaker, its weight decaying as the customer states requirements.
 - **Budget understanding** — "under $50", "around $60" reorder toward
   in-budget products without eliminating unpriced ones.
+- **Parallel ranking tournament** — at a fixed wall-clock budget,
+  concurrency buys coverage: the whole 48-candidate pool gets a concurrent
+  LLM read in chunks, chunk leaders meet in a final listwise call.
+
+## Tradeoff analysis — built for live commerce
+
+The obvious deployment for this agent is TikTok Shop–style conversational
+commerce, and that context dictates our tradeoffs. A shopper who arrives
+from a video has seconds of intent, not minutes: every extra turn and every
+second of per-turn latency is attrition on a purchase that was almost made.
+
+- **Turns are the scarcest resource.** MTTC is weighted at only 0.2 in the
+  score, but in live commerce it *is* the business metric — each avoided
+  clarification turn keeps a buyer who would otherwise scroll on. Our
+  question policy asks only questions that provably shrink the candidate
+  pool, and drops attributes the customer has answered or dismissed.
+- **Per-turn latency is a hard product constraint, not a benchmark metric.**
+  A 5-minute turn can buy benchmark points (LLM-reading thousands of
+  candidates), but no live shopper waits for it. We cap the connected
+  pipeline near 4 seconds by buying LLM coverage with *parallel* chunk calls
+  rather than serial depth, and the offline path answers in under a second.
+- **Cost must round to zero at platform scale.** The default path costs
+  nothing; the full connected path costs ~$0.02/session with no-reasoning
+  nano calls doing the volume work and budget caps enforced per call.
+- **Reliability beats brilliance.** Every LLM stage is margin-gated (skipped
+  when the local ranker is already confident) and fail-open (a timeout
+  returns the local ordering, never an error). The agent's worst case is the
+  offline agent, which already scores 0.756.
+- **Honest generalization over leaderboard fit.** The private evaluation
+  uses different users and different targets. We deleted a route that scored
+  0.9628 by exploiting the public simulator, and instead gate every change
+  on paraphrased and novel-target replays — the configuration that ships is
+  the one that survives distribution shift, which is the one that would
+  survive production.
 
 ## Honest-optimization discipline
 
-Reward-hacking prevention is a release gate, not an afterthought:
-
 - Production code contains no evaluator imports, no simulator template
   knowledge, no per-session logic — verified by an independent adversarial
-  review (see `docs/ENGINEERING_JOURNAL.md`).
+  review (`docs/ENGINEERING_JOURNAL.md`).
 - Exact / paraphrased / novel-target conditions are always reported
   separately; a gain that dies under rewording never ships.
-- Every lever is documented with its measurement in
-  `docs/honest_optimizations.md` — including the rejected ones, and a
-  simulator-coupled route that scored 0.9628 and was deleted as reward
-  hacking (the private sessions use separate users and targets; coupled
-  scores would not survive them).
+- Every lever is documented with its measurement — including rejections —
+  in `docs/honest_optimizations.md`; the full iteration history, failures
+  included, is in `docs/ENGINEERING_JOURNAL.md`.
 
 ## Optional connected mode
 
-`gpt-5.4-mini` listwise reranking (and experimental nano chunk-tournament /
-query-rewrite stages) via the OpenAI Responses API: `store=false`, strict
-JSON-schema outputs, per-call budget reservation under a $10 cap, no
-retries, unconditional fail-open. Prices versioned in
-`config/semantic_ranker*.json`. Tokens are reported per turn through the
-official response schema; a full connected 200-session run costs ~$2–4.
+OpenAI Responses API with `store=false`, strict JSON-schema outputs,
+per-call budget reservation under a $10 development cap, no retries,
+unconditional fail-open. Prices versioned in `config/semantic_ranker*.json`.
+Token usage is reported per turn through the official response schema.
 
 ```bash
-python -m tools.llm_rank_experiment --role fast_ranker --sessions 60 \
-  --max-candidates 12 --output benchmarks/llm_rank.json   # needs .env with OPENAI_API_KEY
+# single mini rerank                      # nano ranking tournament
+python -m tools.llm_rank_experiment \
+  --role fast_ranker --sessions 60 \
+  --max-candidates 12 --output benchmarks/llm_rank.json
+python -m tools.llm_rank_experiment \
+  --role nano_ranker --config config/semantic_ranker_nano.json \
+  --tournament --sessions 60 --output benchmarks/llm_tournament.json
 ```
 
 ## Limitations
 
 - Among near-identical listings, the exact purchased product is
   underdetermined by dialog text; the popularity prior is the honest ceiling
-  on MRR (~0.6–0.7 here).
+  on MRR.
 - MTTC has a structural floor: intent overrides arrive at turn 3–4 and
   misses score as turn 11.
 - With more time: LLM constraint extraction behind the existing fail-open
@@ -143,11 +178,7 @@ docs/             engineering journal, optimization log, specs, ADRs
 tests/            218 tests incl. anti-coupling and fail-open coverage
 ```
 
-Deeper documentation: `docs/ENGINEERING_JOURNAL.md` (full iteration history,
-including failures), `docs/honest_optimizations.md` (every lever + its
-measurement), `docs/competition_specification.md`, `docs/submission_rules.md`.
-
-## Team contributions
+## Team TechBros — contributions
 
 Work was planned and tracked as vertical slices on this repository's issue
 tracker (issues #1–#19); per-slice assignees:
@@ -157,42 +188,36 @@ tracker (issues #1–#19); per-slice assignees:
   replayable fusion-training dataset (09), fusion-weight training and the
   frozen pool-aware policy (10–11), connected OpenAI model benchmarking (14),
   conditional second calls and budget enforcement (15, with dylothx),
-  packaging/reproduction (17), plus the honest-optimization wave in this
-  submission (dialog accumulation, information-value asks, popularity
-  priors, robustness gates).
+  packaging/reproduction (17), plus this submission's honest-optimization
+  wave (dialog accumulation, information-value asks, popularity priors,
+  ranking tournament, robustness gates).
 - **dylothx** — constraint handling end-to-end (02), Intent Overrides and
   Boundary Responses (03), validated LLM planning for overrides (12),
   Session Mode and clarification experiments (13), conditional calls (15,
   with Dharshan2004).
 - **likalight** — versioned dense index (04), reranker benchmarking and
-  deep-pool depth selection (07), live deep-pool reranking (08), fail-open
-  Langfuse session tracing (16).
+  deep-pool depth selection (07), live deep-pool reranking (08).
 
 ## Tools, models, and references
 
 - **Development tools:** VS Code; Claude Code (Claude Fable 5) and OpenAI
   Codex as coding agents for implementation, measurement, and review;
-  GitHub CLI for the issue-tracker workflow; Langfuse for session tracing.
+  GitHub CLI for the issue-tracker workflow.
 - **APIs and models:** OpenAI Responses API — `gpt-5.4-mini` (listwise
-  rerank), `gpt-5.4-nano` (chunk ranking, query rewriting), `gpt-5.6-sol` /
-  `gpt-5.6-luna` (planning benchmarks, measured and not retained). Local
-  models: `sentence-transformers/all-MiniLM-L6-v2` embeddings,
-  `cross-encoder/ms-marco-MiniLM-L-6-v2` reranker (pinned revisions).
+  rerank), `gpt-5.4-nano` (chunk-tournament ranking, query rewriting),
+  `gpt-5.6-sol` / `gpt-5.6-luna` (planning benchmarks, measured and not
+  retained). Local models: `sentence-transformers/all-MiniLM-L6-v2`
+  embeddings, `cross-encoder/ms-marco-MiniLM-L-6-v2` reranker (pinned
+  revisions).
 - **Libraries:** PyTorch, Hugging Face Transformers, sentence-transformers,
   embedded Qdrant (local mode), SQLite FTS5, NumPy.
 - **Dataset:** Amazon Reviews 2023 (McAuley Lab, UCSD) — organizer-frozen
   catalog and sessions; see `DATA_ATTRIBUTION.md`.
-- **Referenced research** (full citations inline in `docs/lever_catalog.md`
-  and `docs/honest_optimizations.md`): conversational query rewriting
-  (LLM4CS, ConvGQR), reciprocal-rank fusion and hybrid retrieval practice,
-  doc2query document expansion, facet/question selection by expected
-  information gain (Vandic et al. CIKM 2013; Interactive Classification;
-  BED-LLM), listwise LLM reranking (RankGPT/RankZephyr lineage), Bayesian-
-  average rating priors and Empirical-Bayes cold-start ranking in product
-  search, and intent-aware result diversification (IA-Select/xQuAD).
-
-## Data
-
-Catalog and sessions derive from Amazon Reviews 2023 (McAuley Lab, UCSD) —
-see `DATA_ATTRIBUTION.md`. Large assets stay out of the repository; the
-commands above reproduce them.
+- **Referenced research** (full citations in `docs/lever_catalog.md` and
+  `docs/honest_optimizations.md`): conversational query rewriting (LLM4CS,
+  ConvGQR), reciprocal-rank fusion and hybrid retrieval practice, doc2query
+  document expansion, facet/question selection by expected information gain
+  (Vandic et al. CIKM 2013; Interactive Classification; BED-LLM), listwise
+  LLM reranking (RankGPT/RankZephyr lineage), Bayesian-average rating priors
+  and Empirical-Bayes cold-start ranking, and intent-aware result
+  diversification (IA-Select/xQuAD).

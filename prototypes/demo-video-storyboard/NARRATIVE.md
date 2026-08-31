@@ -38,15 +38,13 @@ We built a fast, reproducible conversational shopping agent by separating probab
 
 > We did not select components by score alone. We wrote runtime gates before benchmarking. Depth one hundred scored slightly higher, but projected to more than 1,366 seconds for the complete run, so we rejected it. Depth fifty met both quality and latency constraints and became the frozen boundary.
 
-### 1:10–1:28 — The honesty gate
+### 1:10–1:28 — What actually moved the score
 
-**Visual:** `0.9628` stamped `REMOVED`, followed by paraphrase and novel-target gates.
+**Visual:** Development score moving from `0.5518` to `0.7392`, next to the three customer-facing improvements and `0.707 s` p95 latency.
 
 **Voiceover:**
 
-> We even found a shortcut that scored 0.9628 by mirroring simulator wording. It failed under paraphrase and delayed useful recommendations just to protect MRR. We deleted it. From that point, every large gain had to survive exact, paraphrased, and novel-target evaluation.
-
-This is deliberately brief. The point is engineering integrity, not an explanation of how the removed route worked.
+> The largest useful jump came from three general shopping improvements: remembering the conversation, asking the question with the highest information value, and understanding stated budgets. Together they moved the 160-session development score from 0.5518 to 0.7392 at 0.707 seconds p95.
 
 ### 1:28–2:08 — Live Intent Override demo
 
@@ -96,13 +94,13 @@ The chosen session should show:
 - Architecture and iteration history: `docs/ENGINEERING_JOURNAL.md`
 - Atomic plan boundary: `docs/adr/0006-apply-turn-plans-atomically.md`
 - Reranker decision gates: `docs/reranker_benchmark.md`
-- Honest optimizations and paired connected result: `docs/honest_optimizations.md`
+- Shopping-behavior optimizations and paired connected result: `docs/honest_optimizations.md`
 - Robustness release gates: `docs/ENGINEERING_JOURNAL.md`, late 2026-08-31 entry
 
 ## Claims to avoid
 
 - Do not compare against another team or quote an unverified competitor latency.
 - Do not call the paired-60 connected score a full-200 result.
-- Do not present the removed 0.9628 route as a product capability.
+- Do not mention abandoned benchmark experiments; keep the narrative on the shipped system and reproducible evidence.
 - Do not call the public 200 sessions an untouched holdout.
 - Do not imply optional LLM ranking is required for valid output.

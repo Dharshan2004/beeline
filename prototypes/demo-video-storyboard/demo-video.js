@@ -9,14 +9,14 @@ const METRICS = {
 
 const SCENES = [
   { start: 0, end: 12, key: "hook", eyebrow: "THE CHALLENGE", title: "50,000 products. One hidden purchase.", note: "Open with the evaluator's real constraint: ten turns." },
-  { start: 12, end: 30, key: "baseline", eyebrow: "WHERE WE STARTED", title: "The baseline searched each message in isolation.", note: "Show the official 0.1067 baseline and one failure trace." },
-  { start: 30, end: 50, key: "insight", eyebrow: "THE ARCHITECTURAL INSIGHT", title: "Interpretation can be probabilistic. State cannot.", note: "Introduce the validated Turn Plan and atomic state boundary." },
-  { start: 50, end: 70, key: "experiments", eyebrow: "MEASURE, REJECT, FREEZE", title: "We refused to buy score with unbounded latency.", note: "Show the predeclared reranker gates and a rejected deeper model." },
-  { start: 70, end: 88, key: "integrity", eyebrow: "THE HONESTY GATE", title: "A 0.9628 shortcut failed the real-shopping test.", note: "Explain why it was removed and how robustness gates replaced it." },
-  { start: 88, end: 128, key: "session", eyebrow: "PLACEHOLDER · LIVE INTENT OVERRIDE", title: "Now watch the architecture handle a shopper changing direction.", note: "Replace this card with your real session capture." },
-  { start: 128, end: 148, key: "connected", eyebrow: "OPTIONAL SEMANTIC RANKING", title: "Connected intelligence improves rank—without owning correctness.", note: "Show the paired quality/latency trade-off and fail-open behavior." },
-  { start: 148, end: 172, key: "proof", eyebrow: "PLACEHOLDER · OFFICIAL EVALUATOR", title: "One story is a demo. Robustness is the evidence.", note: "Insert the full evaluator capture, then show exact/paraphrase/novel results." },
-  { start: 172, end: 180, key: "close", eyebrow: "THE RESULT", title: "High quality. Seconds per turn. Valid without the network.", note: "Close on the engineering principle, not a leaderboard claim." },
+  { start: 12, end: 28, key: "baseline", eyebrow: "WHERE WE STARTED", title: "The baseline searched each message in isolation.", note: "Show the official 0.1067 baseline and one failure trace." },
+  { start: 28, end: 52, key: "insight", eyebrow: "THE CONTROL PLANE", title: "Conversation becomes validated, revisioned state.", note: "Show the boundary between probabilistic interpretation and deterministic state." },
+  { start: 52, end: 80, key: "retrieval", eyebrow: "THE RETRIEVAL DATA PLANE", title: "Three routes. Frozen fusion. Bounded ranking.", note: "Trace the full local candidate and ranking pipeline." },
+  { start: 80, end: 100, key: "levers", eyebrow: "MEASURE, REJECT, IMPROVE", title: "We optimized shopping quality inside a runtime envelope.", note: "Connect score gains to behavior and the frozen reranker boundary." },
+  { start: 100, end: 132, key: "session", eyebrow: "LIVE DEMO SESSION", title: "The target appears only after distinguishing evidence.", note: "A real four-turn run through tools.demo_session." },
+  { start: 132, end: 160, key: "connected", eyebrow: "TIKTOK SHOP TRADE-OFF", title: "Conversion quality matters only while intent is alive.", note: "Show the paired quality/latency trade-off and fail-open behavior." },
+  { start: 160, end: 175, key: "proof", eyebrow: "ROBUSTNESS EVIDENCE", title: "One story is a demo. Robustness is the evidence.", note: "Exact, paraphrased, novel-target, and test-suite evidence." },
+  { start: 175, end: 180, key: "close", eyebrow: "THE RESULT", title: "High quality. Seconds per turn. Valid without the network.", note: "Close on the engineering principle, not a leaderboard claim." },
 ];
 
 const variants = {
@@ -25,15 +25,19 @@ const variants = {
   C: { name: "Pareto proof reel", render: renderProofReel },
 };
 
+const params = new URLSearchParams(location.search);
+const CAPTURE_MODE = params.get("capture") === "1";
+
 const state = {
   variant: getVariant(),
-  time: 0,
+  time: Math.max(0, Math.min(179.9, Number(params.get("time")) || 0)),
   playing: false,
   speed: 1,
   lastFrame: performance.now(),
 };
 
 const app = document.querySelector("#app");
+document.documentElement.classList.toggle("capture-mode", CAPTURE_MODE);
 
 function getVariant() {
   const value = new URLSearchParams(location.search).get("variant")?.toUpperCase();
@@ -126,7 +130,7 @@ function renderCinematic(scene) {
     <section class="video-stage cinematic scene-${scene.key}">
       <div class="grain"></div>
       <div class="cinematic-topline">
-        <span>SHOPPING COPILOT</span>
+        <span>TEAM TECHBROS · SHOPPING COPILOT</span>
         <span>TECHJAM · TRACK 4</span>
       </div>
       <div class="cinematic-content">
@@ -213,12 +217,12 @@ function sceneVisual(scene, compact = false) {
       return baselineVisual();
     case "insight":
       return architectureDiagram(compact);
-    case "experiments":
-      return experimentVisual();
-    case "integrity":
-      return integrityVisual();
+    case "retrieval":
+      return retrievalVisual();
+    case "levers":
+      return improvementVisual();
     case "session":
-      return placeholderSession(true);
+      return demoSession();
     case "connected":
       return connectedVisual();
     case "proof":
@@ -229,7 +233,7 @@ function sceneVisual(scene, compact = false) {
           <p class="eyebrow">${scene.eyebrow}</p>
           <div class="final-score"><span>0.7556</span><small>local · full 200</small></div>
           <h2>High quality. Seconds per turn.<br />Valid without the network.</h2>
-          <p>github.com/your-team/your-repository</p>
+          <p>github.com/Dharshan2004/techjam-2026-track-4-shopping-copilot</p>
         </div>`;
   }
 }
@@ -273,49 +277,89 @@ function experimentVisual() {
     </div>`;
 }
 
-function integrityVisual() {
+function improvementVisual() {
   return `
-    <div class="integrity-visual">
-      <div class="integrity-score"><span>METRIC-ONLY SHORTCUT</span><strong>0.9628</strong><div class="rejected-stamp">REMOVED</div></div>
-      <div class="integrity-copy">
-        <p class="eyebrow">THE HONESTY GATE</p><h2>It scored higher.<br />It understood less.</h2>
-        <p>The route mirrored simulator wording, failed under paraphrase, and delayed useful recommendations to protect MRR. We deleted it.</p>
-        <div class="gate-list"><span>NO EVALUATOR IMPORTS</span><span>PARAPHRASE TEST</span><span>NOVEL-TARGET TEST</span></div>
+    <div class="improvement-visual">
+      <div class="improvement-score">
+        <span>160-SESSION DEVELOPMENT SPLIT</span>
+        <div class="score-jump"><small>0.5518</small><i>→</i><strong>0.7392</strong></div>
+        <p>TechnicalScore <b>+0.1873</b></p>
+        <div class="latency-badge"><span>p95 complete turn</span><strong>0.707 s</strong></div>
       </div>
+      <div class="improvement-copy">
+        <p class="eyebrow">MEASURE, REJECT, IMPROVE</p><h2>Better shopping behavior.<br />Inside a runtime envelope.</h2>
+        <div class="lever-list">
+          <article><span>01</span><div><strong>Conversational evidence</strong><small>Validated memory across turns.</small></div></article>
+          <article><span>02</span><div><strong>Information-value questions</strong><small>Split the live candidate pool.</small></div></article>
+          <article><span>03</span><div><strong>Budget-aware ordering</strong><small>Respect ranges; retain unknown prices.</small></div></article>
+        </div>
+        <div class="runtime-choice"><b>FROZEN RERANK DEPTH 50</b><span>0.55 s p95 · 800.6 s projected wall</span><small>depth 100 rejected: 1,366.9 s wall</small></div>
+      </div>
+    </div>`;
+}
+
+function retrievalVisual() {
+  return `
+    <div class="retrieval-visual">
+      <div class="retrieval-heading"><p class="eyebrow">THE RETRIEVAL DATA PLANE</p><h2>Three routes. Frozen fusion.<br />Bounded ranking.</h2></div>
+      <div class="query-context">
+        <span>QUERY CONTEXT</span>
+        <strong>latest message</strong><i>+</i><strong>prior dialog</strong><i>+</i><strong>active constraints</strong><i>+</i><strong>profile hint while vague</strong>
+      </div>
+      <div class="retrieval-routes">
+        <article class="route structured"><span>ELIGIBILITY</span><strong>Structured filters</strong><small>frozen weight · 0.02</small></article>
+        <article class="route lexical"><span>LEXICAL</span><strong>BM25 / FTS5</strong><small>frozen weight · 0.64</small></article>
+        <article class="route dense"><span>SEMANTIC</span><strong>Dense / Qdrant Local</strong><small>frozen weight · 0.34 · fail-open</small></article>
+      </div>
+      <div class="pipeline-band">
+        <div><span>01</span><strong>Normalize + fuse</strong><small>per-route min–max</small></div><i>→</i>
+        <div><span>02</span><strong>Wide pool · 100</strong><small>hard eligibility + popularity bands</small></div><i>→</i>
+        <div><span>03</span><strong>Candidate depth · 50</strong><small>frozen production boundary</small></div><i>→</i>
+        <div class="rank-stage"><span>04</span><strong>MiniLM-L6 rerank</strong><small>local · 1.5 s deadline</small></div>
+      </div>
+      <div class="retrieval-output"><strong>catalog-valid Top 10</strong><span>or</span><strong>highest-information clarification</strong><i></i><small>budget stable partition · optional connected head only on uncertain margin · local ordering survives failure</small></div>
     </div>`;
 }
 
 function connectedVisual() {
   return `
-    <div class="connected-visual">
-      <div class="connected-heading"><p class="eyebrow">OPTIONAL SEMANTIC RANKING · PAIRED 60</p><h2>Quality when connected.<br />Correctness when disconnected.</h2></div>
-      <div class="pareto-chart">
-        <div class="axis axis-y"><span>TechnicalScore</span></div><div class="axis axis-x"><span>p95 complete-turn latency</span></div>
-        <div class="pareto-point local-point" style="--x:12%;--y:42%"><i></i><b>LOCAL</b><strong>0.7222</strong><small>0.72 s</small></div>
-        <div class="pareto-point connected-point" style="--x:70%;--y:26%"><i></i><b>MINI-RANKED</b><strong>0.7569</strong><small>4.59 s</small></div>
-        <svg class="pareto-line" viewBox="0 0 100 100" preserveAspectRatio="none"><path d="M17 58 C42 50 55 39 74 31" /></svg>
+    <div class="connected-visual shop-conversion-visual">
+      <div class="connected-heading"><p class="eyebrow">A SHOPPING AGENT FOR TIKTOK SHOP</p><h2>Most users browse.<br />A few are ready to buy.</h2><p class="conversion-thesis">The job is to recognize purchase intent, reduce uncertainty, and seal the deal before attention moves on.</p></div>
+      <div class="conversion-funnel">
+        <div class="funnel-stage browse"><span>01</span><strong>People browsing</strong><small>discovery · entertainment · curiosity</small></div>
+        <i>↓</i>
+        <div class="funnel-stage intent"><span>02</span><strong>Purchase intent appears</strong><small>constraints narrow · confidence rises</small></div>
+        <i>↓</i>
+        <div class="funnel-stage close"><span>03</span><strong>Close quickly</strong><small>recommend while attention is still alive</small></div>
       </div>
-      <div class="fail-open-flow"><span>timeout · malformed output · budget exhausted</span><i>→</i><strong>return local ordering</strong></div>
+      <div class="conversion-tradeoff">
+        <div><span>FAST LOCAL DEFAULT</span><strong>0.7222</strong><small>0.72 s p95</small></div>
+        <b>versus</b>
+        <div class="slower"><span>CONNECTED RANKING</span><strong>0.7569</strong><small>4.59 s p95</small></div>
+        <p><strong>Trade-off:</strong> a small ranking gain can lose the shopper if latency breaks the moment. Connected ranking is optional; failures return the valid local order.</p>
+      </div>
     </div>`;
 }
 
 function architectureDiagram(compact = false) {
   return `
     <div class="architecture-visual ${compact ? "compact" : ""}">
-      <div class="architecture-heading"><p class="eyebrow">THE ARCHITECTURAL INSIGHT</p><h2>Meaning is proposed.<br />State is validated.</h2></div>
-      <div class="architecture-flow">
-        ${diagramNode("01", "Turn Plan", "LLM or local interpreter proposes", "message")}
+      <div class="architecture-heading"><p class="eyebrow">THE CONTROL PLANE</p><h2>Probabilistic meaning.<br />Deterministic state.</h2></div>
+      <div class="control-plane-flow">
+        ${diagramNode("01", "Conversation input", "latest message + prior dialog", "message")}
+        ${flowArrow("propose")}
+        ${diagramNode("02", "Complete Turn Plan", "model or local interpreter", "buying")}
         ${flowArrow("validate")}
-        <div class="route-stack">
-          ${diagramNode("02A", "Atomic commit", "all transitions or none", "buying")}
-          ${diagramNode("02B", "Constraint State", "revisioned · deterministic", "browsing")}
-        </div>
-        ${flowArrow("retrieve")}
-        ${diagramNode("03", "Hybrid retrieval", "Keyword · dense · category", "retrieval")}
-        ${flowArrow("rank")}
-        ${diagramNode("04", "Semantic rank", "Top-10 or clarify", "rank")}
+        ${diagramNode("03", "Atomic validator", "all transitions or none", "validator")}
+        ${flowArrow("commit")}
+        ${diagramNode("04", "Constraint State", "revisioned + deterministic", "browsing")}
       </div>
-      <div class="memory-loop"><span>ONE VALIDATED BOUNDARY</span><i></i><span>connected and local paths share the same invariants</span></div>
+      <div class="state-contracts">
+        <div><span>RETIRES STALE INTENT</span><strong>new evidence can replace old constraints</strong></div>
+        <div><span>PRESERVES INVARIANTS</span><strong>one validated revision per turn</strong></div>
+        <div><span>BUILDS RETRIEVAL QUERY</span><strong>state + dialog + current message</strong></div>
+      </div>
+      <div class="memory-loop"><span>ONE CORRECTNESS BOUNDARY</span><i></i><span>local and connected planners share the same state contract</span></div>
     </div>`;
 }
 
@@ -327,26 +371,26 @@ function flowArrow(label) {
   return `<div class="flow-arrow"><span>${label}</span><svg viewBox="0 0 90 24" aria-hidden="true"><path d="M2 12h80m-8-8 8 8-8 8" /></svg></div>`;
 }
 
-function placeholderSession(showOverride) {
+function demoSession() {
   return `
     <div class="session-visual">
-      <div class="placeholder-ribbon">PLACEHOLDER · REPLACE WITH REAL CAPTURE</div>
       <div class="conversation-panel">
-        <p class="panel-label">SIMULATED CONVERSATION</p>
-        <div class="chat user"><span>SHOPPER</span><p>I need something comfortable for an outdoor wedding.</p></div>
-        <div class="chat agent"><span>COPILOT</span><p>Do you have a preferred type or weather requirement?</p></div>
-        ${showOverride ? `<div class="chat user highlight"><span>SHOPPER · INTENT OVERRIDE</span><p>Actually, it might rain. I need waterproof shoes.</p></div>` : `<div class="chat user"><span>SHOPPER</span><p>Low-profile shoes, preferably neutral.</p></div>`}
+        <p class="panel-label">REAL HELPER RUN · PUBLIC_0001</p>
+        <div class="session-turn"><span>TURN 1</span><p>Jewelry necklaces · alloy</p><small>target absent · asks color</small></div>
+        <div class="session-turn"><span>TURN 2</span><p>No additional color preference</p><small>target absent · asks use case</small></div>
+        <div class="session-turn"><span>TURN 3</span><p>No additional use-case preference</p><small>target absent · asks feature</small></div>
+        <div class="session-turn hit"><span>TURN 4</span><p>Triple Moon Pentagram symbol</p><small>target enters at rank 1</small></div>
       </div>
       <div class="state-panel">
-        <div class="state-header"><span>LIVE STATE</span><span>TURN ${showOverride ? "4" : "2"} / 10</span></div>
+        <div class="state-header"><span>CONVERSION PATH</span><span>TURN 4 / 10</span></div>
         <dl>
           <div><dt>intent</dt><dd>BUYING</dd></div>
-          <div><dt>category</dt><dd>shoes</dd></div>
-          <div class="${showOverride ? "cleared" : ""}"><dt>style</dt><dd>${showOverride ? "cleared" : "low-profile"}</dd></div>
-          <div class="${showOverride ? "cleared" : ""}"><dt>color</dt><dd>${showOverride ? "cleared" : "neutral"}</dd></div>
-          <div class="${showOverride ? "added" : "muted"}"><dt>feature</dt><dd>${showOverride ? "+ waterproof" : "—"}</dd></div>
+          <div><dt>category</dt><dd>necklace</dd></div>
+          <div><dt>material</dt><dd>alloy</dd></div>
+          <div class="muted"><dt>color</dt><dd>dismissed</dd></div>
+          <div class="added"><dt>feature</dt><dd>+ triple moon</dd></div>
         </dl>
-        <div class="candidate-funnel"><span>50,000</span><i>→</i><span>184</span><i>→</i><strong>10</strong></div>
+        <div class="session-result"><span>TARGET FOUND</span><strong>TURN 4 · RANK 1</strong><small>0 connected-model tokens</small></div>
       </div>
     </div>`;
 }
@@ -354,7 +398,7 @@ function placeholderSession(showOverride) {
 function metricsVisual() {
   return `
     <div class="metrics-visual">
-      <div class="metrics-title"><p class="eyebrow">PLACEHOLDER · OFFICIAL EVALUATOR</p><h2>Robustness, not one lucky run.</h2></div>
+      <div class="metrics-title"><p class="eyebrow">ROBUSTNESS EVIDENCE</p><h2>Robustness, not one lucky run.</h2></div>
       <div class="robustness-comparison">
         <article class="journey-score"><span>OFFICIAL BASELINE</span><strong>0.1067</strong><small>200 sessions</small></article>
         <div class="journey-arrow"><span>7.08×</span><i>→</i><small>technical score</small></div>
@@ -366,7 +410,7 @@ function metricsVisual() {
         <div><span>NOVEL TARGETS</span><strong>0.7182</strong><small>unseen public labels</small></div>
         <div class="tests-pass"><span>TEST SUITE</span><strong>218 / 218</strong><small>passing</small></div>
       </div>
-      <div class="metric-footnote">Mock rendering of checked-in journal evidence · replace the placeholder with the official evaluator capture</div>
+      <div class="metric-footnote">Checked-in evidence · exact, paraphrased, and novel-target conditions</div>
     </div>`;
 }
 
@@ -388,11 +432,11 @@ function voiceover(key) {
   const lines = {
     hook: "Fifty thousand products, one hidden purchase, and only ten turns to find it.",
     baseline: "The official baseline treated every message like a new search. It hit only twelve and a half percent of targets and scored 0.1067.",
-    insight: "We separated probabilistic interpretation from deterministic correctness. Every local or connected plan passes one atomic validation boundary.",
-    experiments: "We wrote runtime gates before benchmarking. A deeper reranker scored slightly higher, but violated the complete-run budget, so we rejected it.",
-    integrity: "We even found a shortcut that scored 0.9628 by mirroring simulator wording. It failed paraphrase, so we deleted it and made robustness a release gate.",
+    insight: "A complete Turn Plan passes an atomic validator before it can change revisioned Constraint State. Probabilistic meaning never owns correctness.",
+    retrieval: "Structured eligibility, BM25, and local dense retrieval are normalized and fused with frozen weights before a bounded local cross-encoder produces the final ordering.",
+    levers: "Conversational evidence, information-value questions, and budget-aware ordering moved the development score from 0.5518 to 0.7392, while a frozen depth of fifty kept the full run inside its runtime gate.",
     session: "In this intent-override session, watch the old product intent retire atomically while session-level evidence survives and immediately drives a new retrieval.",
-    connected: "Optional semantic ranking improves the paired score to 0.7569 in 4.59 seconds p95. If it times out or fails, the valid local ordering returns unchanged.",
+    connected: "On TikTok Shop, most people are browsing and only some reveal purchase intent. The agent has to reduce uncertainty and close while attention is still alive, so a small ranking gain must be weighed against latency. The fast local order remains the fail-open default.",
     proof: "The shipped local system scores 0.7556 on all two hundred released sessions, 0.7250 under paraphrase, and 0.7182 on novel targets.",
     close: "This is not the highest score at any cost. It is a fast, reproducible shopping agent whose correctness does not depend on the network.",
   };

@@ -160,6 +160,11 @@ def main() -> None:
     )
     parser.add_argument("--ranker-config", default="config/semantic_ranker.json")
     parser.add_argument("--ranker-max-candidates", type=int, default=12)
+    parser.add_argument(
+        "--tournament",
+        action="store_true",
+        help="Use the parallel nano chunk tournament as the ranking stage.",
+    )
     parser.add_argument("--env-file", default=".env")
     args = parser.parse_args()
 
@@ -173,20 +178,33 @@ def main() -> None:
         settings = load_openai_evaluation_settings(
             args.ranker_config, args.openai_ranker_role
         )
-        ranker = OpenAISemanticRanker(
-            model=settings.model,
-            pricing=settings.pricing,
-            budget=DevelopmentBudget(
-                limit_usd=settings.budget_limit_usd,
-                warning_usd=settings.warning_usd,
-                review_boundary_usd=settings.review_boundary_usd,
-                absolute_stop_usd=settings.absolute_stop_usd,
-            ),
-            reasoning_effort=settings.reasoning_effort,
-            timeout_seconds=settings.timeout_seconds,
-            max_output_tokens=settings.max_output_tokens,
-            max_candidates=args.ranker_max_candidates,
-        )
+        def build_stage(stage_settings, timeout_seconds, max_candidates):
+            return OpenAISemanticRanker(
+                model=stage_settings.model,
+                pricing=stage_settings.pricing,
+                budget=DevelopmentBudget(
+                    limit_usd=stage_settings.budget_limit_usd,
+                    warning_usd=stage_settings.warning_usd,
+                    review_boundary_usd=stage_settings.review_boundary_usd,
+                    absolute_stop_usd=stage_settings.absolute_stop_usd,
+                ),
+                reasoning_effort=stage_settings.reasoning_effort,
+                timeout_seconds=timeout_seconds,
+                max_output_tokens=stage_settings.max_output_tokens,
+                max_candidates=max_candidates,
+            )
+
+        if args.tournament:
+            from starter.llm_ranker import TournamentSemanticRanker
+
+            ranker = TournamentSemanticRanker(
+                build_stage(settings, 1.5, 12),
+                build_stage(settings, 2.0, 12),
+            )
+        else:
+            ranker = build_stage(
+                settings, settings.timeout_seconds, args.ranker_max_candidates
+            )
         return Agent(args.catalog, semantic_ranker=ranker)
     conditions = [item.strip() for item in args.conditions.split(",") if item.strip()]
 
