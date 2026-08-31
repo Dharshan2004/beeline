@@ -5,14 +5,24 @@ from pathlib import Path
 import tempfile
 import unittest
 
+from starter.constraint_state import (
+    AddConstraint,
+    DismissAttribute,
+    ReplaceConstraint,
+    ReplaceProductIntent,
+    TurnPlan,
+)
 from starter.planning import ProviderResponse
 from tools.benchmark_openai_planning import (
     BenchmarkConfigurationError,
     ModelBenchmarkConfig,
+    _mutation_signature,
+    _replacement_signature,
     assert_development_only_samples,
     build_planning_fixtures,
     compare_providers,
     load_benchmark_config,
+    validate_benchmark_report,
 )
 from tools.dataset_split import FROZEN_HOLDOUT_SAMPLE_IDS
 
@@ -37,6 +47,18 @@ class RecordingProvider:
             prompt_tokens=100,
             completion_tokens=20,
         )
+
+
+class MeteredFailingProvider:
+    def __init__(self) -> None:
+        self.spent_usd = 0.0
+
+    def plan(self, request):
+        self.spent_usd += 0.25
+        raise TimeoutError("request timed out after submission")
+
+    def metrics(self):
+        return {"budget": {"spent_usd": self.spent_usd}}
 
 
 class OpenAIPlanningBenchmarkTest(unittest.TestCase):
@@ -114,6 +136,12 @@ class OpenAIPlanningBenchmarkTest(unittest.TestCase):
         self.assertEqual(metrics["aggregate"]["failure_rate"], 0.0)
         self.assertEqual(metrics["aggregate"]["state_accuracy"], 1.0)
         self.assertEqual(metrics["aggregate"]["tool_decision_accuracy"], 1.0)
+        self.assertEqual(metrics["aggregate"]["constraint_decision_accuracy"], 1.0)
+        self.assertEqual(metrics["route_selection_rates"], {
+            "bm25": 1.0,
+            "dense": 1.0,
+            "structured": 1.0,
+        })
         self.assertEqual(metrics["token_usage"], {
             "prompt_tokens": len(fixtures) * 100,
             "completion_tokens": len(fixtures) * 20,
@@ -123,6 +151,7 @@ class OpenAIPlanningBenchmarkTest(unittest.TestCase):
         self.assertIn("p95_seconds", metrics["latency"])
         self.assertIn("browsing", metrics["scenario_metrics"])
         self.assertEqual(report["selection_status"], "provisional_no_default_activation")
+        validate_benchmark_report(report)
 
         comparison = report["provisional_comparison"]
         self.assertEqual(comparison["lower_cost_within_tolerance"], True)
@@ -151,6 +180,31 @@ class OpenAIPlanningBenchmarkTest(unittest.TestCase):
         self.assertEqual(cheap["failure_causes"], {"RuntimeError": len(fixtures)})
         self.assertEqual(cheap["estimated_cost_usd"], 0.0)
 
+    def test_failed_call_budget_charges_are_attributed_to_the_model(self) -> None:
+        fixtures = build_planning_fixtures(self.samples, self.catalog)
+
+        report = compare_providers(
+            fixtures=fixtures,
+            catalog_path=self.catalog,
+            providers={
+                "quality_reference": RecordingProvider(),
+                "lower_cost": MeteredFailingProvider(),
+            },
+            models={
+                "quality_reference": self.model("quality_reference", "reference", 4),
+                "lower_cost": self.model("lower_cost", "cheap", 0.2),
+            },
+            configuration_sha256="d" * 64,
+        )
+
+        cheap = report["models"]["lower_cost"]
+        self.assertEqual(cheap["estimated_cost_usd"], len(fixtures) * 0.25)
+        self.assertTrue(
+            cheap["cost_accounting"][
+                "includes_pessimistic_failed_call_reservations"
+            ]
+        )
+
     def test_checked_in_configuration_has_two_distinct_roles_and_budget_gates(self) -> None:
         config_path = Path(__file__).parents[1] / "config" / "openai_phase_a_benchmark.json"
 
@@ -167,6 +221,81 @@ class OpenAIPlanningBenchmarkTest(unittest.TestCase):
         self.assertEqual(configuration.absolute_stop_usd, 600.0)
         self.assertEqual(configuration.dataset_split, "public-split-v1-development-only")
         self.assertEqual(len(configuration.sha256), 64)
+
+    def test_report_schema_validation_rejects_missing_aggregate_metrics(self) -> None:
+        fixtures = build_planning_fixtures(self.samples, self.catalog)
+        report = compare_providers(
+            fixtures=fixtures,
+            catalog_path=self.catalog,
+            providers={
+                "quality_reference": RecordingProvider(),
+                "lower_cost": RecordingProvider(),
+            },
+            models={
+                "quality_reference": self.model("quality_reference", "reference", 4),
+                "lower_cost": self.model("lower_cost", "cheap", 0.2),
+            },
+            configuration_sha256="c" * 64,
+        )
+        del report["models"]["lower_cost"]["aggregate"]["state_accuracy"]
+
+        with self.assertRaisesRegex(BenchmarkConfigurationError, "state_accuracy"):
+            validate_benchmark_report(report)
+
+        schema = Path(__file__).parents[1] / "docs" / "openai_model_benchmark_report.schema.json"
+        self.assertTrue(schema.is_file())
+
+    def test_report_schema_validation_rejects_wrong_metric_types(self) -> None:
+        fixtures = build_planning_fixtures(self.samples, self.catalog)
+        report = compare_providers(
+            fixtures=fixtures,
+            catalog_path=self.catalog,
+            providers={
+                "quality_reference": RecordingProvider(),
+                "lower_cost": RecordingProvider(),
+            },
+            models={
+                "quality_reference": self.model("quality_reference", "reference", 4),
+                "lower_cost": self.model("lower_cost", "cheap", 0.2),
+            },
+            configuration_sha256="e" * 64,
+        )
+        report["models"]["lower_cost"]["scenario_metrics"] = "invalid"
+
+        with self.assertRaisesRegex(BenchmarkConfigurationError, "scenario_metrics"):
+            validate_benchmark_report(report)
+
+    def test_mutation_metrics_distinguish_kind_and_replacement_target(self) -> None:
+        common = {
+            "attribute": "color",
+            "values": ("black",),
+            "match_rule": "any",
+            "classification": "hard",
+            "scope": "product_intent",
+            "raw_phrase": "black",
+            "confidence": 1.0,
+        }
+        expected = TurnPlan(0, 1, (
+            AddConstraint(**common),
+            DismissAttribute(attribute="material", raw_phrase="any material"),
+            ReplaceConstraint(constraint_id="c-1", **common),
+            ReplaceProductIntent(product_intent_id="intent-2", raw_phrase="boots"),
+        ))
+        wrong_target = TurnPlan(0, 1, (
+            AddConstraint(**common),
+            DismissAttribute(attribute="material", raw_phrase="any material"),
+            ReplaceConstraint(constraint_id="c-2", **common),
+            ReplaceProductIntent(product_intent_id="intent-3", raw_phrase="boots"),
+        ))
+
+        self.assertNotEqual(
+            _mutation_signature(expected),
+            _mutation_signature(wrong_target),
+        )
+        self.assertNotEqual(
+            _replacement_signature(expected),
+            _replacement_signature(wrong_target),
+        )
 
 
 if __name__ == "__main__":

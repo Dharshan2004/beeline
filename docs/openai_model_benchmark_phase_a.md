@@ -30,8 +30,10 @@ Locked Holdout, or private chain-of-thought. Responses use `store=false`.
 - Split: `public-split-v1-development-only`; holdout identifiers are rejected.
 - Budget: shared $10 Phase A ceiling, $40 warning, review before $50, and an
   absolute programmatic stop at $600. A worst-case reservation is checked before
-  every request and actual token cost is recorded even when output validation
-  subsequently fails.
+  every request. Actual token cost is recorded whenever the API supplies valid
+  usage; a submitted request that times out or returns unusable usage is charged
+  the full reservation pessimistically. Raising the configured limit above $50
+  requires an explicit review-approval flag.
 
 The checked-in prices are the standard text-token prices published on
 2026-08-31: Sol at $4/M input and $20/M output, and Luna at $0.20/M input and
@@ -44,14 +46,23 @@ and [Luna model page](https://developers.openai.com/api/docs/models/gpt-5.6-luna
 Each model report contains aggregate and per-scenario:
 
 - exact canonical Constraint State accuracy;
-- replacement/Constraint decision accuracy;
-- Retrieval Route decision accuracy;
+- exact mutation-decision accuracy across add, reintroduce, dismiss,
+  Constraint replacement, and Product Intent replacement operations;
+- exact replacement subtype/target accuracy;
+- canonical Retrieval Route agreement (order-insensitive), plus an individual
+  selection rate for `structured`, `bm25`, and `dense`;
 - provisional Clarification protocol quality;
 - downstream local retrieval HitRate@10 and MRR;
 - failure rate and classified failure causes;
 - p50, p95, and mean request latency;
 - prompt, completion, and total token use; and
-- estimated cost from the versioned per-model prices.
+- estimated cost from the versioned per-model prices, including each model's
+  attributed pessimistic reservations for submitted calls without usable usage.
+
+The stable paired-report contract is checked before output and published as
+`docs/openai_model_benchmark_report.schema.json`. The benchmark and connected
+adapter serialize `PlanningRequest` through one canonical function, preventing
+the report corpus hash from drifting from the API payload representation.
 
 Clarification scoring is intentionally limited to schema and state-policy
 validity in Phase A. Slice 13 owns the final Session Mode, expected-value policy,

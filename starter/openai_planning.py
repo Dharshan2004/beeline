@@ -18,6 +18,7 @@ from starter.planning import (
     PlanningRequest,
     PlanningSchemaError,
     ProviderResponse,
+    planning_request_as_dict,
 )
 
 
@@ -56,12 +57,17 @@ class DevelopmentBudget:
     review_boundary_usd: float = 50.0
     absolute_stop_usd: float = ABSOLUTE_BUDGET_CEILING_USD
     spent_usd: float = 0.0
+    review_approved: bool = False
 
     def __post_init__(self) -> None:
         if self.limit_usd <= 0:
             raise ValueError("development budget limit must be positive")
         if self.limit_usd > self.absolute_stop_usd:
             raise ValueError("development budget cannot exceed the absolute stop")
+        if self.limit_usd > self.review_boundary_usd and not self.review_approved:
+            raise ValueError(
+                "development budget above the review boundary requires approval"
+            )
         if self.spent_usd < 0 or self.spent_usd > self.limit_usd:
             raise ValueError("initial development spend is outside the budget")
 
@@ -89,25 +95,18 @@ class DevelopmentBudget:
             "review_boundary_usd": self.review_boundary_usd,
             "absolute_stop_usd": self.absolute_stop_usd,
             "warning_reached": self.spent_usd >= self.warning_usd,
+            "review_approved": self.review_approved,
         }
 
 
 def _request_input(request: PlanningRequest) -> str:
+    payload = planning_request_as_dict(request)
+    # Instructions and schema travel in dedicated Responses API fields. Keeping
+    # one canonical representation prevents benchmark/API payload drift.
+    payload.pop("instructions")
+    payload.pop("response_schema")
     return json.dumps(
-        {
-            "session_id": request.session_id,
-            "turn": request.turn,
-            "user_message": request.user_message,
-            "state_snapshot": request.state_snapshot,
-            "recent_history": list(request.recent_history),
-            "supported_values": {
-                key: list(values)
-                for key, values in request.supported_values.items()
-            },
-            "allowed_tools": list(request.allowed_tools),
-            "prompt_version": request.prompt_version,
-            "validation_error": request.validation_error,
-        },
+        payload,
         sort_keys=True,
         separators=(",", ":"),
     )
@@ -146,6 +145,8 @@ class OpenAIPlanningProvider:
         self.pricing = pricing or ModelPricing()
         self.budget = budget or DevelopmentBudget(limit_usd=10.0)
         self._client = client if client is not None else self._build_client(key)
+        self._submitted_call_count = 0
+        self._pessimistically_accounted_call_count = 0
 
     @staticmethod
     def _build_client(api_key: str):
@@ -159,17 +160,28 @@ class OpenAIPlanningProvider:
         return OpenAI(api_key=api_key)
 
     def plan(self, request: PlanningRequest) -> ProviderResponse:
+        request_input = _request_input(request)
+        request_bytes = sum((
+            len(request_input.encode("utf-8")),
+            len(request.instructions.encode("utf-8")),
+            len(json.dumps(
+                request.response_schema,
+                sort_keys=True,
+                separators=(",", ":"),
+            ).encode("utf-8")),
+        ))
         reserved_cost = self.pricing.estimate(
-            self.max_input_tokens_estimate,
+            max(self.max_input_tokens_estimate, request_bytes),
             self.max_output_tokens,
         )
         self.budget.authorize(reserved_cost)
         client = self._client.with_options(timeout=self.timeout_seconds)
+        self._submitted_call_count += 1
         try:
             response = client.responses.create(
                 model=self.model,
                 instructions=request.instructions,
-                input=_request_input(request),
+                input=request_input,
                 text={
                     "format": {
                         "type": "json_schema",
@@ -184,13 +196,21 @@ class OpenAIPlanningProvider:
                 store=False,
             )
         except Exception as error:
-            if isinstance(error, TimeoutError) or error.__class__.__name__ == "APITimeoutError":
+            self._record_pessimistic_cost(reserved_cost)
+            if (
+                isinstance(error, TimeoutError)
+                or error.__class__.__name__ == "APITimeoutError"
+            ):
                 raise TimeoutError("OpenAI planning request timed out") from error
             raise
 
-        usage = getattr(response, "usage", None)
-        input_tokens = _non_negative_token_count(usage, "input_tokens")
-        output_tokens = _non_negative_token_count(usage, "output_tokens")
+        try:
+            usage = getattr(response, "usage", None)
+            input_tokens = _non_negative_token_count(usage, "input_tokens")
+            output_tokens = _non_negative_token_count(usage, "output_tokens")
+        except Exception:
+            self._record_pessimistic_cost(reserved_cost)
+            raise
         self.budget.record(self.pricing.estimate(input_tokens, output_tokens))
         status = getattr(response, "status", "completed")
         if status != "completed":
@@ -228,6 +248,19 @@ class OpenAIPlanningProvider:
             },
             "budget": self.budget.as_dict(),
         }
+
+    def metrics(self) -> dict:
+        return {
+            "submitted_call_count": self._submitted_call_count,
+            "pessimistically_accounted_call_count": (
+                self._pessimistically_accounted_call_count
+            ),
+            "budget": self.budget.as_dict(),
+        }
+
+    def _record_pessimistic_cost(self, reserved_cost: float) -> None:
+        self.budget.record(reserved_cost)
+        self._pessimistically_accounted_call_count += 1
 
 
 def _non_negative_token_count(usage: object, attribute: str) -> int:

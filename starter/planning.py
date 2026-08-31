@@ -227,6 +227,25 @@ class PlanningRequest:
     validation_error: str | None = None
 
 
+def planning_request_as_dict(request: PlanningRequest) -> dict:
+    """Return the canonical, JSON-safe representation of a planning input."""
+    return {
+        "session_id": request.session_id,
+        "turn": request.turn,
+        "user_message": request.user_message,
+        "state_snapshot": deepcopy(request.state_snapshot),
+        "recent_history": [deepcopy(item) for item in request.recent_history],
+        "supported_values": {
+            key: list(values) for key, values in request.supported_values.items()
+        },
+        "allowed_tools": list(request.allowed_tools),
+        "prompt_version": request.prompt_version,
+        "instructions": request.instructions,
+        "response_schema": deepcopy(request.response_schema),
+        "validation_error": request.validation_error,
+    }
+
+
 @dataclass(frozen=True)
 class ProviderResponse:
     output: object

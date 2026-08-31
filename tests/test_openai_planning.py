@@ -170,14 +170,22 @@ class OpenAIPlanningProviderTest(unittest.TestCase):
 
     def test_provider_timeout_maps_to_the_planning_timeout_contract(self) -> None:
         client = FakeClient(TimeoutError("request expired"))
+        budget = DevelopmentBudget(limit_usd=1)
         provider = OpenAIPlanningProvider(
             model="gpt-test",
             api_key="secret",
             client=client,
+            max_input_tokens_estimate=100,
+            max_output_tokens=100,
+            pricing=ModelPricing(input_per_million_usd=1, output_per_million_usd=1),
+            budget=budget,
         )
 
         with self.assertRaisesRegex(TimeoutError, "OpenAI planning request"):
             provider.plan(planning_request())
+        self.assertGreater(budget.spent_usd, 0)
+        self.assertEqual(provider.metrics()["submitted_call_count"], 1)
+        self.assertEqual(provider.metrics()["pessimistically_accounted_call_count"], 1)
 
     def test_sdk_timeout_maps_to_the_planning_timeout_contract(self) -> None:
         client = FakeClient(APITimeoutError("SDK deadline"))
@@ -234,6 +242,7 @@ class OpenAIPlanningProviderTest(unittest.TestCase):
                 "review_boundary_usd": 50.0,
                 "absolute_stop_usd": 600.0,
                 "warning_reached": False,
+                "review_approved": False,
             },
         })
         self.assertEqual(
@@ -260,6 +269,13 @@ class OpenAIPlanningProviderTest(unittest.TestCase):
             provider.plan(planning_request())
         self.assertEqual(client.responses.calls, [])
         self.assertEqual(budget.spent_usd, 0)
+
+    def test_budget_requires_explicit_review_approval_above_fifty_dollars(self) -> None:
+        with self.assertRaisesRegex(ValueError, "review boundary"):
+            DevelopmentBudget(limit_usd=51)
+
+        approved = DevelopmentBudget(limit_usd=51, review_approved=True)
+        self.assertEqual(approved.limit_usd, 51)
 
     def test_budget_exhaustion_takes_over_offline_without_retrying(self) -> None:
         client = FakeClient(SimpleNamespace(

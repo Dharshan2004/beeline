@@ -1,0 +1,183 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/techjam/openai-model-benchmark-report.schema.json",
+  "title": "OpenAI Planning Phase A Benchmark Report",
+  "type": "object",
+  "required": [
+    "benchmark_version",
+    "fixture_version",
+    "status",
+    "selection_status",
+    "configuration_sha256",
+    "planning_contract",
+    "input_parity",
+    "models",
+    "provisional_comparison"
+  ],
+  "properties": {
+    "benchmark_version": {"type": "string"},
+    "fixture_version": {"type": "string"},
+    "status": {"type": "string"},
+    "selection_status": {"type": "string"},
+    "configuration_sha256": {"type": "string"},
+    "planning_contract": {
+      "type": "object",
+      "required": ["prompt_version", "prompt_sha256", "allowed_tools"],
+      "properties": {
+        "prompt_version": {"type": "string"},
+        "prompt_sha256": {"type": "string"},
+        "allowed_tools": {"type": "array", "items": {"type": "string"}}
+      }
+    },
+    "input_parity": {
+      "type": "object",
+      "required": ["identical", "fixture_count", "corpus_sha256"],
+      "properties": {
+        "identical": {"type": "boolean"},
+        "fixture_count": {"type": "integer"},
+        "corpus_sha256": {"type": "string"}
+      }
+    },
+    "models": {
+      "type": "object",
+      "required": ["quality_reference", "lower_cost"],
+      "properties": {
+        "quality_reference": {"$ref": "#/$defs/modelReport"},
+        "lower_cost": {"$ref": "#/$defs/modelReport"}
+      }
+    },
+    "provisional_comparison": {
+      "type": "object",
+      "required": [
+        "lower_cost_within_tolerance",
+        "aggregate_state_accuracy_regression",
+        "scenario_state_accuracy_regressions",
+        "downstream_hit_rate_at_10_regression",
+        "additional_failure_rate",
+        "quality_tolerance",
+        "default_activation_allowed",
+        "activation_gate"
+      ],
+      "properties": {
+        "lower_cost_within_tolerance": {"type": "boolean"},
+        "aggregate_state_accuracy_regression": {"type": "number"},
+        "scenario_state_accuracy_regressions": {
+          "type": "object",
+          "additionalProperties": {"type": "number"}
+        },
+        "downstream_hit_rate_at_10_regression": {"type": "number"},
+        "additional_failure_rate": {"type": "number"},
+        "quality_tolerance": {"type": "object"},
+        "default_activation_allowed": {"type": "boolean"},
+        "activation_gate": {"type": "string"}
+      }
+    }
+  },
+  "$defs": {
+    "aggregateMetrics": {
+      "type": "object",
+      "required": [
+        "fixture_count",
+        "state_accuracy",
+        "constraint_decision_accuracy",
+        "replacement_decision_accuracy",
+        "tool_decision_accuracy",
+        "clarification_protocol_quality",
+        "downstream_hit_rate_at_10",
+        "downstream_mrr",
+        "failure_rate"
+      ],
+      "properties": {
+        "fixture_count": {"type": "integer"},
+        "state_accuracy": {"type": "number"},
+        "constraint_decision_accuracy": {"type": "number"},
+        "replacement_decision_accuracy": {"type": "number"},
+        "tool_decision_accuracy": {"type": "number"},
+        "clarification_protocol_quality": {"type": "number"},
+        "downstream_hit_rate_at_10": {"type": "number"},
+        "downstream_mrr": {"type": "number"},
+        "failure_rate": {"type": "number"}
+      }
+    },
+    "modelReport": {
+      "type": "object",
+      "required": [
+        "role",
+        "model",
+        "input_corpus_sha256",
+        "aggregate",
+        "scenario_metrics",
+        "route_selection_rates",
+        "latency",
+        "token_usage",
+        "failure_causes",
+        "estimated_cost_usd",
+        "cost_accounting",
+        "pricing_usd_per_million_tokens"
+      ],
+      "properties": {
+        "role": {"type": "string"},
+        "model": {"type": "string"},
+        "input_corpus_sha256": {"type": "string"},
+        "aggregate": {"$ref": "#/$defs/aggregateMetrics"},
+        "scenario_metrics": {
+          "type": "object",
+          "additionalProperties": {"$ref": "#/$defs/aggregateMetrics"}
+        },
+        "route_selection_rates": {
+          "type": "object",
+          "required": ["bm25", "dense", "structured"],
+          "properties": {
+            "bm25": {"type": "number"},
+            "dense": {"type": "number"},
+            "structured": {"type": "number"}
+          }
+        },
+        "latency": {
+          "type": "object",
+          "required": ["p50_seconds", "p95_seconds", "mean_seconds"],
+          "properties": {
+            "p50_seconds": {"type": "number"},
+            "p95_seconds": {"type": "number"},
+            "mean_seconds": {"type": "number"}
+          }
+        },
+        "token_usage": {
+          "type": "object",
+          "required": ["prompt_tokens", "completion_tokens", "total_tokens"],
+          "properties": {
+            "prompt_tokens": {"type": "integer"},
+            "completion_tokens": {"type": "integer"},
+            "total_tokens": {"type": "integer"}
+          }
+        },
+        "failure_causes": {
+          "type": "object",
+          "additionalProperties": {"type": "integer"}
+        },
+        "estimated_cost_usd": {"type": "number"},
+        "cost_accounting": {
+          "type": "object",
+          "required": [
+            "successful_token_estimate_usd",
+            "provider_budget_delta_usd",
+            "includes_pessimistic_failed_call_reservations"
+          ],
+          "properties": {
+            "successful_token_estimate_usd": {"type": "number"},
+            "provider_budget_delta_usd": {"type": "number"},
+            "includes_pessimistic_failed_call_reservations": {"type": "boolean"}
+          }
+        },
+        "pricing_usd_per_million_tokens": {
+          "type": "object",
+          "required": ["input", "output"],
+          "properties": {
+            "input": {"type": "number"},
+            "output": {"type": "number"}
+          }
+        }
+      }
+    }
+  }
+}

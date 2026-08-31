@@ -23,8 +23,11 @@ from typing import Callable, Mapping, Sequence
 from evaluator.local_evaluator import MAX_TURNS, catalog_index, materialize_hidden_fields
 from retrieval.fusion import build_fusion_policy
 from starter.constraint_state import (
+    AddConstraint,
     ConstraintState,
+    DismissAttribute,
     PlanValidationError,
+    ReintroduceConstraint,
     ReplaceConstraint,
     ReplaceProductIntent,
     TurnPlan,
@@ -43,6 +46,7 @@ from starter.planning import (
     ProviderResponse,
     TURN_PLAN_JSON_SCHEMA,
     decode_plan,
+    planning_request_as_dict,
 )
 from starter.retrieval import CatalogRetrieval
 from starter.turn_interpreter import interpret_turn
@@ -58,6 +62,9 @@ BENCHMARK_VERSION = "openai-planning-phase-a-v1"
 FIXTURE_VERSION = "canonical-planning-fixtures-v1"
 SUBSET_SEED = 20260831
 REQUIRED_MODEL_ROLES = {"quality_reference", "lower_cost"}
+REPORT_SCHEMA_PATH = (
+    Path(__file__).parents[1] / "docs" / "openai_model_benchmark_report.schema.json"
+)
 DEFAULT_QUALITY_TOLERANCE = {
     "aggregate_state_accuracy_max_regression": 0.02,
     "scenario_state_accuracy_max_regression": 0.05,
@@ -68,6 +75,54 @@ DEFAULT_QUALITY_TOLERANCE = {
 
 class BenchmarkConfigurationError(ValueError):
     """The benchmark could violate its frozen comparison contract."""
+
+
+def validate_benchmark_report(report: Mapping[str, object]) -> None:
+    """Validate the stable, machine-readable Phase A comparison shape."""
+
+    schema = json.loads(REPORT_SCHEMA_PATH.read_text(encoding="utf-8"))
+
+    def validate(value: object, node: Mapping[str, object], path: str) -> None:
+        reference = node.get("$ref")
+        if isinstance(reference, str) and reference.startswith("#/"):
+            resolved: object = schema
+            for part in reference[2:].split("/"):
+                resolved = resolved[part]
+            node = resolved
+        expected_type = node.get("type")
+        matches = {
+            "object": isinstance(value, Mapping),
+            "array": isinstance(value, list),
+            "string": isinstance(value, str),
+            "number": isinstance(value, (int, float)) and not isinstance(value, bool),
+            "integer": isinstance(value, int) and not isinstance(value, bool),
+            "boolean": isinstance(value, bool),
+        }
+        if expected_type in matches and not matches[expected_type]:
+            raise BenchmarkConfigurationError(
+                f"report field {path} must be {expected_type}"
+            )
+        if expected_type == "object" and isinstance(value, Mapping):
+            for key in node.get("required", []):
+                if key not in value:
+                    raise BenchmarkConfigurationError(
+                        f"report is missing required field {path}.{key}"
+                    )
+            properties = node.get("properties", {})
+            for key, child in properties.items():
+                if key in value:
+                    validate(value[key], child, f"{path}.{key}")
+            additional = node.get("additionalProperties")
+            if isinstance(additional, Mapping):
+                for key in value.keys() - properties.keys():
+                    validate(value[key], additional, f"{path}.{key}")
+        if expected_type == "array" and isinstance(value, list):
+            items = node.get("items")
+            if isinstance(items, Mapping):
+                for index, item in enumerate(value):
+                    validate(item, items, f"{path}[{index}]")
+
+    validate(report, schema, "report")
 
 
 @dataclass(frozen=True)
@@ -110,6 +165,7 @@ class PlanningFixture:
     user_message: str
     state_before: ConstraintState
     expected_plan: TurnPlan
+    expected_tools: tuple[str, ...]
     request: PlanningRequest
     supported_values: dict[str, set[str]]
 
@@ -169,7 +225,7 @@ def assert_development_only_samples(samples: Sequence[dict]) -> None:
         raise BenchmarkConfigurationError("development samples must be unique")
 
 
-def _fixed_messages(sample: dict) -> list[str]:
+def _canonical_messages_for_sample(sample: dict) -> list[str]:
     card = sample.get("intent_card") or {}
     category = str(card.get("target_category") or "product")
     scenario = str(sample["scenario_type"])
@@ -222,7 +278,7 @@ def build_planning_fixtures(
         recent_history: list[dict] = []
         sample_id = str(sample["sample_id"])
         for turn, user_message in enumerate(
-            _fixed_messages(effective_sample),
+            _canonical_messages_for_sample(effective_sample),
             start=1,
         ):
             expected_plan = interpret_turn(
@@ -262,6 +318,7 @@ def build_planning_fixtures(
                 user_message=user_message,
                 state_before=deepcopy(state),
                 expected_plan=expected_plan,
+                expected_tools=APPROVED_RETRIEVAL_TOOLS,
                 request=request,
                 supported_values={
                     key: set(values) for key, values in supported_values.items()
@@ -278,26 +335,8 @@ def build_planning_fixtures(
     return fixtures
 
 
-def _request_dict(request: PlanningRequest) -> dict:
-    return {
-        "session_id": request.session_id,
-        "turn": request.turn,
-        "user_message": request.user_message,
-        "state_snapshot": request.state_snapshot,
-        "recent_history": list(request.recent_history),
-        "supported_values": {
-            key: list(values) for key, values in request.supported_values.items()
-        },
-        "allowed_tools": list(request.allowed_tools),
-        "prompt_version": request.prompt_version,
-        "instructions": request.instructions,
-        "response_schema": request.response_schema,
-        "validation_error": request.validation_error,
-    }
-
-
 def fixture_corpus_sha256(fixtures: Sequence[PlanningFixture]) -> str:
-    payload = [_request_dict(fixture.request) for fixture in fixtures]
+    payload = [planning_request_as_dict(fixture.request) for fixture in fixtures]
     return hashlib.sha256(
         json.dumps(payload, sort_keys=True, separators=(",", ":")).encode("utf-8")
     ).hexdigest()
@@ -325,10 +364,37 @@ def _state_signature(state: ConstraintState) -> dict:
     }
 
 
-def _has_replacement(plan: TurnPlan) -> bool:
-    return any(
-        isinstance(mutation, (ReplaceConstraint, ReplaceProductIntent))
-        for mutation in plan.mutations
+def _mutation_signature(plan: TurnPlan) -> tuple[tuple, ...]:
+    signatures = []
+    for mutation in plan.mutations:
+        if isinstance(mutation, ReplaceConstraint):
+            signatures.append((
+                "replace_constraint", mutation.constraint_id, mutation.attribute,
+                mutation.values, mutation.match_rule, mutation.classification,
+                mutation.scope,
+            ))
+        elif isinstance(mutation, ReintroduceConstraint):
+            signatures.append((
+                "reintroduce_constraint", mutation.attribute, mutation.values,
+                mutation.match_rule, mutation.classification, mutation.scope,
+            ))
+        elif isinstance(mutation, AddConstraint):
+            signatures.append((
+                "add_constraint", mutation.attribute, mutation.values,
+                mutation.match_rule, mutation.classification, mutation.scope,
+            ))
+        elif isinstance(mutation, DismissAttribute):
+            signatures.append(("dismiss_attribute", mutation.attribute))
+        elif isinstance(mutation, ReplaceProductIntent):
+            signatures.append(("replace_product_intent", mutation.product_intent_id))
+    return tuple(signatures)
+
+
+def _replacement_signature(plan: TurnPlan) -> tuple[tuple, ...]:
+    return tuple(
+        signature
+        for signature in _mutation_signature(plan)
+        if signature[0] in {"replace_constraint", "replace_product_intent"}
     )
 
 
@@ -345,6 +411,7 @@ def _summarize(records: Sequence[dict]) -> dict:
         return {
             "fixture_count": 0,
             "state_accuracy": 0.0,
+            "constraint_decision_accuracy": 0.0,
             "replacement_decision_accuracy": 0.0,
             "tool_decision_accuracy": 0.0,
             "clarification_protocol_quality": 0.0,
@@ -355,6 +422,10 @@ def _summarize(records: Sequence[dict]) -> dict:
     return {
         "fixture_count": count,
         "state_accuracy": round(sum(item["state_correct"] for item in records) / count, 6),
+        "constraint_decision_accuracy": round(
+            sum(item["constraint_decision_correct"] for item in records) / count,
+            6,
+        ),
         "replacement_decision_accuracy": round(
             sum(item["replacement_correct"] for item in records) / count,
             6,
@@ -384,13 +455,16 @@ def evaluate_provider(
     prompt_tokens = 0
     completion_tokens = 0
     failure_causes: Counter[str] = Counter()
+    provider_metrics_before = _provider_metrics(provider)
     for fixture in fixtures:
         started = time.perf_counter()
         record = {
             "scenario_type": fixture.scenario_type,
             "state_correct": 0,
+            "constraint_decision_correct": 0,
             "replacement_correct": 0,
             "tools_correct": 0,
+            "selected_tools": (),
             "clarification_valid": 0,
             "hit": 0,
             "reciprocal_rank": 0.0,
@@ -430,13 +504,18 @@ def evaluate_provider(
                 "state_correct": int(
                     _state_signature(candidate_state) == _state_signature(expected_state)
                 ),
+                "constraint_decision_correct": int(
+                    _mutation_signature(decoded.turn_plan)
+                    == _mutation_signature(fixture.expected_plan)
+                ),
                 "replacement_correct": int(
-                    _has_replacement(decoded.turn_plan)
-                    == _has_replacement(fixture.expected_plan)
+                    _replacement_signature(decoded.turn_plan)
+                    == _replacement_signature(fixture.expected_plan)
                 ),
                 "tools_correct": int(
-                    decoded.retrieval_tools == APPROVED_RETRIEVAL_TOOLS
+                    set(decoded.retrieval_tools) == set(fixture.expected_tools)
                 ),
+                "selected_tools": decoded.retrieval_tools,
                 "clarification_valid": 1,
                 "hit": int(rank is not None),
                 "reciprocal_rank": 0.0 if rank is None else 1.0 / rank,
@@ -451,7 +530,22 @@ def evaluate_provider(
     grouped: dict[str, list[dict]] = defaultdict(list)
     for record in records:
         grouped[record["scenario_type"]].append(record)
-    estimated_cost = model.pricing.estimate(prompt_tokens, completion_tokens)
+    token_estimated_cost = model.pricing.estimate(prompt_tokens, completion_tokens)
+    provider_metrics_after = _provider_metrics(provider)
+    accounted_cost = max(
+        0.0,
+        _budget_spend(provider_metrics_after) - _budget_spend(provider_metrics_before),
+    )
+    estimated_cost = max(token_estimated_cost, accounted_cost)
+    successful_records = [record for record in records if not record["failed"]]
+    route_selection_rates = {
+        route: round(
+            sum(route in record["selected_tools"] for record in successful_records)
+            / len(successful_records),
+            6,
+        ) if successful_records else 0.0
+        for route in APPROVED_RETRIEVAL_TOOLS
+    }
     return {
         "role": model.role,
         "model": model.model,
@@ -460,6 +554,7 @@ def evaluate_provider(
         "scenario_metrics": {
             name: _summarize(grouped[name]) for name in sorted(grouped)
         },
+        "route_selection_rates": route_selection_rates,
         "latency": {
             "p50_seconds": round(_percentile(latencies, 0.50), 6),
             "p95_seconds": round(_percentile(latencies, 0.95), 6),
@@ -472,11 +567,34 @@ def evaluate_provider(
         },
         "failure_causes": dict(sorted(failure_causes.items())),
         "estimated_cost_usd": round(estimated_cost, 9),
+        "cost_accounting": {
+            "successful_token_estimate_usd": round(token_estimated_cost, 9),
+            "provider_budget_delta_usd": round(accounted_cost, 9),
+            "includes_pessimistic_failed_call_reservations": (
+                accounted_cost > token_estimated_cost
+            ),
+        },
         "pricing_usd_per_million_tokens": {
             "input": model.input_per_million_usd,
             "output": model.output_per_million_usd,
         },
     }
+
+
+def _provider_metrics(provider: object) -> Mapping[str, object]:
+    metrics = getattr(provider, "metrics", None)
+    if not callable(metrics):
+        return {}
+    value = metrics()
+    return value if isinstance(value, Mapping) else {}
+
+
+def _budget_spend(metrics: Mapping[str, object]) -> float:
+    budget = metrics.get("budget")
+    if not isinstance(budget, Mapping):
+        return 0.0
+    spent = budget.get("spent_usd", 0.0)
+    return float(spent) if isinstance(spent, (int, float)) else 0.0
 
 
 def compare_providers(
@@ -541,7 +659,7 @@ def compare_providers(
             for regression in scenario_state_regressions.values()
         )
     )
-    return {
+    report = {
         "benchmark_version": BENCHMARK_VERSION,
         "fixture_version": FIXTURE_VERSION,
         "status": "provisional_phase_a",
@@ -578,6 +696,8 @@ def compare_providers(
             "activation_gate": "Slice 13 must merge before the complete Phase B rerun",
         },
     }
+    validate_benchmark_report(report)
+    return report
 
 
 def _load_dotenv(path: str | Path) -> None:
