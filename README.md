@@ -213,11 +213,33 @@ tracker (issues #1–#19); per-slice assignees:
   embedded Qdrant (local mode), SQLite FTS5, NumPy.
 - **Dataset:** Amazon Reviews 2023 (McAuley Lab, UCSD) — organizer-frozen
   catalog and sessions; see `DATA_ATTRIBUTION.md`.
-- **Referenced research** (full citations in `docs/lever_catalog.md` and
-  `docs/honest_optimizations.md`): conversational query rewriting (LLM4CS,
-  ConvGQR), reciprocal-rank fusion and hybrid retrieval practice, doc2query
-  document expansion, facet/question selection by expected information gain
-  (Vandic et al. CIKM 2013; Interactive Classification; BED-LLM), listwise
-  LLM reranking (RankGPT/RankZephyr lineage), Bayesian-average rating priors
-  and Empirical-Bayes cold-start ranking, and intent-aware result
-  diversification (IA-Select/xQuAD).
+- **Referenced research** (how each mapped to our levers:
+  `docs/lever_catalog.md`, `docs/honest_optimizations.md`):
+  - Conversational query rewriting — [LLM4CS](https://arxiv.org/abs/2303.06573),
+    [ConvGQR](https://arxiv.org/abs/2305.15645),
+    [informative conversational rewriting](https://arxiv.org/abs/2310.09716),
+    [selective dialog history for topic shifts](https://www.sciencedirect.com/science/article/pii/S2543925122001231)
+  - Hybrid retrieval and fusion —
+    [reciprocal rank fusion (Cormack et al., SIGIR 2009)](https://plg.uwaterloo.ca/~gvcormac/cormacksigir09-rrf.pdf),
+    [rerank-depth study (Elastic Search Labs)](https://www.elastic.co/search-labs/blog/elastic-semantic-reranker-part-3)
+  - Document expansion — [doc2query](https://arxiv.org/abs/1904.08375),
+    [Doc2Query++](https://arxiv.org/html/2510.09557v2)
+  - Question/facet selection by expected information gain —
+    [Vandic et al., CIKM 2013](https://personal.eur.nl/frasincar/papers/CIKM2013/cikm2013.pdf),
+    [Interactive Classification](https://arxiv.org/abs/1911.03598),
+    [BED-LLM](https://arxiv.org/abs/2508.21184),
+    [SAUR aspect elicitation](https://par.nsf.gov/servlets/purl/10090082),
+    [AGENT-CQ](https://arxiv.org/abs/2410.19692)
+  - Listwise LLM reranking — [RankGPT](https://arxiv.org/abs/2304.09542),
+    [RankZephyr](https://arxiv.org/abs/2312.02724)
+  - Popularity and cold-start priors —
+    [Bayesian-average ranking (Algolia)](https://www.algolia.com/doc/guides/managing-results/must-do/custom-ranking/how-to/bayesian-average),
+    [Empirical-Bayes cold start in product search (Amazon, CIKM 2022)](https://assets.amazon.science/b5/2f/a9d9581d4f8eab473a4ab4a8ad35/addressing-cold-start-in-product-search-via-empirical-bayes.pdf)
+  - Personalization —
+    [Personalize-Before-Retrieve](https://arxiv.org/html/2510.08935v1),
+    [Zero Attention Model for personalized product search](https://arxiv.org/abs/1908.11322)
+  - Diversification — [intent-aware search diversification (IA-Select/xQuAD lineage)](https://dl.acm.org/doi/10.1145/2009916.2009997)
+  - E-commerce relevance — [Amazon ESCI dataset](https://arxiv.org/abs/2206.06588)
+  - Local models — [all-MiniLM-L6-v2](https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2),
+    [ms-marco-MiniLM-L-6-v2](https://huggingface.co/cross-encoder/ms-marco-MiniLM-L6-v2),
+    [bge-small-en-v1.5 (future work)](https://huggingface.co/BAAI/bge-small-en-v1.5)
