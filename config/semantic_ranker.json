@@ -1,0 +1,45 @@
+{
+  "version": "semantic-ranker-config-v1",
+  "models": [
+    {
+      "role": "fast_ranker",
+      "model": "gpt-5.4-mini",
+      "pricing_usd_per_million_tokens": {
+        "input": 0.75,
+        "output": 4.5
+      }
+    },
+    {
+      "role": "lower_cost",
+      "model": "gpt-5.6-luna",
+      "pricing_usd_per_million_tokens": {
+        "input": 0.2,
+        "output": 1.2
+      }
+    },
+    {
+      "role": "quality_reference",
+      "model": "gpt-5.6-sol",
+      "pricing_usd_per_million_tokens": {
+        "input": 4.0,
+        "output": 20.0
+      }
+    }
+  ],
+  "api": {
+    "endpoint": "responses-v1",
+    "reasoning_effort": "low",
+    "timeout_seconds": 4.0,
+    "max_input_tokens_estimate": 8000,
+    "max_output_tokens": 2000,
+    "structured_outputs": true,
+    "store": false
+  },
+  "budget_usd": {
+    "phase_a_limit": 10.0,
+    "warning": 40.0,
+    "review_boundary": 50.0,
+    "absolute_stop": 600.0
+  },
+  "pricing_source_checked_utc": "2026-08-31"
+}

@@ -324,6 +324,7 @@ class LocalRerankerWorker:
         self._last_latency_seconds = 0.0
         self._request_id = 0
         self._worker_pid: int | None = None
+        self._last_scores_by_candidate: dict[str, float] | None = None
         process_context = context or multiprocessing.get_context()
         parent_connection, child_connection = process_context.Pipe()
         self._connection = parent_connection
@@ -387,6 +388,7 @@ class LocalRerankerWorker:
         documents: Sequence[str],
     ) -> list[str]:
         fallback = list(candidates)[:FROZEN_RERANK_DEPTH]
+        self._last_scores_by_candidate = None
         if self._status != "available" or not fallback:
             return fallback
         capped_documents = list(documents)[:FROZEN_RERANK_DEPTH]
@@ -425,12 +427,29 @@ class LocalRerankerWorker:
                 or response.get("request_id") != request_id
             ):
                 raise ValueError(f"unexpected worker response: {response!r}")
-            ranked = order_by_scores(fallback, response.get("scores", ()))
+            raw_scores = response.get("scores", ())
+            ranked = order_by_scores(fallback, raw_scores)
         except (TypeError, ValueError) as error:
             self._disable("malformed_output", str(error))
             return fallback
         self._query_count += 1
+        self._last_scores_by_candidate = {
+            candidate: float(score)
+            for candidate, score in zip(fallback, raw_scores)
+        }
         return ranked
+
+    def last_scores(self) -> dict[str, float] | None:
+        """Per-candidate scores from the most recent successful rerank.
+
+        None whenever the last call fell back, so downstream tie-breaking
+        logic can never act on stale confidence.
+        """
+        return (
+            dict(self._last_scores_by_candidate)
+            if self._last_scores_by_candidate is not None
+            else None
+        )
 
     def metrics(self) -> dict:
         ordered_latencies = sorted(self._latencies_seconds)

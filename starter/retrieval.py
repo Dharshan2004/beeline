@@ -43,6 +43,60 @@ CONSTRAINT_VALUES = {
 }
 
 
+# A price amount only counts as budget evidence when the customer marks it as
+# money (a currency sign or word, or a spending keyword nearby); bare numbers
+# stay untouched so sizes and quantities never become price constraints.
+_AMOUNT = r"\$?\s*(\d+(?:\.\d+)?)\s*(?:dollars|bucks|usd)?"
+_MONEY_MARKER_RE = re.compile(
+    r"\$|\b(?:dollars|bucks|usd|budget|price|spend|spending|cost|costs|pay)\b",
+    re.IGNORECASE,
+)
+_BUDGET_UPPER_RE = re.compile(
+    rf"\b(?:under|below|less\s+than|at\s+most|no\s+more\s+than|up\s+to|"
+    rf"max(?:imum)?(?:\s+of)?|within)\s+{_AMOUNT}",
+    re.IGNORECASE,
+)
+_BUDGET_LOWER_RE = re.compile(
+    rf"\b(?:over|above|at\s+least|more\s+than|minimum(?:\s+of)?)\s+{_AMOUNT}",
+    re.IGNORECASE,
+)
+_BUDGET_RANGE_RE = re.compile(
+    rf"\bbetween\s+{_AMOUNT}\s+and\s+{_AMOUNT}", re.IGNORECASE
+)
+_BUDGET_NEAR_RE = re.compile(
+    rf"\b(?:around|about|roughly|approximately|near)\s+{_AMOUNT}",
+    re.IGNORECASE,
+)
+_BUDGET_BARE_RE = re.compile(r"\$\s*(\d+(?:\.\d+)?)")
+
+
+def parse_budget(text: str) -> tuple[float, float] | None:
+    """Extract a (low, high) price range from free text, or None.
+
+    Interprets ordinary spending language — "under $50", "between 20 and 40
+    dollars", "around $60", a bare "$35" — with an approximate mention widened
+    to a tolerance band, because customers naming a rough figure rarely mean
+    it exactly.
+    """
+    if not text or not _MONEY_MARKER_RE.search(text):
+        return None
+    match = _BUDGET_RANGE_RE.search(text)
+    if match:
+        low, high = sorted((float(match.group(1)), float(match.group(2))))
+        return (low, high)
+    match = _BUDGET_UPPER_RE.search(text)
+    if match:
+        return (0.0, float(match.group(1)))
+    match = _BUDGET_LOWER_RE.search(text)
+    if match:
+        return (float(match.group(1)), float("inf"))
+    match = _BUDGET_NEAR_RE.search(text) or _BUDGET_BARE_RE.search(text)
+    if match:
+        amount = float(match.group(1))
+        return (amount * 0.75, amount * 1.3)
+    return None
+
+
 def _text(value: object) -> str:
     if value is None:
         return ""
@@ -106,7 +160,40 @@ class CatalogRetrieval:
         self.value_index: dict[str, dict[str, set[str]]] = {
             attribute: {} for attribute in CONSTRAINT_VALUES
         }
+        self.price: dict[str, float] = {}
+        self.rating_number: dict[str, int] = {}
+        self.rating_average: dict[str, float] = {}
         self._build_index()
+
+    # Bayesian-average popularity prior: a listing's rating pulled toward the
+    # global mean by a pseudo-count, so a 5.0 with three reviews cannot outrank
+    # a 4.6 with four thousand.
+    BAYESIAN_PSEUDO_COUNT = 20.0
+    BAYESIAN_GLOBAL_MEAN = 4.2
+
+    def popularity_prior(self, parent_asin: str) -> float:
+        count = float(self.rating_number.get(parent_asin, 0))
+        average = self.rating_average.get(parent_asin, self.BAYESIAN_GLOBAL_MEAN)
+        smoothed = (
+            self.BAYESIAN_PSEUDO_COUNT * self.BAYESIAN_GLOBAL_MEAN
+            + count * average
+        ) / (self.BAYESIAN_PSEUDO_COUNT + count)
+        # Review volume dominates among near-identical listings; the smoothed
+        # rating separates equal-volume listings.
+        return count + 10.0 * smoothed
+
+    def within_budget(self, parent_asin: str, budget: tuple[float, float]) -> bool:
+        """True when the product's price fits the range or is unknown.
+
+        A missing price is treated as compatible so budget evidence reorders
+        rather than eliminates; hard elimination on incomplete catalog data
+        would drop valid products.
+        """
+        price = self.price.get(parent_asin)
+        if price is None:
+            return True
+        low, high = budget
+        return low <= price <= high
 
     def rerank_documents(self, candidates: list[str]) -> list[str]:
         """Render catalog-valid candidates for the local cross-encoder."""
@@ -131,6 +218,19 @@ class CatalogRetrieval:
                 )
                 normalized = normalize_text(" ".join(fields))
                 parent_asin = str(product["parent_asin"])
+                raw_rating_number = product.get("rating_number")
+                if isinstance(raw_rating_number, (int, float)):
+                    self.rating_number[parent_asin] = int(raw_rating_number)
+                raw_rating_average = product.get("average_rating")
+                if isinstance(raw_rating_average, (int, float)):
+                    self.rating_average[parent_asin] = float(raw_rating_average)
+                raw_price = product.get("price")
+                if isinstance(raw_price, (int, float)):
+                    self.price[parent_asin] = float(raw_price)
+                elif isinstance(raw_price, str):
+                    price_match = re.search(r"\d+(?:\.\d+)?", raw_price)
+                    if price_match:
+                        self.price[parent_asin] = float(price_match.group(0))
                 self.product_text[parent_asin] = (
                     f"{self.product_text.get(parent_asin, '')} {normalized}".strip()
                 )
@@ -320,6 +420,7 @@ class CatalogRetrieval:
         dense_candidates: list[tuple[str, float]],
         route_limit: int = 100,
         enabled_routes: set[str] | None = None,
+        dialog_text: str = "",
     ) -> dict[str, list[tuple[str, float]]]:
         """Return independent, higher-is-better scores for each Retrieval Route."""
         if route_limit <= 0:
@@ -390,11 +491,45 @@ class CatalogRetrieval:
             for variant in value_variants(value)
             for term in query_terms(variant)
         )
+        # Accumulated dialog evidence: the customer's need is everything they
+        # have said, so earlier disclosures stay in the lexical query. Terms
+        # from superseded constraints are excluded, which keeps Intent
+        # Overrides from dragging replaced requirements back in.
+        terms.extend(
+            term
+            for term in query_terms(dialog_text)
+            if term not in inactive_terms
+        )
         bm25 = []
         if "bm25" in enabled:
+            # Dual-query lexical evidence: the accumulated-dialog query
+            # carries the whole session, while a fresh latest-message query
+            # lets the newest statement rescue a session whose older wording
+            # has drifted from the current need (topic-shift recovery). A
+            # product keeps the better of its two scores.
+            full_scores = dict(self._search(terms))
+            recent_terms = [
+                term
+                for term in query_terms(user_message)
+                if term not in inactive_terms
+            ]
+            recent_terms.extend(
+                term
+                for constraint in hard
+                for value in constraint.values
+                for variant in value_variants(value)
+                for term in query_terms(variant)
+            )
+            if recent_terms != terms:
+                for identifier, score in self._search(recent_terms):
+                    previous = full_scores.get(identifier)
+                    if previous is None or score < previous:
+                        full_scores[identifier] = score
             bm25 = [
                 (identifier, -score)
-                for identifier, score in self._search(terms)
+                for identifier, score in sorted(
+                    full_scores.items(), key=lambda item: (item[1], item[0])
+                )
                 if self._eligible(identifier, hard)
             ][:route_limit]
 

@@ -71,6 +71,49 @@ class Agent:
 
 `ask_attribute` is one of `category`, `material`, `color`, `size`, `style`, `brand`, `budget`, `feature`, `use_case`, `other`, or `null`. See `docs/agent_api_contract.json`.
 
+## Honest Conversational Improvements
+
+On top of the frozen Slice 11 hybrid pipeline, the live Agent adds three
+general conversational-commerce behaviors, documented with their principles,
+runtime inputs, and adversarial tests in `docs/honest_optimizations.md`:
+
+- **Conversational evidence accumulation** — retrieval conditions on the whole
+  dialog (minus superseded constraints), not only the latest message.
+- **Information-value clarification** — each question is chosen to maximally
+  narrow the live Candidate Pool; answered, dismissed, and already-asked
+  attributes are never asked again.
+- **Budget understanding** — ordinary money language ("under $50", "around
+  $60") stably reorders results toward in-budget products without eliminating
+  unpriced ones.
+
+A second measured wave adds dual-query lexical evidence (accumulated dialog
+plus a fresh latest-message query), popularity-aware pool admission with a
+Bayesian bestseller prior that decays as constraints accumulate, band-limited
+popularity tie-breaking after reranking, safe profile-tag personalization
+while the session is still vague, and open-question-first clarification
+ordering. On the 160-session development split the offline agent measures
+TechnicalScore 0.758–0.759 (HitRate@10 0.919, MRR 0.580–0.590, MTTC 4.76–4.86)
+against the 0.551831 frozen baseline, with run-to-run noise quantified at
+±0.013. Reward-hacking prevention is a release gate: production code contains
+no evaluator imports, no simulator template knowledge, and no per-session
+logic, and `tools/robustness_eval.py` reports exact-template, paraphrased,
+and novel-target conditions separately so wording-coupled gains cannot ship.
+See `docs/honest_optimizations.md` for every shipped and rejected lever with
+its measurement.
+
+An optional connected stage completes the track's "Multi-Route Retrieval →
+LLM Semantic Ranking" pipeline: `starter/llm_ranker.py` reorders the top
+candidates with `gpt-5.4-mini` (versioned in `config/semantic_ranker.json`),
+skips the call when the local cross-encoder's score margin already shows a
+confident leader, fails open to the local ordering on any timeout, malformed
+output, or budget stop, and reports its tokens through the official response
+schema. On a paired 60-session development subset the mini rerank measured
+0.756931 against 0.722200 for the identical local-only configuration
+(gpt-5.4-nano and a two-stage rewrite+rerank variant under a 3-second latency
+budget were also measured and rejected; see `docs/honest_optimizations.md`).
+The offline agent remains the default; no paid API is required. Demo one
+annotated session with `python -m tools.demo_session --sample public_0007`.
+
 ## Validated Intent Override Planning
 
 Planning contract `shopping-turn-planner-v2` accepts provider-neutral structured
@@ -429,6 +472,84 @@ listening port. `models/`, `artifacts/`, and `data/catalog.jsonl` are ignored;
 only source code, manifests, public evaluation data, and reproduction instructions
 belong in the repository. Token usage and any connected APIs introduced by later
 slices must continue to be reported through the official response schema.
+
+## Reproducing Our Results
+
+```bash
+# 1. Environment (Python 3.11.9)
+python3 -m venv .venv && source .venv/bin/activate
+pip install -r requirements-dense.txt
+
+# 2. Assets: catalog (organizer release), embedding + reranker models, dense index
+#    (download catalog.jsonl.gz per "Download the Catalog" above, then:)
+python -m tools.fetch_model
+python -m tools.fetch_model \
+  --identity cross-encoder/ms-marco-MiniLM-L-6-v2 \
+  --destination models/cross-encoder__ms-marco-MiniLM-L-6-v2 \
+  --revision 233902d25c440f23af6f7d6e94d2946bac0bee0a
+python -m retrieval.build_dense_index --catalog data/catalog.jsonl --verify-load
+
+# 3. Official score, all 200 public sessions (offline, no API key needed)
+python -m evaluator.local_evaluator
+
+# 4. Anti-overfitting report: exact / paraphrased / novel-target conditions
+python -m tools.robustness_eval --output benchmarks/robustness.json
+
+# 5. Test suite (218 tests) and an annotated demo session
+python -m unittest discover -s tests
+python -m tools.demo_session --sample public_0044
+```
+
+Headline results (2026-09-01 frozen build, unmodified official evaluator):
+
+| Configuration | Exact 200 | Paraphrased 200 | Novel targets 100 | p95/turn | Cost |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| Offline (default) | 0.7556 | 0.7250 | 0.7182 | 0.8 s | $0 |
+| + gpt-5.4-mini rerank | 0.7713 | see `benchmarks/` | see `benchmarks/` | ~4.6 s | ~$0.02/session |
+
+Run-to-run noise is ±0.013 TechnicalScore (documented in
+`docs/honest_optimizations.md`); per-condition reports live under the ignored
+`benchmarks/` directory and are regenerated by the commands above.
+
+## Model, Cost, Token, and Latency Disclosure
+
+- Scoring path default: fully offline — `sentence-transformers/all-MiniLM-L6-v2`
+  embeddings, `cross-encoder/ms-marco-MiniLM-L-6-v2` reranking, zero API
+  calls, zero reported tokens.
+- Optional connected stages (explicit opt-in, never required):
+  `gpt-5.4-mini` listwise reranking and `gpt-5.4-nano` chunk ranking /
+  query rewriting via the OpenAI Responses API with `store=false`, strict
+  JSON-schema outputs, per-call budget reservations against a $10
+  development cap, and unconditional fail-open to the local ordering.
+  Prices are versioned in `config/semantic_ranker*.json`
+  (checked 2026-08-31). Token usage is reported per turn through the official
+  response schema; a full 200-session connected run uses roughly 1.5M input
+  tokens (~$2–4). Total development API spend for every experiment in
+  `docs/honest_optimizations.md` was under $25.
+- Latency: 0.8 s p95 per turn offline; ~4.6 s p95 with the connected rerank.
+
+## Limitations and What We Would Improve
+
+- Among near-identical catalog listings (same garment, many sellers), the
+  exact purchased listing is underdetermined by dialog text; a Bayesian
+  popularity prior is our honest tie-breaker, and it caps MRR below ~0.7.
+- MTTC has a structural floor: intent-override sessions cannot convert before
+  the corrected intent arrives, and misses score as turn 11.
+- The deterministic constraint vocabulary is narrow; free-text disclosures
+  reach retrieval only through dialog-term accumulation. Given more time we
+  would add LLM constraint extraction behind the existing fail-open planning
+  seam, retrain fusion weights on post-accumulation trajectories, swap the
+  embedding model (bge-small-en-v1.5), and pursue the remaining items in
+  `docs/lever_catalog.md`.
+- Measured-and-rejected ideas are documented rather than deleted
+  (`docs/honest_optimizations.md`), including a simulator-coupled route that
+  scored 0.9628 and was removed as reward hacking: it would not generalize to
+  the private sessions, which use separate users and targets.
+
+## Team Contributions
+
+Fill in per-member contributions before submission (repository:
+`Dharshan2004/techjam-2026-track-4-shopping-copilot`).
 
 ## Judging and Submission Policy
 
