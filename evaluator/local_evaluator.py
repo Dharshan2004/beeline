@@ -8,10 +8,17 @@ import statistics
 import time
 import uuid
 from collections import defaultdict
+from dataclasses import dataclass
 from math import ceil
 from pathlib import Path
 
 from starter.agent import Agent
+from starter.openai_planning import (
+    DevelopmentBudget,
+    ModelPricing,
+    OpenAIPlanningProvider,
+)
+from tools.dataset_split import load_frozen_development_samples, stratified_subset
 
 
 MAX_TURNS = 10
@@ -24,6 +31,131 @@ MATERIALS = ("cotton", "polyester", "nylon", "leather", "wool", "spandex", "silk
 SEARCH_FIELDS = ("title", "features", "details", "description", "categories", "store")
 MATERIAL_RE = re.compile(r"\b(cotton|polyester|nylon|leather|wool|spandex|silk|rayon|fabric)\b", re.I)
 COLOR_RE = re.compile(r"\b(black|white|blue|red|pink|green|brown|gray|grey|purple|yellow|orange)\b", re.I)
+EVALUATION_SUBSET_SEED = 20260831
+
+
+@dataclass(frozen=True)
+class OpenAIEvaluationSettings:
+    model: str
+    pricing: ModelPricing
+    timeout_seconds: float
+    max_input_tokens_estimate: int
+    max_output_tokens: int
+    reasoning_effort: str
+    budget_limit_usd: float
+    warning_usd: float
+    review_boundary_usd: float
+    absolute_stop_usd: float
+
+
+def load_openai_evaluation_settings(
+    config_path: str | Path,
+    role: str,
+) -> OpenAIEvaluationSettings:
+    """Load one connected model from the versioned benchmark configuration."""
+    configuration = json.loads(Path(config_path).read_text(encoding="utf-8"))
+    model = next(
+        (item for item in configuration.get("models", ()) if item.get("role") == role),
+        None,
+    )
+    if model is None:
+        raise ValueError(f"OpenAI model role {role!r} is not configured")
+    prices = model["pricing_usd_per_million_tokens"]
+    api = configuration["api"]
+    budget = configuration["budget_usd"]
+    return OpenAIEvaluationSettings(
+        model=str(model["model"]),
+        pricing=ModelPricing(
+            input_per_million_usd=float(prices["input"]),
+            output_per_million_usd=float(prices["output"]),
+        ),
+        timeout_seconds=float(api["timeout_seconds"]),
+        max_input_tokens_estimate=int(api["max_input_tokens_estimate"]),
+        max_output_tokens=int(api["max_output_tokens"]),
+        reasoning_effort=str(api["reasoning_effort"]),
+        budget_limit_usd=float(budget["phase_a_limit"]),
+        warning_usd=float(budget["warning"]),
+        review_boundary_usd=float(budget["review_boundary"]),
+        absolute_stop_usd=float(budget["absolute_stop"]),
+    )
+
+
+def build_evaluation_agent(
+    catalog_path: str | Path,
+    openai_settings: OpenAIEvaluationSettings | None = None,
+) -> Agent:
+    """Build the official Agent in offline or explicitly connected mode."""
+    provider = None
+    if openai_settings is not None:
+        provider = OpenAIPlanningProvider(
+            model=openai_settings.model,
+            timeout_seconds=openai_settings.timeout_seconds,
+            max_output_tokens=openai_settings.max_output_tokens,
+            max_input_tokens_estimate=openai_settings.max_input_tokens_estimate,
+            reasoning_effort=openai_settings.reasoning_effort,
+            pricing=openai_settings.pricing,
+            budget=DevelopmentBudget(
+                limit_usd=openai_settings.budget_limit_usd,
+                warning_usd=openai_settings.warning_usd,
+                review_boundary_usd=openai_settings.review_boundary_usd,
+                absolute_stop_usd=openai_settings.absolute_stop_usd,
+            ),
+        )
+    return Agent(catalog_path, planning_provider=provider)
+
+
+def load_evaluation_samples(
+    dataset_path: str | Path,
+    *,
+    development_only: bool,
+    session_count: int | None,
+) -> list[dict]:
+    """Load the requested evaluation scope without exposing protected rows."""
+    samples = (
+        load_frozen_development_samples(dataset_path)
+        if development_only
+        else load_jsonl(dataset_path)
+    )
+    if session_count is None:
+        return samples
+    if session_count <= 0:
+        raise ValueError("session_count must be positive")
+    return stratified_subset(
+        samples,
+        session_count,
+        seed=EVALUATION_SUBSET_SEED,
+    )
+
+
+def validate_connected_evaluation_scope(
+    *,
+    connected: bool,
+    development_only: bool,
+    full_exposed_public_set: bool,
+) -> str:
+    """Require connected runs to state whether protected rows are included."""
+    if development_only and full_exposed_public_set:
+        raise ValueError("evaluation scopes are mutually exclusive")
+    if connected and not (development_only or full_exposed_public_set):
+        raise ValueError(
+            "connected evaluation requires an explicit evaluation scope"
+        )
+    if development_only:
+        return "development_only"
+    if full_exposed_public_set:
+        return "full_exposed_public_set"
+    return "public_set"
+
+
+def _load_dotenv(path: str | Path) -> None:
+    try:
+        from dotenv import load_dotenv
+    except ImportError as error:
+        raise RuntimeError(
+            "python-dotenv is required for connected evaluation; install "
+            "requirements-openai.txt"
+        ) from error
+    load_dotenv(dotenv_path=Path(path), override=False)
 
 
 def searchable_text(product: dict) -> str:
@@ -330,10 +462,71 @@ def main() -> None:
     parser.add_argument("--catalog", default="data/catalog.jsonl")
     parser.add_argument("--dataset", default="data/public_set.jsonl")
     parser.add_argument("--output", default="results.json")
+    parser.add_argument("--development-only", action="store_true")
+    parser.add_argument(
+        "--full-exposed-public-set",
+        action="store_true",
+        help=(
+            "Acknowledge that all 200 public sessions include the previously "
+            "exposed local holdout and are not untouched holdout evidence."
+        ),
+    )
+    parser.add_argument("--sessions", type=int, default=None)
+    parser.add_argument(
+        "--openai-role",
+        choices=("quality_reference", "lower_cost"),
+        default=None,
+        help="Explicitly enable connected planning with a configured model role.",
+    )
+    parser.add_argument(
+        "--openai-config",
+        default="config/openai_phase_a_benchmark.json",
+    )
+    parser.add_argument("--env-file", default=".env")
     args = parser.parse_args()
-    samples = load_jsonl(args.dataset)
+    try:
+        scope = validate_connected_evaluation_scope(
+            connected=args.openai_role is not None,
+            development_only=args.development_only,
+            full_exposed_public_set=args.full_exposed_public_set,
+        )
+    except ValueError as error:
+        parser.error(str(error))
+    samples = load_evaluation_samples(
+        args.dataset,
+        development_only=args.development_only,
+        session_count=args.sessions,
+    )
     catalog_ids, categories, products = catalog_index(args.catalog)
-    result = evaluate(Agent(args.catalog), samples, catalog_ids, categories, products)
+    openai_settings = None
+    if args.openai_role is not None:
+        _load_dotenv(args.env_file)
+        openai_settings = load_openai_evaluation_settings(
+            args.openai_config,
+            args.openai_role,
+        )
+    agent = build_evaluation_agent(args.catalog, openai_settings)
+    try:
+        result = evaluate(agent, samples, catalog_ids, categories, products)
+        result["evaluation_scope"] = {
+            "scope": scope,
+            "development_only": args.development_only,
+            "full_exposed_public_set": args.full_exposed_public_set,
+            "untouched_holdout_evidence": False,
+            "requested_sessions": args.sessions,
+            "evaluated_sessions": len(samples),
+            "subset_seed": EVALUATION_SUBSET_SEED if args.sessions else None,
+        }
+        result["runtime_configuration"] = agent.get_runtime_configuration()
+        provider = agent.planning_loop.provider
+        if provider is not None:
+            metrics = getattr(provider, "metrics", None)
+            result["connected_planning"] = {
+                "role": args.openai_role,
+                "metrics": metrics() if callable(metrics) else None,
+            }
+    finally:
+        agent.close()
     Path(args.output).write_text(json.dumps(result, indent=2) + "\n", encoding="utf-8")
     print(json.dumps({key: value for key, value in result.items() if key != "sessions"}, indent=2))
 

@@ -153,6 +153,37 @@ that disclosure. See `docs/openai_model_benchmark_phase_a.md` for the paired
 smoke command, budget gates, metrics, current provisional status, and the Phase
 B dependency on Slice 13.
 
+### Connected official-evaluator experiments
+
+The official evaluator remains offline by default. To exercise the complete
+`Agent.reset(...)` / `Agent.respond(...)` path with the connected planner,
+explicitly select a configured model role and an evaluation scope:
+
+```bash
+.venv/bin/python -m evaluator.local_evaluator \
+  --development-only \
+  --sessions 20 \
+  --openai-role lower_cost \
+  --env-file .env \
+  --output benchmarks/connected_luna_20.json
+```
+
+Connected evaluation uses the model identity, prices, timeout, token bounds,
+and $10 development cap from `config/openai_phase_a_benchmark.json`. Results
+record the exact evaluation scope, runtime configuration, provider call count,
+token usage, and estimated spend. The 200-session public set contains the
+previously exposed local holdout, so a connected full-set run requires the
+deliberately explicit `--full-exposed-public-set` acknowledgement and is never
+labelled as untouched holdout evidence:
+
+```bash
+.venv/bin/python -m evaluator.local_evaluator \
+  --full-exposed-public-set \
+  --openai-role lower_cost \
+  --env-file .env \
+  --output benchmarks/connected_luna_full_exposed_200.json
+```
+
 ## Files
 
 ```text

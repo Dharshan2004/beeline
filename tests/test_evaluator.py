@@ -7,10 +7,14 @@ import tempfile
 from unittest.mock import patch
 
 from evaluator.local_evaluator import (
+    build_evaluation_agent,
     catalog_index,
     evaluate,
+    load_evaluation_samples,
+    load_openai_evaluation_settings,
     metric_summary,
     normalize_recommendations,
+    validate_connected_evaluation_scope,
 )
 
 
@@ -26,6 +30,81 @@ class EchoTargetAgent:
 
 
 class EvaluatorTest(unittest.TestCase):
+    def test_openai_evaluation_settings_use_the_frozen_model_configuration(self) -> None:
+        settings = load_openai_evaluation_settings(
+            "config/openai_phase_a_benchmark.json",
+            "lower_cost",
+        )
+
+        self.assertEqual(settings.model, "gpt-5.6-luna")
+        self.assertEqual(settings.pricing.input_per_million_usd, 0.2)
+        self.assertEqual(settings.pricing.output_per_million_usd, 1.2)
+        self.assertEqual(settings.budget_limit_usd, 10.0)
+
+    def test_connected_evaluation_builds_agent_with_openai_planning(self) -> None:
+        settings = load_openai_evaluation_settings(
+            "config/openai_phase_a_benchmark.json",
+            "lower_cost",
+        )
+        provider = object()
+
+        with (
+            patch(
+                "evaluator.local_evaluator.OpenAIPlanningProvider",
+                return_value=provider,
+            ) as provider_type,
+            patch("evaluator.local_evaluator.Agent") as agent_type,
+        ):
+            build_evaluation_agent("data/catalog.jsonl", settings)
+
+        provider_type.assert_called_once()
+        provider_arguments = provider_type.call_args.kwargs
+        self.assertEqual(provider_arguments["model"], "gpt-5.6-luna")
+        self.assertEqual(
+            provider_arguments["pricing"].output_per_million_usd,
+            1.2,
+        )
+        agent_type.assert_called_once_with(
+            "data/catalog.jsonl",
+            planning_provider=provider,
+        )
+
+    def test_connected_evaluation_subset_is_deterministic_and_development_only(self) -> None:
+        first = load_evaluation_samples(
+            "data/public_set.jsonl",
+            development_only=True,
+            session_count=20,
+        )
+        second = load_evaluation_samples(
+            "data/public_set.jsonl",
+            development_only=True,
+            session_count=20,
+        )
+
+        self.assertEqual(first, second)
+        self.assertEqual(len(first), 20)
+        self.assertEqual(
+            {sample["scenario_type"] for sample in first},
+            {"buying", "browsing", "intent_override", "boundary"},
+        )
+
+    def test_connected_full_public_evaluation_requires_explicit_acknowledgement(self) -> None:
+        with self.assertRaisesRegex(ValueError, "explicit evaluation scope"):
+            validate_connected_evaluation_scope(
+                connected=True,
+                development_only=False,
+                full_exposed_public_set=False,
+            )
+
+        self.assertEqual(
+            validate_connected_evaluation_scope(
+                connected=True,
+                development_only=False,
+                full_exposed_public_set=True,
+            ),
+            "full_exposed_public_set",
+        )
+
     def test_normalization_preserves_first_valid_unique_order(self) -> None:
         payload = [
             {"parent_asin": "A"}, {"parent_asin": "bad"}, {"parent_asin": "A"},
