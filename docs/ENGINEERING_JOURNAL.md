@@ -113,9 +113,9 @@ Evidence:
 - Boundary Hit Rate@10 remained 0.600000, while MRR declined from 0.460000 to 0.371111; this ranking regression remains an investigation target.
 - This journal iteration is distinct from implementation-plan Slice 04 / GitHub issue #5, which is the versioned dense-index deliverable.
 
-### Current verified three-route result
+### Historical dense-enabled result before the Slice 7 fusion correction
 
-Source: `results.json` and `docs/fixed_hybrid_fusion.md`.
+Source: checked-in evidence in `docs/fixed_hybrid_fusion.md` and Iteration 9 below. The later 2026-08-30 direct evaluator run replaced the ignored working-copy `results.json`, so that file now represents current `main`, not this historical result.
 
 Environment: project `.venv` with the bundled MiniLM model and 50,000-product Qdrant Local Mode artifact available. This distinction matters because the dense route intentionally fails open when dependencies or assets are absent.
 
@@ -151,6 +151,44 @@ Interpretation:
 - The gain costs approximately 109 seconds over 200 sessions, leaving reranker latency as a first-class constraint rather than an afterthought.
 - Intent Override remains the weakest scenario by Hit Rate@10 and mean turns.
 - This is not an apples-to-apples dense-enabled comparison with historical Slice 05; that commit still needs to be run with the same environment and artifacts.
+
+### Current verified `main` result after Slice 7
+
+Source: `results.json` from the direct official evaluator run on 2026-08-30 at merge commit `41a218b`, with aggregate and scenario metrics duplicated here so the evidence survives replacement of the ignored result file.
+
+Environment: Python 3.11.9 from the project `.venv`; the bundled MiniLM embedding model and 50,000-product Qdrant artifact loaded successfully. The dense-route readiness preflight reported `status=available`. The selected Slice 7 cross-encoder was **not** active because live reranking is the responsibility of Slice 8.
+
+Commands:
+
+```bash
+.venv/bin/python -m evaluator.local_evaluator
+.venv/bin/python -m unittest discover -s tests -q
+```
+
+| Metric | Pre-Slice 7 dense-enabled | Current `main` | Absolute change |
+| --- | ---: | ---: | ---: |
+| Hit Rate@10 | 0.580000 | 0.540000 | -0.040000 |
+| MRR | 0.385437 | 0.376548 | -0.008889 |
+| Mean turns to conversion | 6.545 | 6.880 | +0.335 turns |
+| Efficiency | 0.445500 | 0.412000 | -0.033500 |
+| Technical Score | 0.494731 | 0.465364 | -0.029367 |
+
+Current scenario results:
+
+| Scenario | Sessions | Hit Rate@10 | MRR | Mean turns |
+| --- | ---: | ---: | ---: | ---: |
+| Boundary | 10 | 0.600000 | 0.475000 | 6.800000 |
+| Browsing | 80 | 0.637500 | 0.453715 | 6.337500 |
+| Buying | 80 | 0.500000 | 0.324529 | 6.712500 |
+| Intent Override | 30 | 0.366667 | 0.276667 | 8.800000 |
+
+Interpretation:
+
+- The official Agent contract completed successfully and all 127 unit tests passed.
+- This is a real behavior change, not a dense-route or interpreter mismatch. Slice 7 replaced the earlier base-membership special case with one weighted ordering over the complete structured/BM25/dense union so exact independently generated deep pools can be benchmarked.
+- The current live score is therefore the corrected no-reranker baseline. It is consistent with the separate 160-session Slice 7 replay baseline of 0.543750 HitRate@10 and 0.467096 TechnicalScore, but those figures are not directly interchangeable because the session sets differ.
+- The better Slice 7 result of 0.600000 HitRate@10 and 0.507240 TechnicalScore was produced by replaying MiniLM-L6 at depth 50 on the frozen 160-session development trajectory. It is evidence for the selection decision, not an end-to-end score for the current Agent.
+- Because this direct run evaluated all 200 public sessions, it also executed the locally designated 40-session locked partition. That partition must now be treated as exposed and cannot serve as untouched final holdout evidence. A replacement holdout or another predeclared external validation strategy is required before a final unbiased release claim.
 
 ## Iteration history
 
@@ -413,6 +451,33 @@ These reachability figures currently come from the latest analysis/plan review a
 
 **Next experiment:** Integrate the frozen model and depth downstream of the committed Turn Plan and Fusion Policy, then run the official development evaluator with timeout and fail-open tests.
 
+### 2026-08-30 — Iteration 13: merge Slice 7 and verify the live no-reranker boundary
+
+**Related issue/commit:** #8; PR #22; merge commit `41a218b`.
+
+**Problem or hypothesis:** After validated planning and Slice 7 landed on `main`, verify that the official evaluator still runs through the exact submission interface and determine whether the selected reranker improvement is already present in live recommendations.
+
+**Change:** Fast-forwarded the local checkout to `origin/main`, confirmed Python 3.11.9 and dense-route readiness, ran the direct 200-session official evaluator, compared it with the prior dense-enabled fixed-fusion result, inspected the Slice 7 fusion diff, and ran the complete unit suite.
+
+**Evidence:**
+
+| Metric | Prior dense-enabled run | `main` at `41a218b` | Change |
+| --- | ---: | ---: | ---: |
+| Hit Rate@10 | 0.580000 | 0.540000 | -0.040000 |
+| MRR | 0.385437 | 0.376548 | -0.008889 |
+| MTTC | 6.545 | 6.880 | +0.335 |
+| Technical Score | 0.494731 | 0.465364 | -0.029367 |
+
+The dense preflight returned `status=available`, the evaluator exited successfully, and `python -m unittest discover -s tests -q` passed all 127 tests. Boundary HitRate@10 was unchanged at 0.600000; Browsing fell from 0.662500 to 0.637500, Buying from 0.550000 to 0.500000, and Intent Override from 0.433333 to 0.366667.
+
+**What failed or surprised us:** The phrase “Slice 7 improved HitRate@10 to 0.600000” was easy to misread as a current live-Agent result. It is instead an offline replay comparison on 160 development sessions with the selected cross-encoder applied. The current 200-session Agent still returns the corrected fused ordering without cross-encoder reranking. Running the full official evaluator also opened the locally locked 40-session partition earlier than the planned Slice 18 release gate.
+
+**Decision and rationale:** Keep the Slice 7 selection frozen: MiniLM-L6 revision `233902d25c440f23af6f7d6e94d2946bac0bee0a`, depth 50, and the 1.5-second absolute deadline. Do not claim the replay gain as an end-to-end gain until Slice 8 applies this configuration through `Agent.respond`. Treat the original 40-session holdout as contaminated for future model or policy selection.
+
+**Known limitations:** The current official run validates contract execution and the live no-reranker baseline, not the selected reranker's live quality, timeout behavior, worker lifecycle, or complete runtime. Its 200-session metrics may not be used as untouched holdout evidence.
+
+**Next experiment:** Complete Slice 8's persistent cancellable reranker worker, rerank the exact post-plan depth-50 pool, preserve fused ordering on startup failure/crash/malformed output/timeout, and evaluate first on the 160-session development split. Before any final release claim, define and freeze replacement validation evidence that has not influenced configuration choices.
+
 ## Current architectural invariants
 
 ### State
@@ -449,11 +514,12 @@ These reachability figures currently come from the latest analysis/plan review a
 - How the deterministic interpreter identifies high-confidence Product Intent replacement without overreaching.
 - Whether Session Constraints should participate in every future Product Intent automatically or require attribute-specific compatibility checks.
 - How Clarifications should behave when a same-attribute addition versus replacement remains ambiguous.
-- Intent Override quality remains weak at 0.433333 Hit Rate@10 in the dense-enabled run; pre-override hits are irrelevant after the evaluator resets conversion eligibility.
-- The fused top-30 pool appears to cap reachability near 0.77 versus approximately 0.93 for the Deep Candidate Pool; these figures need eligibility-aware checked-in reproduction evidence.
-- Cross-encoding practical depths up to the 300-candidate three-route cap may exceed the evaluator time limit on top of the current 248.45-second dense-enabled run.
+- Intent Override is the weakest scenario in the current live no-reranker run at 0.366667 Hit Rate@10 and 8.8 mean turns; pre-override hits are irrelevant after the evaluator resets conversion eligibility.
+- Eligibility-aware Slice 7 evidence places session pool recall at 0.725 for depth 30, 0.775 for the selected depth 50, and 0.900 at the depth-300 union ceiling.
+- MiniLM-L6 depth 50 fits the declared gates at 548.9 ms p95 added latency and an 800.6-second projected 200-session wall time. Depth 100 improves replay quality but fails the wall gate at 1,366.9 seconds.
 - Fusion training can overfit final ordering while failing to improve pool membership unless pool recall at the frozen rerank depth is an explicit objective.
 - Public evaluator sessions are not sufficient evidence for robust compound-turn behavior. Adversarial tests are required.
+- The original 40-session locally locked partition was executed during the 2026-08-30 full official run and is no longer untouched. It must not be used for model selection or described as unbiased final holdout evidence.
 
 ## Next experiments and acceptance evidence
 
@@ -494,12 +560,16 @@ These reachability figures currently come from the latest analysis/plan review a
 
 ### Deep Candidate Pool and reranker budget
 
-- Cache the per-turn structured/BM25/dense Route Candidate Sets, exact depth-specific Candidate Pools, target label, state revision, selected tools, and conversion eligibility.
-- Reproduce aggregate and per-scenario pool recall at exact depths 30, 50, 100, 150, 200, 250, and 300.
-- Benchmark at least two compact cross-encoders on identical cached pools.
-- Measure the complete 160-session development run; report p50/p95 rerank latency, peak memory, package size, and a clearly labelled 200-session runtime projection without executing the locked holdout.
-- Freeze the deepest pool that fits the evaluator time budget and record any recall ceiling sacrificed by truncation.
-- Report pool recall, post-rerank HitRate@10, MRR, efficiency, TechnicalScore, and recall-to-hit conversion separately, using post-override-only eligibility for Intent Override sessions.
+- [x] Cache the per-turn structured/BM25/dense Route Candidate Sets, exact depth-specific Candidate Pools, target label, state revision, selected tools, and conversion eligibility.
+- [x] Reproduce aggregate and per-scenario pool recall at exact depths 30, 50, 100, 150, 200, 250, and 300.
+- [x] Benchmark three compact cross-encoders on identical cached pools.
+- [x] Measure the complete 160-session development run and report p50/p95 rerank latency, peak memory, package size, and a clearly labelled 200-session runtime projection.
+- [x] Freeze MiniLM-L6 revision `233902d25c440f23af6f7d6e94d2946bac0bee0a` at depth 50, the deepest pool that passes both runtime and quality gates.
+- [x] Report pool recall, post-rerank HitRate@10, MRR, efficiency, TechnicalScore, and recall-to-hit conversion separately, using post-override-only eligibility for Intent Override sessions.
+- [ ] Activate the frozen configuration in one persistent cancellable worker downstream of the committed Turn Plan and Fusion Policy.
+- [ ] Prove that startup failure, crash, malformed output, and the 1.5-second deadline return the fused ordering and disable reranking for the remainder of the evaluator run.
+- [ ] Reproduce the replay improvement through the live Agent on the 160-session development split before making an end-to-end quality claim.
+- [ ] Define replacement untouched validation evidence now that the original 40-session partition has been exposed.
 
 ### Pool-aware fusion
 
@@ -592,11 +662,11 @@ A preference improves relevance but is not a requirement. Allowing it to determi
 
 ### How do you know the system improved?
 
-The current verified dense-enabled three-route system raised Hit Rate@10 from 0.125 to 0.58 and Technical Score from 0.10671 to 0.494731 on the same 200-session public evaluator. The journal preserves intermediate regressions and avoids attributing gains to an individual component without a controlled comparison.
+The weak baseline scored 0.125 Hit Rate@10 and 0.10671 Technical Score. The best historical live three-route run scored 0.58 and 0.494731 on the same 200 public sessions. After Slice 7 corrected Candidate Pool construction, the current live no-reranker baseline is 0.54 and 0.465364. Separately, controlled 160-session replay improved from 0.543750/0.467096 to 0.600000/0.507240 with the frozen MiniLM-L6 depth-50 reranker. That replay gain is not yet an end-to-end claim; Slice 8 must reproduce it through the live Agent.
 
 ### What is currently weakest?
 
-Intent Override, at 0.433333 Hit Rate@10 and 8.366667 mean turns in the dense-enabled run. It also has the largest observed gap between a reachable post-override target and a qualifying hit, so Slice 12 is now focused specifically on that conversion problem.
+Intent Override, at 0.366667 Hit Rate@10 and 8.8 mean turns in the current live no-reranker run. It also has the largest observed gap between a reachable post-override target and a qualifying hit, so post-override pool inclusion and rerank conversion remain explicit scenario gates.
 
 ### What happens when the model is unavailable?
 
@@ -604,7 +674,7 @@ The deterministic interpreter proposes a smaller, high-confidence Turn Plan, pas
 
 ### Are you overfitting to the public evaluator?
 
-Evaluator-aware structured evidence is one transparent Retrieval Route, not the whole system. Independent sparse and dense semantic routes, scenario-level guardrails, frozen configuration, and a locked holdout are intended to limit narrow fitting.
+Evaluator-aware structured evidence is one transparent Retrieval Route, not the whole system. Independent sparse and dense semantic routes, scenario-level guardrails, frozen configuration, and replay provenance limit narrow fitting. However, the original 40-session locked partition was executed during the 2026-08-30 verification run, so it can no longer provide unbiased final evidence. The project must predeclare replacement untouched validation evidence and must not tune against the exposed partition.
 
 ### What engineering judgment does this project demonstrate?
 
@@ -612,8 +682,8 @@ The team separated probabilistic interpretation from deterministic correctness, 
 
 ## Evidence checklist for final submission
 
-- [ ] Record commit SHA and configuration version for every reported run.
-- [ ] Save aggregate and per-scenario metrics.
+- [x] Record commit SHA and configuration state for the 2026-08-30 Slice 7 verification run.
+- [x] Save its aggregate and per-scenario metrics in this journal.
 - [ ] Record latency distribution and peak memory.
 - [ ] Record connected model name, prompt version, token usage, and estimated cost.
 - [ ] Preserve a network-disabled evaluation result.
@@ -621,7 +691,7 @@ The team separated probabilistic interpretation from deterministic correctness, 
 - [ ] Capture one multi-turn Intent Override trace for the demo.
 - [ ] Compare each Retrieval Route and fixed fusion against the selected Fusion Policy.
 - [ ] Record known limitations and failed experiments.
-- [ ] Freeze configuration before opening the locked holdout.
+- [ ] Predeclare and freeze replacement untouched validation evidence; the original locked partition was exposed on 2026-08-30.
 - [ ] Record individual team contributions as work is completed.
 
 ## Team contribution log
