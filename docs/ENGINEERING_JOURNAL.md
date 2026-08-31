@@ -624,6 +624,59 @@ The team separated probabilistic interpretation from deterministic correctness, 
 - [ ] Freeze configuration before opening the locked holdout.
 - [ ] Record individual team contributions as work is completed.
 
+### 2026-08-31 — Iteration 13: revisable Session Mode and useful Clarifications
+
+**Owner(s):** dylothx
+
+**Related issue/commit:** GitHub issue #14 (Slice 13)
+
+**Problem or hypothesis:** A fixed question order repeated attributes that had
+already produced no information, and the agent did not expose or revise its view
+of whether a customer was buying, browsing, or uncertain.
+
+**Change:** Added versioned session policy `shopping-session-policy-v1` and
+planning contract `shopping-turn-planner-v3`. Session Mode is revised and logged
+on every turn. Clarifications are limited to allowed catalog-supported attributes
+with multiple possible answers, excluding active, dismissed, and already asked
+attributes for the current Product Intent. Safe aggregate profile tags can reorder
+only eligible questions and never become Constraints. Ranked recommendations
+remain present whenever a Clarification is returned.
+
+**Commands and environment:** Python 3.12 on Windows; `python -m compileall -q
+starter tests`; `python -m unittest -v tests.test_session_policy
+tests.test_planning tests.test_agent tests.test_turn_interpreter`; `python -m
+unittest discover -s tests -p "test_*.py"`.
+
+**Evidence:** The focused contract suite ran 72 tests successfully with two
+optional-model skips. The full suite ran 185 tests and retained the same six
+baseline environment/data errors observed before Slice 13: five Unix-only
+`multiprocessing` `fork` tests on Windows and one frozen public-set checksum
+mismatch. Seven new Slice 13 tests cover mode transitions, recommendation-bearing
+Clarifications, repeated-question rejection, Boundary behavior, all four scenario
+fixtures, and profile/current-turn precedence.
+
+**Scenario effects:** Buying favors direct narrowing attributes; Browsing favors
+broad use-case exploration; Intent Override starts a new asked-attribute history
+for the successor Product Intent; Boundary dismissals remain excluded across
+Product Intent changes.
+
+**What failed or surprised us:** The existing full suite is not fully portable to
+Windows because its local reranker worker tests request the unavailable `fork`
+start method. The checked-in public set also does not match the frozen split
+checksum in this workspace; neither condition was introduced by Slice 13.
+
+**Decision and rationale:** Keep mode outside Constraint State revisioning so a
+mode-only turn remains observable without pretending that authoritative customer
+constraints changed. Use deterministic usefulness validation around connected
+Clarifications, following the same bounded retry and fallback behavior as other
+invalid plan fields.
+
+**Known limitations:** Catalog diversity is an inexpensive global expected-value
+proxy; it does not yet measure entropy over the exact per-turn Candidate Pool.
+
+**Next experiment:** Slice 14 should compare connected models on mode accuracy,
+Clarification acceptance/retry rate, latency, token use, and downstream conversion.
+
 ## Team contribution log
 
 Add entries continuously; do not reconstruct this section at submission time.
@@ -631,6 +684,7 @@ Add entries continuously; do not reconstruct this section at submission time.
 | Date | Person | Contribution | Evidence | Outcome |
 | --- | --- | --- | --- | --- |
 | YYYY-MM-DD | Name | Concise technical contribution | Commit, issue, test, or document | Observable result |
+| 2026-08-31 | dylothx | Implemented Slice 13 Session Mode and Clarifications | Issue #14; `tests.test_session_policy` | Seven deterministic acceptance tests pass |
 
 ## Iteration entry template
 

@@ -24,6 +24,7 @@ def plan_payload(
     turn: int = 1,
     mutations: list[dict] | None = None,
     tools: list[str] | None = None,
+    session_mode: str = "buying",
     clarification: dict | None = None,
 ) -> dict:
     return {
@@ -31,6 +32,7 @@ def plan_payload(
         "source_turn": turn,
         "mutations": mutations or [],
         "retrieval_tools": tools or ["structured", "bm25", "dense"],
+        "session_mode": session_mode,
         "clarification": clarification,
     }
 
@@ -234,7 +236,11 @@ class PlanningLoopTest(unittest.TestCase):
             "source": "connected",
             "attempts": 1,
             "retrieval_tools": ["structured"],
+            "session_mode": "buying",
+            "session_mode_reason": "connected_interpretation",
             "ask_attribute": "color",
+            "clarification_expected_value": 8.2,
+            "clarification_reason": "buying_priority+catalog_answer_diversity",
             "fallback_reason": None,
             "errors": [],
         })
@@ -741,7 +747,7 @@ class PlanningLoopTest(unittest.TestCase):
     def test_each_call_receives_local_state_and_recent_history(self) -> None:
         provider = CallbackProvider()
         agent = Agent(self.catalog_path, planning_provider=provider)
-        agent.reset("session", {})
+        agent.reset("session", {"preference_tags": ["material"]})
 
         agent.respond("session", "I need cotton.", 1, 10)
         response = agent.respond("session", "Show me options.", 2, 10)
@@ -755,7 +761,10 @@ class PlanningLoopTest(unittest.TestCase):
         )
         self.assertEqual(len(second.recent_history), 1)
         self.assertEqual(second.recent_history[0]["user_message"], "I need cotton.")
-        self.assertEqual(second.prompt_version, "shopping-turn-planner-v2")
+        self.assertEqual(second.prompt_version, "shopping-turn-planner-v3")
+        self.assertEqual(second.profile_hints, ("material",))
+        self.assertEqual(second.previous_session_mode, "buying")
+        self.assertTrue(second.allowed_ask_attributes)
         self.assertIn("Local Constraint State is", second.instructions)
         self.assertFalse(hasattr(second, "conversation_id"))
         self.assertEqual(response["recommendations"], [{"parent_asin": "A"}])

@@ -4,7 +4,7 @@ from copy import deepcopy
 from dataclasses import dataclass
 import hashlib
 import json
-from typing import Callable, Literal, Mapping, Protocol
+from typing import Callable, Literal, Mapping, Protocol, Sequence
 
 from starter.constraint_state import (
     AddConstraint,
@@ -20,6 +20,7 @@ from starter.replacement_evidence import (
     ReplacementEvidenceError,
     validate_replacement_evidence,
 )
+from starter.session_policy import ALLOWED_ASK_ATTRIBUTES, SESSION_MODES, SessionMode
 
 
 RetrievalTool = Literal["structured", "bm25", "dense"]
@@ -35,7 +36,7 @@ DEFAULT_RETRIEVAL_TOOLS: tuple[RetrievalTool, ...] = (
 )
 MAX_PLANNING_ATTEMPTS = 2
 RECENT_HISTORY_LIMIT = 4
-PLANNING_PROMPT_VERSION = "shopping-turn-planner-v2"
+PLANNING_PROMPT_VERSION = "shopping-turn-planner-v3"
 PLANNING_INSTRUCTIONS = """You are the semantic planner for a Shopping Agent.
 Return exactly one complete Turn Plan that matches the supplied JSON Schema.
 Use the supplied Constraint State revision and source turn unchanged. Propose only
@@ -49,7 +50,13 @@ Intent identifiers, and approved Candidate Pool-producing Retrieval Routes.
 Local reranking is fixed downstream and is not a selectable tool. Never request shell, web,
 arbitrary code, or catalog mutation capabilities. Local Constraint State is
 authoritative; recent history is context, not permission to replay old mutations.
-Return null clarification when no useful supported attribute should be asked.
+Revise Session Mode on every turn as buying, browsing, or uncertain. Explicit
+current-turn requirements outrank recent history and aggregate profile hints.
+Profile hints may only break ties between otherwise useful Clarifications; never
+turn them into Constraints. Ask at most one allowed attribute, never ask an active,
+dismissed, previously asked, or unsupported attribute, and return null clarification
+when no useful supported attribute should be asked. Recommendations are produced
+downstream even when a Clarification is selected.
 """
 
 
@@ -61,6 +68,7 @@ TURN_PLAN_JSON_SCHEMA = {
         "source_turn",
         "mutations",
         "retrieval_tools",
+        "session_mode",
         "clarification",
     ],
     "properties": {
@@ -153,6 +161,7 @@ TURN_PLAN_JSON_SCHEMA = {
             "uniqueItems": True,
             "items": {"enum": list(APPROVED_RETRIEVAL_TOOLS)},
         },
+        "session_mode": {"enum": list(SESSION_MODES)},
         "clarification": {
             "oneOf": [
                 {"type": "null"},
@@ -161,7 +170,7 @@ TURN_PLAN_JSON_SCHEMA = {
                     "additionalProperties": False,
                     "required": ["ask_attribute", "message"],
                     "properties": {
-                        "ask_attribute": {"type": "string"},
+                        "ask_attribute": {"enum": list(ALLOWED_ASK_ATTRIBUTES)},
                         "message": {"type": "string", "minLength": 1},
                     },
                 },
@@ -217,6 +226,10 @@ class PlanningRequest:
     recent_history: tuple[dict, ...]
     supported_values: dict[str, tuple[str, ...]]
     allowed_tools: tuple[RetrievalTool, ...]
+    previous_session_mode: SessionMode
+    profile_hints: tuple[str, ...]
+    previously_asked_attributes: tuple[str, ...]
+    allowed_ask_attributes: tuple[str, ...]
     prompt_version: str
     instructions: str
     response_schema: dict
@@ -238,6 +251,7 @@ class PlanningProvider(Protocol):
 class DecodedPlan:
     turn_plan: TurnPlan
     retrieval_tools: tuple[RetrievalTool, ...]
+    session_mode: SessionMode
     clarification: Clarification | None
 
 
@@ -245,6 +259,7 @@ class DecodedPlan:
 class PlanningOutcome:
     turn_plan: TurnPlan
     retrieval_tools: tuple[RetrievalTool, ...]
+    session_mode: SessionMode
     clarification: Clarification | None
     source: Literal["connected", "fallback"]
     attempts: int
@@ -386,13 +401,15 @@ def decode_plan(
     state: ConstraintState,
     supported_values: Mapping[str, set[str]],
     grounding_mutations: tuple[object, ...] | None = None,
+    allowed_ask_attributes: Sequence[str] | None = None,
+    previously_asked_attributes: Sequence[str] = (),
 ) -> DecodedPlan:
     value = _mapping(payload, "Turn Plan")
     _exact_keys(
         value,
         required={
             "expected_state_revision", "source_turn", "mutations",
-            "retrieval_tools", "clarification",
+            "retrieval_tools", "session_mode", "clarification",
         },
         label="Turn Plan",
     )
@@ -425,6 +442,10 @@ def decode_plan(
         )
     retrieval_tools = tuple(raw_tools)
 
+    session_mode = value["session_mode"]
+    if session_mode not in SESSION_MODES:
+        raise PlanningSchemaError("session_mode must be buying, browsing, or uncertain")
+
     clarification_value = value["clarification"]
     clarification = None
     if clarification_value is not None:
@@ -441,6 +462,21 @@ def decode_plan(
         if ask_attribute not in supported_values:
             raise PlanningStateError(
                 f"clarification uses unknown attribute: {ask_attribute}"
+            )
+        if ask_attribute not in ALLOWED_ASK_ATTRIBUTES:
+            raise PlanningStateError(
+                f"clarification uses disallowed ask_attribute: {ask_attribute}"
+            )
+        if ask_attribute in previously_asked_attributes:
+            raise PlanningStateError(
+                "clarification repeats a previously asked low-value attribute"
+            )
+        if (
+            allowed_ask_attributes is not None
+            and ask_attribute not in allowed_ask_attributes
+        ):
+            raise PlanningStateError(
+                "clarification has no useful expected value for the current mode"
             )
         clarification = Clarification(
             ask_attribute=ask_attribute,
@@ -485,6 +521,7 @@ def decode_plan(
     return DecodedPlan(
         turn_plan=turn_plan,
         retrieval_tools=retrieval_tools,
+        session_mode=session_mode,
         clarification=clarification,
     )
 
@@ -512,6 +549,11 @@ class PlanningLoop:
         state: ConstraintState,
         supported_values: Mapping[str, set[str]],
         recent_history: list[dict],
+        previous_session_mode: SessionMode,
+        profile_hints: tuple[str, ...],
+        previously_asked_attributes: tuple[str, ...],
+        allowed_ask_attributes: tuple[str, ...],
+        fallback_session_mode: SessionMode,
         fallback_plan: Callable[[], TurnPlan],
     ) -> PlanningOutcome:
         if self.provider is None:
@@ -524,6 +566,7 @@ class PlanningLoop:
                 prompt_tokens=0,
                 completion_tokens=0,
                 errors=(),
+                session_mode=fallback_session_mode,
             )
 
         prompt_tokens = 0
@@ -545,6 +588,10 @@ class PlanningLoop:
                     for attribute, values in supported_values.items()
                 },
                 allowed_tools=APPROVED_RETRIEVAL_TOOLS,
+                previous_session_mode=previous_session_mode,
+                profile_hints=profile_hints,
+                previously_asked_attributes=previously_asked_attributes,
+                allowed_ask_attributes=allowed_ask_attributes,
                 prompt_version=PLANNING_PROMPT_VERSION,
                 instructions=PLANNING_INSTRUCTIONS,
                 response_schema=deepcopy(TURN_PLAN_JSON_SCHEMA),
@@ -562,10 +609,13 @@ class PlanningLoop:
                     state=state,
                     supported_values=supported_values,
                     grounding_mutations=grounding_plan.mutations,
+                    allowed_ask_attributes=allowed_ask_attributes,
+                    previously_asked_attributes=previously_asked_attributes,
                 )
                 return PlanningOutcome(
                     turn_plan=decoded.turn_plan,
                     retrieval_tools=decoded.retrieval_tools,
+                    session_mode=decoded.session_mode,
                     clarification=decoded.clarification,
                     source="connected",
                     attempts=attempt,
@@ -602,6 +652,7 @@ class PlanningLoop:
             prompt_tokens=prompt_tokens,
             completion_tokens=completion_tokens,
             errors=tuple(errors),
+            session_mode=fallback_session_mode,
         )
 
     def _fallback(
@@ -615,6 +666,7 @@ class PlanningLoop:
         prompt_tokens: int,
         completion_tokens: int,
         errors: tuple[str, ...],
+        session_mode: SessionMode,
     ) -> PlanningOutcome:
         plan = fallback_plan()
         draft = deepcopy(state)
@@ -628,6 +680,7 @@ class PlanningLoop:
         return PlanningOutcome(
             turn_plan=plan,
             retrieval_tools=DEFAULT_RETRIEVAL_TOOLS,
+            session_mode=session_mode,
             clarification=None,
             source="fallback",
             attempts=attempts,
