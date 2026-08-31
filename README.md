@@ -73,7 +73,7 @@ class Agent:
 
 ## Validated Intent Override Planning
 
-Planning contract `shopping-turn-planner-v3` accepts provider-neutral structured
+Planning contract `shopping-turn-planner-v2` accepts provider-neutral structured
 Turn Plans while local Constraint State remains authoritative. One versioned
 Explicit Replacement Evidence classifier is shared by connected validation and
 the deterministic interpreter. Attribute-level correction replaces only the
@@ -89,28 +89,20 @@ policy and cannot be selected, disabled, or bypassed by a Turn Plan. Slice 12 is
 provider-neutral and its connected behavior is tested with deterministic fake
 providers; the measured concrete OpenAI adapter belongs to Slice 14.
 
-## Session Mode and Clarifications
+### Slice 13 activation status
 
-Session policy `shopping-session-policy-v1` revises the current mode on every
-turn as `buying`, `browsing`, or `uncertain`. Explicit current-turn evidence wins
-over earlier mode and aggregate profile hints. The connected Turn Plan proposes a
-mode, while deterministic evidence handles explicit browsing, purchase, and
-uncertainty language and provides the offline fallback.
-
-Clarifications are selected only from evaluator-allowed, catalog-supported
-attributes that are not already active, dismissed by a Boundary Response, or
-previously asked for the current Product Intent. The mode determines attribute
-priority, catalog answer diversity supplies the usefulness gate, and safe
-aggregate profile tags may only break ties between otherwise eligible questions.
-Profile data never becomes a Constraint. A Clarification is emitted only with a
-non-empty ranked recommendation list, and a Product Intent replacement starts a
-fresh asked-attribute history without reviving dismissed attributes.
+Session Mode and pool-aware Clarification changes are not active in this frozen
+build. Their first complete-development evidence attempt could not satisfy the
+existing runtime and quality gates, so ADR 0005 requires the validated
+`shopping-turn-planner-v2` / `pool-aware-global-v2` build to remain active. The
+locked holdout was not opened. See the engineering journal for the rejected
+experiment and the requirements for a future activation.
 
 Run the planning and Intent Override contract tests without API credentials or
 spending:
 
 ```bash
-.venv/bin/python -m unittest -v tests.test_planning tests.test_session_policy tests.test_turn_interpreter
+.venv/bin/python -m unittest -v tests.test_planning tests.test_turn_interpreter
 ```
 
 ## Technical Metrics

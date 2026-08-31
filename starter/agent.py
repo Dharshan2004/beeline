@@ -32,18 +32,13 @@ from starter.replacement_evidence import (
     REPLACEMENT_EVIDENCE_VERSION,
 )
 from starter.retrieval import CatalogRetrieval
-from starter.session_policy import (
-    ClarificationCandidate,
-    SESSION_POLICY_SHA256,
-    SESSION_POLICY_VERSION,
-    SessionMode,
-    aggregate_profile_hints,
-    clarification_candidates,
-    revise_session_mode,
-)
 from starter.turn_interpreter import interpret_turn
 
 
+QUESTION_ORDER = (
+    "category", "material", "color", "size", "style", "brand", "budget",
+    "feature", "use_case", "other",
+)
 DENSE_CANDIDATE_DEPTH = 100
 
 
@@ -92,10 +87,6 @@ class Agent:
         self._candidate_traces: dict[str, list[dict]] = {}
         self._sessions: dict[str, ConstraintState] = {}
         self._last_asked_attributes: dict[str, str | None] = {}
-        self._asked_attributes_by_intent: dict[str, dict[str, set[str]]] = {}
-        self._session_modes: dict[str, SessionMode] = {}
-        self._session_mode_history: dict[str, list[dict]] = {}
-        self._profile_hints: dict[str, tuple[str, ...]] = {}
         self._session_ids_by_state: dict[int, str] = {}
         self._planning_history: dict[str, list[dict]] = {}
         self.planning_loop = PlanningLoop(planning_provider)
@@ -108,12 +99,6 @@ class Agent:
         state = ConstraintState()
         self._sessions[session_id] = state
         self._last_asked_attributes[session_id] = None
-        self._asked_attributes_by_intent[session_id] = {
-            state.active_product_intent_id: set(),
-        }
-        self._session_modes[session_id] = "uncertain"
-        self._session_mode_history[session_id] = []
-        self._profile_hints[session_id] = aggregate_profile_hints(user_profile)
         self._planning_history[session_id] = []
         self._candidate_traces[session_id] = []
         self._session_ids_by_state[id(state)] = session_id
@@ -146,16 +131,6 @@ class Agent:
         """Return local planning evidence without provider conversation state."""
         self._state(session_id)
         return deepcopy(self._planning_history[session_id])
-
-    def get_session_mode(self, session_id: str) -> SessionMode:
-        """Return the current, revisable Session Mode."""
-        self._state(session_id)
-        return self._session_modes[session_id]
-
-    def get_session_mode_history(self, session_id: str) -> list[dict]:
-        """Return evidence that Session Mode was revised on every turn."""
-        self._state(session_id)
-        return deepcopy(self._session_mode_history[session_id])
 
     def get_candidate_traces(self) -> dict[str, list[dict]]:
         """Return the recorded deep Candidate Pools, keyed by session identifier.
@@ -235,8 +210,6 @@ class Agent:
                 "prompt_sha256": PLANNING_PROMPT_SHA256,
                 "replacement_evidence_version": REPLACEMENT_EVIDENCE_VERSION,
                 "replacement_evidence_sha256": REPLACEMENT_EVIDENCE_SHA256,
-                "session_policy_version": SESSION_POLICY_VERSION,
-                "session_policy_sha256": SESSION_POLICY_SHA256,
                 "provider": type(provider).__name__ if provider is not None else None,
                 "connected_model_version": (
                     getattr(provider, "model", None) if provider is not None else None
@@ -293,29 +266,25 @@ class Agent:
             ),
         )
 
-    def _asked_attributes(
+    def _next_ask_attribute(
         self,
         session_id: str,
         state: ConstraintState,
-    ) -> set[str]:
-        return self._asked_attributes_by_intent[session_id].setdefault(
-            state.active_product_intent_id,
-            set(),
-        )
-
-    def _clarification_candidates(
-        self,
-        session_id: str,
-        state: ConstraintState,
-        mode: SessionMode,
-    ) -> tuple[ClarificationCandidate, ...]:
-        return clarification_candidates(
-            mode,
-            state,
-            self.retrieval.supported_values,
-            asked_attributes=tuple(sorted(self._asked_attributes(session_id, state))),
-            profile_hints=self._profile_hints[session_id],
-        )
+    ) -> str | None:
+        active_attributes = {
+            constraint.attribute
+            for constraint in state.constraints
+            if constraint.status == "active"
+        }
+        for attribute in QUESTION_ORDER:
+            if not self.retrieval.supported_values.get(attribute):
+                continue
+            if attribute in active_attributes or attribute in state.dismissed_attributes:
+                continue
+            self._last_asked_attributes[session_id] = attribute
+            return attribute
+        self._last_asked_attributes[session_id] = None
+        return None
 
     def _dense_query(self, user_message: str, state: ConstraintState) -> str:
         active_evidence = [
@@ -343,42 +312,10 @@ class Agent:
         if session_id not in self._sessions:
             raise RuntimeError("reset must be called before respond")
         state = self._sessions[session_id]
-        previous_mode = self._session_modes[session_id]
-        fallback_plan = self._fallback_turn(user_message, turn, state)
-        fallback_draft = deepcopy(state)
-        try:
-            fallback_draft.apply(
-                fallback_plan,
-                self.retrieval.supported_values,
-            )
-        except PlanValidationError:
-            fallback_draft = deepcopy(state)
-        fallback_mode = revise_session_mode(
-            user_message,
-            fallback_draft,
-            previous_mode,
-        ).mode
-        if fallback_draft.active_product_intent_id == state.active_product_intent_id:
-            planning_asked_attributes = tuple(sorted(
-                self._asked_attributes(session_id, state)
-            ))
-        else:
-            planning_asked_attributes = ()
-        allowed_ask_attributes = tuple(
-            candidate.ask_attribute
-            for candidate in clarification_candidates(
-                fallback_mode,
-                fallback_draft,
-                self.retrieval.supported_values,
-                asked_attributes=planning_asked_attributes,
-                profile_hints=self._profile_hints[session_id],
-            )
-        )
         if self.planning_loop.provider is None:
             outcome = PlanningOutcome(
                 turn_plan=self._interpret_turn(user_message, turn, state),
                 retrieval_tools=DEFAULT_RETRIEVAL_TOOLS,
-                session_mode=fallback_mode,
                 clarification=None,
                 source="fallback",
                 attempts=0,
@@ -394,12 +331,11 @@ class Agent:
                 state=state,
                 supported_values=self.retrieval.supported_values,
                 recent_history=self._planning_history[session_id],
-                previous_session_mode=previous_mode,
-                profile_hints=self._profile_hints[session_id],
-                previously_asked_attributes=planning_asked_attributes,
-                allowed_ask_attributes=allowed_ask_attributes,
-                fallback_session_mode=fallback_mode,
-                fallback_plan=lambda: fallback_plan,
+                fallback_plan=lambda: self._fallback_turn(
+                    user_message,
+                    turn,
+                    state,
+                ),
             )
         try:
             state.apply(outcome.turn_plan, self.retrieval.supported_values)
@@ -410,23 +346,6 @@ class Agent:
             except PlanValidationError:
                 # Retrieval still uses the original unchanged state.
                 pass
-
-        mode_decision = revise_session_mode(
-            user_message,
-            state,
-            previous_mode,
-            proposed_mode=(
-                outcome.session_mode if outcome.source == "connected" else None
-            ),
-        )
-        session_mode = mode_decision.mode
-        self._session_modes[session_id] = session_mode
-        self._session_mode_history[session_id].append({
-            "turn": turn,
-            "from": previous_mode,
-            "to": session_mode,
-            "reason": mode_decision.reason,
-        })
 
         selected_tools = set(outcome.retrieval_tools)
         dense_candidates = []
@@ -483,7 +402,6 @@ class Agent:
                 "planning": {
                     "source": outcome.source,
                     "state_revision": state.revision,
-                    "session_mode": session_mode,
                     "retrieval_tools": list(outcome.retrieval_tools),
                 },
                 "route_candidates": {
@@ -515,41 +433,22 @@ class Agent:
             for parent_asin in fused_candidates[:recommendation_limit]
         ]
         message = "Here are the closest matches I found."
-        useful_clarifications = self._clarification_candidates(
-            session_id,
-            state,
-            session_mode,
-        )
-        useful_by_attribute = {
-            candidate.ask_attribute: candidate
-            for candidate in useful_clarifications
-        }
-        selected_clarification = None
-        connected_message = None
-        if recommendations:
-            if (
-                outcome.source == "connected"
-                and outcome.clarification is not None
-                and outcome.clarification.ask_attribute in useful_by_attribute
-            ):
-                selected_clarification = useful_by_attribute[
-                    outcome.clarification.ask_attribute
-                ]
-                connected_message = outcome.clarification.message
-            elif useful_clarifications:
-                selected_clarification = useful_clarifications[0]
-        ask_attribute = (
-            selected_clarification.ask_attribute
-            if selected_clarification is not None
-            else None
-        )
-        if ask_attribute is not None:
-            question = connected_message or (
-                f"Do you have a preference for {ask_attribute.replace('_', ' ')}?"
+        if outcome.source == "connected":
+            ask_attribute = (
+                outcome.clarification.ask_attribute
+                if outcome.clarification is not None
+                else None
             )
-            message = f"{message} {question}"
-            self._asked_attributes(session_id, state).add(ask_attribute)
-        self._last_asked_attributes[session_id] = ask_attribute
+            if outcome.clarification is not None:
+                message = f"{message} {outcome.clarification.message}"
+                self._last_asked_attributes[session_id] = ask_attribute
+        else:
+            ask_attribute = self._next_ask_attribute(session_id, state)
+            if ask_attribute is not None:
+                message = (
+                    f"{message} Do you have a preference for "
+                    f"{ask_attribute.replace('_', ' ')}?"
+                )
         self._planning_history[session_id].append({
             "turn": turn,
             "user_message": user_message,
@@ -557,19 +456,7 @@ class Agent:
             "source": outcome.source,
             "attempts": outcome.attempts,
             "retrieval_tools": list(outcome.retrieval_tools),
-            "session_mode": session_mode,
-            "session_mode_reason": mode_decision.reason,
             "ask_attribute": ask_attribute,
-            "clarification_expected_value": (
-                selected_clarification.expected_value
-                if selected_clarification is not None
-                else None
-            ),
-            "clarification_reason": (
-                selected_clarification.reason
-                if selected_clarification is not None
-                else None
-            ),
             "fallback_reason": outcome.fallback_reason,
             "errors": list(outcome.errors),
         })

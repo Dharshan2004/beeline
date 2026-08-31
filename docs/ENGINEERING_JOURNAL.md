@@ -610,6 +610,39 @@ Evaluator-aware structured evidence is one transparent Retrieval Route, not the 
 
 The team separated probabilistic interpretation from deterministic correctness, kept failure paths first-class, used explicit domain language, tested at public seams, measured scenario regressions, and changed architecture when green unit tests failed to guarantee the intended semantics.
 
+### 2026-08-31 — Slice 13 activation rejected at the freeze gate
+
+**Related issue/commit:** GitHub issue #14; reviewed from `aafa1b9`.
+
+**Experiment:** The landed Session Mode/Clarification implementation was
+reviewed against the issue specification and ADR 0005. A regenerated
+development trajectory was attempted without opening the locked holdout. The
+existing 128-token reranker repeatedly crossed its absolute 1.5-second deadline
+on this host. A 64-token contingency met the latency margin but changed the
+trajectory and collapsed HitRate@10 from 0.575 to 0.319 and TechnicalScore from
+0.488 to 0.258.
+
+**Decision and rationale:** Reject the contingency and revert the complete
+unvalidated Slice 13 build. Retain `shopping-turn-planner-v2`, the validated
+`pool-aware-global-v2` fusion policy, its checked-in evidence chain, and the
+planner-owned Retrieval Route contract. This follows ADR 0005: a material
+planning/policy change is not active until replay, training, freeze, and live
+evidence all describe and validate the same build.
+
+**Final restored-build benchmark:** A fresh official evaluator replay used all
+160 development sessions and did not open the 40-session holdout. It measured
+HitRate@10 `0.65625`, MRR `0.406937`, MTTC `5.91875`, Efficiency `0.508125`,
+and TechnicalScore `0.551831`. Scenario HitRate@10 was `0.625` boundary,
+`0.78125` browsing, `0.59375` buying, and `0.5` intent override. Wall time was
+`549.931s` (`687.414s` projected to 200 sessions); turn p95 was `0.896474s`.
+All 892 local reranker calls succeeded, with reranker p95 `0.485852s`, below
+the fixed `1.5s` gate.
+
+**Next experiment:** Rework Session Mode and exact-pool Clarification behind an
+inactive/versioned boundary, add checkpoint-resume to the score builder, then
+regenerate the complete development evidence chain and activate only if runtime,
+overall quality, and every scenario guardrail pass.
+
 ## Evidence checklist for final submission
 
 - [ ] Record commit SHA and configuration version for every reported run.
@@ -624,59 +657,6 @@ The team separated probabilistic interpretation from deterministic correctness, 
 - [ ] Freeze configuration before opening the locked holdout.
 - [ ] Record individual team contributions as work is completed.
 
-### 2026-08-31 — Iteration 13: revisable Session Mode and useful Clarifications
-
-**Owner(s):** dylothx
-
-**Related issue/commit:** GitHub issue #14 (Slice 13)
-
-**Problem or hypothesis:** A fixed question order repeated attributes that had
-already produced no information, and the agent did not expose or revise its view
-of whether a customer was buying, browsing, or uncertain.
-
-**Change:** Added versioned session policy `shopping-session-policy-v1` and
-planning contract `shopping-turn-planner-v3`. Session Mode is revised and logged
-on every turn. Clarifications are limited to allowed catalog-supported attributes
-with multiple possible answers, excluding active, dismissed, and already asked
-attributes for the current Product Intent. Safe aggregate profile tags can reorder
-only eligible questions and never become Constraints. Ranked recommendations
-remain present whenever a Clarification is returned.
-
-**Commands and environment:** Python 3.12 on Windows; `python -m compileall -q
-starter tests`; `python -m unittest -v tests.test_session_policy
-tests.test_planning tests.test_agent tests.test_turn_interpreter`; `python -m
-unittest discover -s tests -p "test_*.py"`.
-
-**Evidence:** The focused contract suite ran 72 tests successfully with two
-optional-model skips. The full suite ran 185 tests and retained the same six
-baseline environment/data errors observed before Slice 13: five Unix-only
-`multiprocessing` `fork` tests on Windows and one frozen public-set checksum
-mismatch. Seven new Slice 13 tests cover mode transitions, recommendation-bearing
-Clarifications, repeated-question rejection, Boundary behavior, all four scenario
-fixtures, and profile/current-turn precedence.
-
-**Scenario effects:** Buying favors direct narrowing attributes; Browsing favors
-broad use-case exploration; Intent Override starts a new asked-attribute history
-for the successor Product Intent; Boundary dismissals remain excluded across
-Product Intent changes.
-
-**What failed or surprised us:** The existing full suite is not fully portable to
-Windows because its local reranker worker tests request the unavailable `fork`
-start method. The checked-in public set also does not match the frozen split
-checksum in this workspace; neither condition was introduced by Slice 13.
-
-**Decision and rationale:** Keep mode outside Constraint State revisioning so a
-mode-only turn remains observable without pretending that authoritative customer
-constraints changed. Use deterministic usefulness validation around connected
-Clarifications, following the same bounded retry and fallback behavior as other
-invalid plan fields.
-
-**Known limitations:** Catalog diversity is an inexpensive global expected-value
-proxy; it does not yet measure entropy over the exact per-turn Candidate Pool.
-
-**Next experiment:** Slice 14 should compare connected models on mode accuracy,
-Clarification acceptance/retry rate, latency, token use, and downstream conversion.
-
 ## Team contribution log
 
 Add entries continuously; do not reconstruct this section at submission time.
@@ -684,7 +664,6 @@ Add entries continuously; do not reconstruct this section at submission time.
 | Date | Person | Contribution | Evidence | Outcome |
 | --- | --- | --- | --- | --- |
 | YYYY-MM-DD | Name | Concise technical contribution | Commit, issue, test, or document | Observable result |
-| 2026-08-31 | dylothx | Implemented Slice 13 Session Mode and Clarifications | Issue #14; `tests.test_session_policy` | Seven deterministic acceptance tests pass |
 
 ## Iteration entry template
 
