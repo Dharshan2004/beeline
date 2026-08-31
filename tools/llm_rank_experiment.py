@@ -43,6 +43,12 @@ def main() -> None:
         help="Override the ranker timeout from the config file.",
     )
     parser.add_argument(
+        "--chunk-timeout",
+        type=float,
+        default=1.2,
+        help="Tournament chunk-ranker timeout in seconds.",
+    )
+    parser.add_argument(
         "--openai-rewriter-role",
         default=None,
         help="Also enable the LLM query-rewriting stage with this role.",
@@ -97,7 +103,7 @@ def main() -> None:
                 absolute_stop_usd=nano_settings.absolute_stop_usd,
             ),
             reasoning_effort=nano_settings.reasoning_effort,
-            timeout_seconds=1.5,
+            timeout_seconds=args.chunk_timeout,
             max_output_tokens=nano_settings.max_output_tokens,
             max_candidates=12,
         )
@@ -112,7 +118,7 @@ def main() -> None:
             ),
             reasoning_effort=settings.reasoning_effort,
             timeout_seconds=(
-                args.ranker_timeout if args.ranker_timeout is not None else 2.2
+                args.ranker_timeout if args.ranker_timeout is not None else 1.6
             ),
             max_output_tokens=settings.max_output_tokens,
             max_candidates=12,

@@ -165,6 +165,18 @@ def main() -> None:
         action="store_true",
         help="Use the parallel nano chunk tournament as the ranking stage.",
     )
+    parser.add_argument(
+        "--chunk-timeout",
+        type=float,
+        default=1.2,
+        help="Tournament chunk-ranker timeout in seconds.",
+    )
+    parser.add_argument(
+        "--final-timeout",
+        type=float,
+        default=1.6,
+        help="Tournament final-ranker timeout in seconds.",
+    )
     parser.add_argument("--env-file", default=".env")
     args = parser.parse_args()
 
@@ -198,8 +210,8 @@ def main() -> None:
             from starter.llm_ranker import TournamentSemanticRanker
 
             ranker = TournamentSemanticRanker(
-                build_stage(settings, 1.5, 12),
-                build_stage(settings, 2.0, 12),
+                build_stage(settings, args.chunk_timeout, 12),
+                build_stage(settings, args.final_timeout, 12),
             )
         else:
             ranker = build_stage(

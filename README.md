@@ -37,7 +37,7 @@ public sessions. Weak BM25 starter baseline: **0.107**.
 | --- | ---: | ---: | ---: | ---: | ---: | ---: |
 | Offline (default) | **0.756** | 0.910 | 0.588 | 4.79 | 0.8 s | $0 |
 | + gpt-5.4-mini listwise rerank | **0.771** | 0.910 | 0.638 | 4.75 | ~4.6 s | ~$0.02 |
-| + nano ranking tournament | **0.793** | 0.955 | 0.593 | 4.13 | 4.2 s | ~$0.01 |
+| + nano ranking tournament | **0.806** | 0.960 | 0.628 | 4.13 | 3.4 s | ~$0.01 |
 
 Supplementary anti-overfitting evidence (not the official metric): the same
 unmodified `evaluate()` scorer replayed with every customer message fully
@@ -48,7 +48,7 @@ label. Scores that survive both are competence, not benchmark fit:
 | --- | ---: | ---: | ---: |
 | Offline | 0.756 | 0.725 | 0.718 |
 | + mini rerank | 0.771 | 0.740 | 0.756 |
-| + nano tournament | 0.793 | 0.765 | 0.757 |
+| + nano tournament | 0.806 | 0.763 | 0.756 |
 
 Run-to-run noise is ±0.013, quantified from identical-code runs. Reproduce:
 
@@ -111,11 +111,12 @@ second of per-turn latency is attrition on a purchase that was almost made.
   pool, and drops attributes the customer has answered or dismissed.
 - **Per-turn latency is a hard product constraint, not a benchmark metric.**
   A 5-minute turn can buy benchmark points (LLM-reading thousands of
-  candidates), but no live shopper waits for it. We cap the connected
-  pipeline near 4 seconds by buying LLM coverage with *parallel* chunk calls
-  rather than serial depth, and the offline path answers in under a second.
+  candidates), but no live shopper waits for it. We keep the connected
+  pipeline under 4 seconds (p95 3.4 s) by buying LLM coverage with
+  *parallel* chunk calls rather than serial depth, and the offline path
+  answers in under a second.
 - **Cost must round to zero at platform scale.** The default path costs
-  nothing; the full connected path costs ~$0.02/session with no-reasoning
+  nothing; the full connected path costs ~$0.01/session with no-reasoning
   nano calls doing the volume work and budget caps enforced per call.
 - **Reliability beats brilliance.** Every LLM stage is margin-gated (skipped
   when the local ranker is already confident) and fail-open (a timeout

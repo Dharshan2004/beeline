@@ -504,6 +504,8 @@ Latency p50 3.1 s / p95 4.2 s per turn; ~4.6 M nano tokens per 200-session run (
 
 **Known limitations:** 0.85 remains out of honest reach (requires HR 0.95 + MRR 0.75 + MTTC ≤3.5 simultaneously against near-duplicate crowds); MRR is the binding constraint.
 
+**Follow-up (same night):** the 4.2 s p95 exceeded the <4 s product constraint, so chunk/final timeouts were tightened to 1.2 s / 1.6 s and the full three-condition gates rerun (`benchmarks/robustness_ship_tournament_fast.json`): exact-200 **0.805848** (HR 0.960 / MRR 0.628 / MTTC 4.13), paraphrase-200 0.763434, novel-100 0.755807, p95 3.44 s, ~$1/200-session run. Paraphrase and novel are unchanged within noise, and tighter timeouts can only *reduce* LLM influence (more chunk calls fail open to the local order — 33% chunk timeout rate absorbed with no score cost), so the change introduces no new coupling surface. This 1.2/1.6 configuration is the shipped connected mode and the tools' tournament default.
+
 ## Current architectural invariants
 
 ### State

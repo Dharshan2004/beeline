@@ -178,10 +178,18 @@ treated as benchmark coupling and reverted.
   at single-call wall clock. Standard tournament/map-reduce reranking; no
   evaluator knowledge consumed (inputs: dialog messages, constraint summary,
   catalog snippets).
-- *Full three-condition gates* (unmodified official `evaluate()`):
-  exact-200 **0.7929** (HR 0.955 / MRR 0.593 / MTTC 4.13), paraphrase-200
-  0.7649, novel-100 0.7573. Gaps (−0.028 / −0.036) match the offline
-  configuration's own gaps (−0.031 / −0.038) → no template coupling; rule-8
-  check passed before shipping.
-- *Latency/cost:* p50 3.1 s, p95 4.2 s per turn; ≈$0.005/session at nano
+- *Full three-condition gates* (unmodified official `evaluate()`), first at
+  1.5 s chunk / 2.0 s final timeouts: exact-200 0.7929 (HR 0.955 / MRR
+  0.593 / MTTC 4.13), paraphrase-200 0.7649, novel-100 0.7573. Gaps
+  (−0.028 / −0.036) match the offline configuration's own gaps
+  (−0.031 / −0.038) → no template coupling; rule-8 check passed.
+- *Timeout tightening (shipped):* to meet the <4 s p95 product constraint,
+  chunk/final timeouts were cut to 1.2 s / 1.6 s and the full gates rerun:
+  exact-200 **0.8058** (HR 0.960 / MRR 0.628 / MTTC 4.13), paraphrase-200
+  0.7634, novel-100 0.7558, p95 3.4 s. Paraphrase/novel are unchanged
+  within the ±0.013 noise band and the change strictly *reduces* LLM
+  influence (more timeouts fail open to the local order), so no coupling
+  can be introduced; the exact gain is at the noise edge and is reported as
+  equal-or-better, not as a lever.
+- *Latency/cost:* p50 2.7 s, p95 3.4 s per turn; ≈$0.005/session at nano
   token pricing (fail-open on every node; offline path untouched).
