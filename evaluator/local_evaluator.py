@@ -1,13 +1,14 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import random
 import re
 import statistics
 import time
 import uuid
-from collections import defaultdict
+from collections import Counter, defaultdict
 from dataclasses import dataclass
 from math import ceil
 from pathlib import Path
@@ -18,7 +19,11 @@ from starter.openai_planning import (
     ModelPricing,
     OpenAIPlanningProvider,
 )
-from tools.dataset_split import load_frozen_development_samples, stratified_subset
+from tools.dataset_split import (
+    FROZEN_PUBLIC_SET_SHA256,
+    load_frozen_development_samples,
+    stratified_subset,
+)
 
 
 MAX_TURNS = 10
@@ -108,14 +113,25 @@ def load_evaluation_samples(
     dataset_path: str | Path,
     *,
     development_only: bool,
+    full_exposed_public_set: bool = False,
     session_count: int | None,
 ) -> list[dict]:
-    """Load the requested evaluation scope without exposing protected rows."""
-    samples = (
-        load_frozen_development_samples(dataset_path)
-        if development_only
-        else load_jsonl(dataset_path)
-    )
+    """Load the requested development or explicitly exposed public scope."""
+    if full_exposed_public_set:
+        if session_count is not None:
+            raise ValueError("full public-set evaluation requires all 200 sessions")
+        path = Path(dataset_path)
+        with path.open("rb") as handle:
+            digest = hashlib.file_digest(handle, "sha256").hexdigest()
+        if digest != FROZEN_PUBLIC_SET_SHA256:
+            raise ValueError(
+                "full public-set evaluation requires the frozen public dataset"
+            )
+        samples = load_jsonl(path)
+        if len(samples) != 200:
+            raise ValueError("full public-set evaluation requires all 200 sessions")
+        return samples
+    samples = load_frozen_development_samples(dataset_path) if development_only else load_jsonl(dataset_path)
     if session_count is None:
         return samples
     if session_count <= 0:
@@ -381,6 +397,10 @@ def evaluate(
     turn_latencies: list[float] = []
     total_prompt_tokens = 0
     total_completion_tokens = 0
+    response_exception_count = 0
+    invalid_response_count = 0
+    planning_source_counts: Counter[str] = Counter()
+    fallback_reason_counts: Counter[str] = Counter()
     for sample in samples:
         session_id = f"public_{uuid.uuid4().hex}"
         agent.reset(session_id, sample["user_profile"])
@@ -393,16 +413,30 @@ def evaluate(
         user_message = initial_message(effective_sample, coarse_category(categories.get(target, [])), disclosed)
         hit_turn: int | None = None
         best_rank: int | None = None
+        observed_planning_entries = 0
         for turn in range(1, MAX_TURNS + 1):
             turn_started = time.perf_counter()
             try:
                 response = agent.respond(session_id, user_message, turn, TOP_K)
             except Exception:
+                response_exception_count += 1
                 response = {"message": "", "ask_attribute": None, "recommendations": []}
             finally:
                 turn_latencies.append(time.perf_counter() - turn_started)
             if not isinstance(response, dict) or not isinstance(response.get("message"), str):
+                invalid_response_count += 1
                 response = {"message": "", "ask_attribute": None, "recommendations": []}
+            history_method = getattr(agent, "get_planning_history", None)
+            if callable(history_method):
+                planning_history = history_method(session_id)
+                for entry in planning_history[observed_planning_entries:]:
+                    source = entry.get("source")
+                    if isinstance(source, str):
+                        planning_source_counts[source] += 1
+                    fallback_reason = entry.get("fallback_reason")
+                    if isinstance(fallback_reason, str) and fallback_reason:
+                        fallback_reason_counts[fallback_reason] += 1
+                observed_planning_entries = len(planning_history)
             usage = response.get("usage")
             if isinstance(usage, dict):
                 if isinstance(usage.get("prompt_tokens"), int) and usage["prompt_tokens"] >= 0:
@@ -451,6 +485,13 @@ def evaluate(
             "completion_tokens": total_completion_tokens,
             "total_tokens": total_prompt_tokens + total_completion_tokens,
         },
+        "execution_diagnostics": {
+            "response_exception_count": response_exception_count,
+            "invalid_response_count": invalid_response_count,
+            "connected_plan_turn_count": planning_source_counts["connected"],
+            "fallback_plan_turn_count": planning_source_counts["fallback"],
+            "fallback_reason_counts": dict(sorted(fallback_reason_counts.items())),
+        },
         "scenario_metrics": {name: metric_summary(grouped[name]) for name in sorted(grouped)},
         "turn_latency": turn_latency_summary(turn_latencies),
         "sessions": sessions,
@@ -468,7 +509,7 @@ def main() -> None:
         action="store_true",
         help=(
             "Acknowledge that all 200 public sessions include the previously "
-            "exposed local holdout and are not untouched holdout evidence."
+            "exposed former reserved split and are not untouched evidence."
         ),
     )
     parser.add_argument("--sessions", type=int, default=None)
@@ -495,6 +536,7 @@ def main() -> None:
     samples = load_evaluation_samples(
         args.dataset,
         development_only=args.development_only,
+        full_exposed_public_set=args.full_exposed_public_set,
         session_count=args.sessions,
     )
     catalog_ids, categories, products = catalog_index(args.catalog)
@@ -517,8 +559,11 @@ def main() -> None:
             "evaluated_sessions": len(samples),
             "subset_seed": EVALUATION_SUBSET_SEED if args.sessions else None,
         }
-        result["runtime_configuration"] = agent.get_runtime_configuration()
-        provider = agent.planning_loop.provider
+        runtime_configuration = getattr(agent, "get_runtime_configuration", None)
+        if callable(runtime_configuration):
+            result["runtime_configuration"] = runtime_configuration()
+        planning_loop = getattr(agent, "planning_loop", None)
+        provider = getattr(planning_loop, "provider", None)
         if provider is not None:
             metrics = getattr(provider, "metrics", None)
             result["connected_planning"] = {
@@ -526,7 +571,9 @@ def main() -> None:
                 "metrics": metrics() if callable(metrics) else None,
             }
     finally:
-        agent.close()
+        close = getattr(agent, "close", None)
+        if callable(close):
+            close()
     Path(args.output).write_text(json.dumps(result, indent=2) + "\n", encoding="utf-8")
     print(json.dumps({key: value for key, value in result.items() if key != "sessions"}, indent=2))
 

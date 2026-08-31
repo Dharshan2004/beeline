@@ -172,9 +172,9 @@ Connected evaluation uses the model identity, prices, timeout, token bounds,
 and $10 development cap from `config/openai_phase_a_benchmark.json`. Results
 record the exact evaluation scope, runtime configuration, provider call count,
 token usage, and estimated spend. The 200-session public set contains the
-previously exposed local holdout, so a connected full-set run requires the
-deliberately explicit `--full-exposed-public-set` acknowledgement and is never
-labelled as untouched holdout evidence:
+previously exposed former reserved split, so a connected full-set run requires
+the deliberately explicit `--full-exposed-public-set` acknowledgement and is
+never labelled as untouched holdout evidence:
 
 ```bash
 .venv/bin/python -m evaluator.local_evaluator \

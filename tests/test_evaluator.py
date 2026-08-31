@@ -105,6 +105,59 @@ class EvaluatorTest(unittest.TestCase):
             "full_exposed_public_set",
         )
 
+        with self.assertRaisesRegex(ValueError, "all 200 sessions"):
+            load_evaluation_samples(
+                "data/public_set.jsonl",
+                development_only=False,
+                full_exposed_public_set=True,
+                session_count=20,
+            )
+
+    def test_evaluate_reports_connected_planning_fallbacks(self) -> None:
+        class FallbackAgent(EchoTargetAgent):
+            def __init__(self) -> None:
+                self.history: list[dict] = []
+
+            def respond(
+                self,
+                session_id: str,
+                user_message: str,
+                turn: int,
+                top_k: int,
+            ) -> dict:
+                self.history.append({
+                    "source": "fallback",
+                    "fallback_reason": "provider_timeout",
+                })
+                return super().respond(session_id, user_message, turn, top_k)
+
+            def get_planning_history(self, session_id: str) -> list[dict]:
+                return list(self.history)
+
+        samples = [{
+            "sample_id": "diagnostics",
+            "scenario_type": "buying",
+            "user_profile": {},
+            "ground_truth": {"parent_asin": "A"},
+            "intent_card": {"hard_constraints": [], "soft_preferences": []},
+            "behavior": {"scenario_type": "buying"},
+        }]
+        result = evaluate(
+            FallbackAgent(),
+            samples,
+            {"A"},
+            {"A": []},
+            {"A": {"parent_asin": "A"}},
+        )
+
+        self.assertEqual(result["execution_diagnostics"], {
+            "response_exception_count": 0,
+            "invalid_response_count": 0,
+            "connected_plan_turn_count": 0,
+            "fallback_plan_turn_count": 1,
+            "fallback_reason_counts": {"provider_timeout": 1},
+        })
+
     def test_normalization_preserves_first_valid_unique_order(self) -> None:
         payload = [
             {"parent_asin": "A"}, {"parent_asin": "bad"}, {"parent_asin": "A"},
