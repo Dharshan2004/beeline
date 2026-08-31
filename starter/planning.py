@@ -202,6 +202,10 @@ class MissingCredentialsError(RuntimeError):
     """The connected provider cannot run without configured credentials."""
 
 
+class BudgetExceededError(RuntimeError):
+    """The connected provider cannot spend beyond its authorized boundary."""
+
+
 @dataclass(frozen=True)
 class Clarification:
     ask_attribute: str
@@ -575,6 +579,10 @@ class PlanningLoop:
                 )
             except MissingCredentialsError as error:
                 fallback_reason = "missing_credentials"
+                errors.append(self._safe_error(error))
+                break
+            except BudgetExceededError as error:
+                fallback_reason = "budget_exhausted"
                 errors.append(self._safe_error(error))
                 break
             except TimeoutError as error:

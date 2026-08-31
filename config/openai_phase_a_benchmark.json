@@ -1,0 +1,45 @@
+{
+  "version": "openai-planning-phase-a-config-v1",
+  "dataset_split": "public-split-v1-development-only",
+  "models": [
+    {
+      "role": "quality_reference",
+      "model": "gpt-5.6-sol",
+      "pricing_usd_per_million_tokens": {
+        "input": 4.0,
+        "output": 20.0
+      }
+    },
+    {
+      "role": "lower_cost",
+      "model": "gpt-5.6-luna",
+      "pricing_usd_per_million_tokens": {
+        "input": 0.2,
+        "output": 1.2
+      }
+    }
+  ],
+  "api": {
+    "endpoint": "responses-v1",
+    "reasoning_effort": "low",
+    "timeout_seconds": 10.0,
+    "max_input_tokens_estimate": 8000,
+    "max_output_tokens": 1200,
+    "structured_outputs": true,
+    "store": false
+  },
+  "budget_usd": {
+    "phase_a_limit": 10.0,
+    "warning": 40.0,
+    "review_boundary": 50.0,
+    "absolute_stop": 600.0
+  },
+  "quality_tolerance": {
+    "aggregate_state_accuracy_max_regression": 0.02,
+    "scenario_state_accuracy_max_regression": 0.05,
+    "downstream_hit_rate_at_10_max_regression": 0.05,
+    "additional_failure_rate_max": 0.0,
+    "status": "provisional_phase_a_predeclared"
+  },
+  "pricing_source_checked_utc": "2026-08-31"
+}

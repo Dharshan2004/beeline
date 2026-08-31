@@ -187,6 +187,11 @@ class Agent:
             }
         reranker_metrics = self.reranker.metrics()
         provider = self.planning_loop.provider
+        provider_configuration = None
+        if provider is not None:
+            configuration_method = getattr(provider, "configuration", None)
+            if callable(configuration_method):
+                provider_configuration = configuration_method()
         return {
             "version": "shopping-agent-runtime-v1",
             "catalog": {
@@ -214,6 +219,7 @@ class Agent:
                 "connected_model_version": (
                     getattr(provider, "model", None) if provider is not None else None
                 ),
+                "provider_configuration": provider_configuration,
             },
             "fusion_and_retrieval": self.get_retrieval_configuration(),
             "feature_flags": {
@@ -226,7 +232,11 @@ class Agent:
                 "warning": 40,
                 "review_boundary": 50,
                 "absolute_stop": 600,
-                "enforcement_status": "scheduled_for_slice_15",
+                "enforcement_status": (
+                    "enforced_by_connected_provider"
+                    if provider_configuration is not None
+                    else "not_applicable_offline"
+                ),
             },
         }
 

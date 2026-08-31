@@ -116,6 +116,34 @@ Only exact `parent_asin` equality produces a hit. Core metrics are also reported
 
 Teams may use any legally accessible LLM API or local model. Teams manage their own credentials and must never commit API keys. Model choice, estimated cost, token usage, and latency must be disclosed. Token usage is a feasibility metric, not part of the core technical score. The organizer does not provide or reimburse model API credits; teams are responsible for any costs incurred through optional external services.
 
+### Phase A connected-planning benchmark
+
+The optional Slice 14 adapter uses the stateless OpenAI Responses API behind the
+existing `PlanningProvider.plan(PlanningRequest)` seam. It sends no hosted tools,
+sets `store=false`, requests the unchanged Turn Plan JSON Schema as a strict
+Structured Output, and falls back locally after missing credentials, timeout,
+invalid output, rejected state, provider failure, or budget exhaustion.
+
+The development-only benchmark compares `gpt-5.6-sol` and `gpt-5.6-luna` on one
+canonical corpus generated from the 160-session development split. Both models
+receive byte-identical prompt/schema/tools/state/history inputs, while their
+validated proposals are scored independently. Validate the complete fixture
+manifest without network access or API spend:
+
+```bash
+.venv/bin/pip install -r requirements-openai.txt
+.venv/bin/python -m tools.benchmark_openai_planning \
+  --validate-only \
+  --output benchmarks/openai_phase_a_validation.json
+```
+
+Credentialed runs load `OPENAI_API_KEY` from the ignored `.env` file. They send
+development messages, local Constraint State, recent canonical turns, and
+catalog-derived supported values to OpenAI, so run them only after approving
+that disclosure. See `docs/openai_model_benchmark_phase_a.md` for the paired
+smoke command, budget gates, metrics, current provisional status, and the Phase
+B dependency on Slice 13.
+
 ## Files
 
 ```text
@@ -132,6 +160,9 @@ docs/dense_index.md               dense index build, verification, and measured 
 docs/fixed_hybrid_fusion.md       fixed policy, score normalization, and baselines
 docs/reranker_benchmark.md        cross-encoder and deep-pool depth decision gate
 docs/reranker_benchmark.json      machine-readable benchmark summary
+docs/openai_model_benchmark_phase_a.md  connected benchmark method and status
+config/openai_phase_a_benchmark.json    models, prices, tolerances, and budget
+requirements-openai.txt          optional connected-development dependencies
 ```
 
 ## Dense Retrieval Route

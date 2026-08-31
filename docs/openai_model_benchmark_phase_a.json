@@ -1,0 +1,25 @@
+{
+  "benchmark_version": "openai-planning-phase-a-v1",
+  "configuration_sha256": "1e92b256d92d66d64162e3611088fc1c089552cbdbfd0cdf1bcd8440d27d5b9a",
+  "development_session_count": 160,
+  "fixture_count": 798,
+  "fixture_version": "canonical-planning-fixtures-v1",
+  "input_corpus_sha256": "c05e7f1b88abbc7d6cee3f5b81b7366c98daab86f63ec6da44fcf820d13df7c7",
+  "locked_holdout_loaded": false,
+  "models": {
+    "lower_cost": "gpt-5.6-luna",
+    "quality_reference": "gpt-5.6-sol"
+  },
+  "planning_contract": {
+    "allowed_tools": [
+      "structured",
+      "bm25",
+      "dense"
+    ],
+    "prompt_version": "shopping-turn-planner-v2"
+  },
+  "selection_status": "provisional_no_default_activation",
+  "status": "validated_without_api_calls",
+  "live_metrics": null,
+  "live_smoke_status": "pending_explicit_external_data_disclosure_approval"
+}

@@ -1,0 +1,4 @@
+# Optional connected-development dependencies. The official scoring path remains
+# network-independent and does not require these packages.
+openai>=2,<3
+python-dotenv>=1,<2
