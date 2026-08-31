@@ -680,6 +680,39 @@ Evaluator-aware structured evidence is one transparent Retrieval Route, not the 
 
 The team separated probabilistic interpretation from deterministic correctness, kept failure paths first-class, used explicit domain language, tested at public seams, measured scenario regressions, and changed architecture when green unit tests failed to guarantee the intended semantics.
 
+### 2026-08-31 — Slice 13 activation rejected at the freeze gate
+
+**Related issue/commit:** GitHub issue #14; reviewed from `aafa1b9`.
+
+**Experiment:** The landed Session Mode/Clarification implementation was
+reviewed against the issue specification and ADR 0005. A regenerated
+development trajectory was attempted without opening the locked holdout. The
+existing 128-token reranker repeatedly crossed its absolute 1.5-second deadline
+on this host. A 64-token contingency met the latency margin but changed the
+trajectory and collapsed HitRate@10 from 0.575 to 0.319 and TechnicalScore from
+0.488 to 0.258.
+
+**Decision and rationale:** Reject the contingency and revert the complete
+unvalidated Slice 13 build. Retain `shopping-turn-planner-v2`, the validated
+`pool-aware-global-v2` fusion policy, its checked-in evidence chain, and the
+planner-owned Retrieval Route contract. This follows ADR 0005: a material
+planning/policy change is not active until replay, training, freeze, and live
+evidence all describe and validate the same build.
+
+**Final restored-build benchmark:** A fresh official evaluator replay used all
+160 development sessions and did not open the 40-session holdout. It measured
+HitRate@10 `0.65625`, MRR `0.406937`, MTTC `5.91875`, Efficiency `0.508125`,
+and TechnicalScore `0.551831`. Scenario HitRate@10 was `0.625` boundary,
+`0.78125` browsing, `0.59375` buying, and `0.5` intent override. Wall time was
+`549.931s` (`687.414s` projected to 200 sessions); turn p95 was `0.896474s`.
+All 892 local reranker calls succeeded, with reranker p95 `0.485852s`, below
+the fixed `1.5s` gate.
+
+**Next experiment:** Rework Session Mode and exact-pool Clarification behind an
+inactive/versioned boundary, add checkpoint-resume to the score builder, then
+regenerate the complete development evidence chain and activate only if runtime,
+overall quality, and every scenario guardrail pass.
+
 ## Evidence checklist for final submission
 
 - [x] Record commit SHA and configuration state for the 2026-08-30 Slice 7 verification run.

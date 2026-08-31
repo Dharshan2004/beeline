@@ -89,6 +89,15 @@ policy and cannot be selected, disabled, or bypassed by a Turn Plan. Slice 12 is
 provider-neutral and its connected behavior is tested with deterministic fake
 providers; the measured concrete OpenAI adapter belongs to Slice 14.
 
+### Slice 13 activation status
+
+Session Mode and pool-aware Clarification changes are not active in this frozen
+build. Their first complete-development evidence attempt could not satisfy the
+existing runtime and quality gates, so ADR 0005 requires the validated
+`shopping-turn-planner-v2` / `pool-aware-global-v2` build to remain active. The
+locked holdout was not opened. See the engineering journal for the rejected
+experiment and the requirements for a future activation.
+
 Run the planning and Intent Override contract tests without API credentials or
 spending:
 
