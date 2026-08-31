@@ -5,6 +5,7 @@ import os
 from pathlib import Path
 import tempfile
 import unittest
+from dataclasses import replace
 from types import SimpleNamespace
 from unittest.mock import patch
 
@@ -133,6 +134,54 @@ class OpenAIPlanningProviderTest(unittest.TestCase):
         self.assertNotIn("api_key", payload)
         self.assertAlmostEqual(provider.budget.spent_usd, 0.000157)
 
+    def test_transport_schema_converts_one_of_without_mutating_contract(self) -> None:
+        request = replace(
+            planning_request(),
+            response_schema={
+                "type": "object",
+                "properties": {
+                    "kind": {"const": "example"},
+                    "mode": {"enum": ["one", "two"]},
+                    "value": {
+                        "oneOf": [
+                            {
+                                "type": "array",
+                                "items": {"type": "string"},
+                                "uniqueItems": True,
+                            },
+                            {"type": "null"},
+                        ],
+                    },
+                },
+                "required": ["kind", "mode", "value"],
+                "additionalProperties": False,
+            },
+        )
+        original_schema = json.loads(json.dumps(request.response_schema))
+        client = FakeClient(SimpleNamespace(
+            output_text='{"kind":"example","mode":"one","value":null}',
+            usage=SimpleNamespace(input_tokens=3, output_tokens=2),
+        ))
+        provider = OpenAIPlanningProvider(
+            model="gpt-test",
+            api_key="secret",
+            client=client,
+            budget=DevelopmentBudget(limit_usd=1),
+        )
+
+        provider.plan(request)
+
+        transport_schema = client.responses.calls[0]["text"]["format"]["schema"]
+        self.assertNotIn("oneOf", transport_schema["properties"]["value"])
+        self.assertIn("anyOf", transport_schema["properties"]["value"])
+        self.assertNotIn(
+            "uniqueItems",
+            transport_schema["properties"]["value"]["anyOf"][0],
+        )
+        self.assertEqual(transport_schema["properties"]["kind"]["type"], "string")
+        self.assertEqual(transport_schema["properties"]["mode"]["type"], "string")
+        self.assertEqual(request.response_schema, original_schema)
+
     def test_invalid_json_is_rejected_at_the_adapter_boundary(self) -> None:
         client = FakeClient(SimpleNamespace(
             output_text="not json",
@@ -233,6 +282,10 @@ class OpenAIPlanningProviderTest(unittest.TestCase):
             "timeout_seconds": 7.0,
             "max_output_tokens": 800,
             "structured_outputs": True,
+            "transport_schema": {
+                "version": "openai-anyof-v1",
+                "sha256": "fc76794ea220f56a227a92fe63e7b26b1ebeed329b5de56bcfd1dc27773bf46f",
+            },
             "store": False,
             "pricing_usd_per_million_tokens": {"input": 3, "output": 9},
             "budget": {

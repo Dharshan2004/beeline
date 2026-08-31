@@ -35,7 +35,9 @@ from starter.constraint_state import (
 from starter.openai_planning import (
     DevelopmentBudget,
     ModelPricing,
+    OPENAI_TRANSPORT_SCHEMA_VERSION,
     OpenAIPlanningProvider,
+    openai_transport_schema_sha256,
 )
 from starter.planning import (
     APPROVED_RETRIEVAL_TOOLS,
@@ -571,7 +573,7 @@ def evaluate_provider(
             "successful_token_estimate_usd": round(token_estimated_cost, 9),
             "provider_budget_delta_usd": round(accounted_cost, 9),
             "includes_pessimistic_failed_call_reservations": (
-                accounted_cost > token_estimated_cost
+                accounted_cost > token_estimated_cost + 1e-12
             ),
         },
         "pricing_usd_per_million_tokens": {
@@ -668,6 +670,10 @@ def compare_providers(
         "planning_contract": {
             "prompt_version": PLANNING_PROMPT_VERSION,
             "prompt_sha256": PLANNING_PROMPT_SHA256,
+            "transport_schema": {
+                "version": OPENAI_TRANSPORT_SCHEMA_VERSION,
+                "sha256": openai_transport_schema_sha256(TURN_PLAN_JSON_SCHEMA),
+            },
             "allowed_tools": list(APPROVED_RETRIEVAL_TOOLS),
         },
         "input_parity": {

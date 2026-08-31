@@ -22,10 +22,23 @@
     "configuration_sha256": {"type": "string"},
     "planning_contract": {
       "type": "object",
-      "required": ["prompt_version", "prompt_sha256", "allowed_tools"],
+      "required": [
+        "prompt_version",
+        "prompt_sha256",
+        "transport_schema",
+        "allowed_tools"
+      ],
       "properties": {
         "prompt_version": {"type": "string"},
         "prompt_sha256": {"type": "string"},
+        "transport_schema": {
+          "type": "object",
+          "required": ["version", "sha256"],
+          "properties": {
+            "version": {"type": "string"},
+            "sha256": {"type": "string"}
+          }
+        },
         "allowed_tools": {"type": "array", "items": {"type": "string"}}
       }
     },

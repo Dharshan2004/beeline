@@ -151,6 +151,13 @@ class OpenAIPlanningBenchmarkTest(unittest.TestCase):
         self.assertIn("p95_seconds", metrics["latency"])
         self.assertIn("browsing", metrics["scenario_metrics"])
         self.assertEqual(report["selection_status"], "provisional_no_default_activation")
+        self.assertEqual(
+            report["planning_contract"]["transport_schema"],
+            {
+                "version": "openai-anyof-v1",
+                "sha256": "fc76794ea220f56a227a92fe63e7b26b1ebeed329b5de56bcfd1dc27773bf46f",
+            },
+        )
         validate_benchmark_report(report)
 
         comparison = report["provisional_comparison"]

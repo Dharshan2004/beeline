@@ -16,10 +16,37 @@
       "bm25",
       "dense"
     ],
-    "prompt_version": "shopping-turn-planner-v2"
+    "prompt_version": "shopping-turn-planner-v2",
+    "transport_schema": {
+      "sha256": "fc76794ea220f56a227a92fe63e7b26b1ebeed329b5de56bcfd1dc27773bf46f",
+      "version": "openai-anyof-v1"
+    }
   },
   "selection_status": "provisional_no_default_activation",
   "status": "validated_without_api_calls",
-  "live_metrics": null,
-  "live_smoke_status": "pending_explicit_external_data_disclosure_approval"
+  "live_metrics": {
+    "budget_spent_usd": 0.0370742,
+    "fixture_count": 4,
+    "input_corpus_sha256": "b3063aa33b90fa3e4b8bded234670aa69d75d26248b339c116339ec124d97fda",
+    "input_parity_identical": true,
+    "lower_cost": {
+      "estimated_cost_usd": 0.0019462,
+      "failure_rate": 0.0,
+      "p50_seconds": 3.253087,
+      "p95_seconds": 5.694569,
+      "state_accuracy": 0.25,
+      "token_usage": 4811
+    },
+    "quality_reference": {
+      "estimated_cost_usd": 0.035128,
+      "failure_rate": 0.0,
+      "p50_seconds": 3.956833,
+      "p95_seconds": 6.607046,
+      "state_accuracy": 0.25,
+      "token_usage": 4818
+    },
+    "selection_result": "lower_cost_within_provisional_tolerance",
+    "session_count": 1
+  },
+  "live_smoke_status": "completed_2026-08-31"
 }

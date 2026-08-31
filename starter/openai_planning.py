@@ -8,6 +8,7 @@ Turn Plan schema.
 from __future__ import annotations
 
 from dataclasses import dataclass
+import hashlib
 import json
 import os
 from typing import Any
@@ -18,6 +19,7 @@ from starter.planning import (
     PlanningRequest,
     PlanningSchemaError,
     ProviderResponse,
+    TURN_PLAN_JSON_SCHEMA,
     planning_request_as_dict,
 )
 
@@ -26,6 +28,7 @@ DEFAULT_TIMEOUT_SECONDS = 10.0
 DEFAULT_MAX_OUTPUT_TOKENS = 2_000
 DEFAULT_MAX_INPUT_TOKENS_ESTIMATE = 32_000
 ABSOLUTE_BUDGET_CEILING_USD = 600.0
+OPENAI_TRANSPORT_SCHEMA_VERSION = "openai-anyof-v1"
 
 
 @dataclass(frozen=True)
@@ -112,6 +115,36 @@ def _request_input(request: PlanningRequest) -> str:
     )
 
 
+def _openai_compatible_schema(value: object) -> object:
+    """Translate canonical JSON Schema unions to OpenAI's supported subset."""
+    if isinstance(value, dict):
+        result = {
+            ("anyOf" if key == "oneOf" else key): _openai_compatible_schema(item)
+            for key, item in value.items()
+            if key != "uniqueItems"
+        }
+        if "type" not in result:
+            if isinstance(result.get("const"), str):
+                result["type"] = "string"
+            elif (
+                isinstance(result.get("enum"), list)
+                and result["enum"]
+                and all(isinstance(item, str) for item in result["enum"])
+            ):
+                result["type"] = "string"
+        return result
+    if isinstance(value, list):
+        return [_openai_compatible_schema(item) for item in value]
+    return value
+
+
+def openai_transport_schema_sha256(schema: object) -> str:
+    transformed = _openai_compatible_schema(schema)
+    return hashlib.sha256(
+        json.dumps(transformed, sort_keys=True, separators=(",", ":")).encode("utf-8")
+    ).hexdigest()
+
+
 class OpenAIPlanningProvider:
     """Use the Responses API behind ``PlanningProvider.plan``."""
 
@@ -161,11 +194,12 @@ class OpenAIPlanningProvider:
 
     def plan(self, request: PlanningRequest) -> ProviderResponse:
         request_input = _request_input(request)
+        response_schema = _openai_compatible_schema(request.response_schema)
         request_bytes = sum((
             len(request_input.encode("utf-8")),
             len(request.instructions.encode("utf-8")),
             len(json.dumps(
-                request.response_schema,
+                response_schema,
                 sort_keys=True,
                 separators=(",", ":"),
             ).encode("utf-8")),
@@ -186,7 +220,7 @@ class OpenAIPlanningProvider:
                     "format": {
                         "type": "json_schema",
                         "name": "shopping_turn_plan",
-                        "schema": request.response_schema,
+                        "schema": response_schema,
                         "strict": True,
                     },
                 },
@@ -241,6 +275,10 @@ class OpenAIPlanningProvider:
             "timeout_seconds": self.timeout_seconds,
             "max_output_tokens": self.max_output_tokens,
             "structured_outputs": True,
+            "transport_schema": {
+                "version": OPENAI_TRANSPORT_SCHEMA_VERSION,
+                "sha256": openai_transport_schema_sha256(TURN_PLAN_JSON_SCHEMA),
+            },
             "store": False,
             "pricing_usd_per_million_tokens": {
                 "input": self.pricing.input_per_million_usd,

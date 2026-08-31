@@ -2,15 +2,16 @@
 
 ## Status
 
-The Phase A adapter and benchmark machinery are implemented and validated
-without API calls. The frozen 160-session development split produces 798
+The Phase A adapter and benchmark machinery are implemented and validated both
+offline and through a credentialed one-session paired smoke run. The frozen
+160-session development split produces 798
 canonical planning fixtures with input-corpus SHA-256
 `c05e7f1b88abbc7d6cee3f5b81b7366c98daab86f63ec6da44fcf820d13df7c7`.
 The loader discarded all 40 designated Locked Holdout rows before JSON
 deserialization. No production default is selected or activated in Phase A.
 
-The credentialed smoke run remains pending explicit approval to disclose its
-request payloads to OpenAI. Each request includes the development user message,
+The credentialed smoke was run after explicit approval to disclose its request
+payloads to OpenAI. Each request includes the development user message,
 the local Constraint State snapshot, up to four recent canonical turns, the
 allowed Retrieval Routes, and catalog-derived supported attribute values. It
 does not include the API key, raw user profile, complete product records, the
@@ -23,6 +24,10 @@ Locked Holdout, or private chain-of-thought. Responses use `store=false`.
 - API: stateless Responses API with strict JSON Schema Structured Outputs.
 - Reasoning effort: `low` for both models.
 - Prompt/schema: the unchanged Slice 12 `shopping-turn-planner-v2` contract.
+- Transport schema: `openai-anyof-v1` converts canonical `oneOf` unions to
+  OpenAI-supported `anyOf`, removes unsupported `uniqueItems`, and makes
+  implicit string types explicit. The canonical prompt/schema and strict local
+  validation remain unchanged.
 - Tools: the same `structured`, `bm25`, and `dense` identifiers; no hosted or
   executable tools are exposed.
 - Input parity: fixtures are generated once from canonical local state and then
@@ -60,9 +65,10 @@ Each model report contains aggregate and per-scenario:
   attributed pessimistic reservations for submitted calls without usable usage.
 
 The stable paired-report contract is checked before output and published as
-`docs/openai_model_benchmark_report.schema.json`. The benchmark and connected
-adapter serialize `PlanningRequest` through one canonical function, preventing
-the report corpus hash from drifting from the API payload representation.
+`docs/openai_model_benchmark_report.schema.json`. The corpus hash proves both
+models receive the same canonical `PlanningRequest` inputs. The separately
+reported transport-schema version and SHA identify the transformed schema sent
+to OpenAI.
 
 Clarification scoring is intentionally limited to schema and state-policy
 validity in Phase A. Slice 13 owns the final Session Mode, expected-value policy,
@@ -92,14 +98,14 @@ Validate all 160 development sessions without credentials, network, or API cost:
   --output benchmarks/openai_phase_a_validation.json
 ```
 
-After explicitly approving the external disclosure described above, run a small
-deterministic paired smoke benchmark using the ignored `.env` file:
+After explicitly approving the external disclosure described above, reproduce
+the small deterministic paired smoke benchmark using the ignored `.env` file:
 
 ```bash
 .venv/bin/python -m tools.benchmark_openai_planning \
-  --sessions 4 \
+  --sessions 1 \
   --env-file .env \
-  --output benchmarks/openai_phase_a_smoke_4.json
+  --output benchmarks/openai_phase_a_smoke_1.json
 ```
 
 Omit `--sessions` only when the budget and full development run have been
@@ -109,7 +115,16 @@ checked-in machine-readable Phase A status is
 
 ## Current provisional result
 
-The offline manifest and report schema pass. Live quality, latency, token, cost,
-and failure metrics are deliberately `null` until the external-data disclosure
-is approved and the paired smoke run completes. This is not evidence for a
-model default and does not satisfy the Phase B selection gate.
+The 2026-08-31 paired smoke evaluated four canonical browsing fixtures for each
+model with identical input hash
+`b3063aa33b90fa3e4b8bded234670aa69d75d26248b339c116339ec124d97fda`.
+Both models completed with zero failures, 0.25 exact state accuracy, 0.50 local
+HitRate@10, and 1.0 clarification-protocol validity. Sol used 4,818 tokens,
+cost $0.035128, and had p50/p95 latency of 3.956833/6.607046 seconds. Luna used
+4,811 tokens, cost $0.0019462, and had p50/p95 latency of
+3.253087/5.694569 seconds. Total recorded spend was $0.0370742.
+
+Luna is within the predeclared provisional tolerance on this deliberately small
+smoke. This is not evidence for a production default: `default_activation_allowed`
+remains false, and the complete Phase B development rerun remains gated on
+Slice 13.
