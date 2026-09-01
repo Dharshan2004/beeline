@@ -18,9 +18,11 @@ cost, never an error. The evaluator itself is never modified; the agent
 simply configures itself.
 
 ```bash
-python3 -m venv .venv && source .venv/bin/activate && pip install -r requirements-dense.txt
+python3 -m venv .venv && source .venv/bin/activate \
+  && pip install -r requirements-dense.txt -r requirements-openai.txt
 # catalog: download catalog.jsonl.gz from the GitHub Release, verify SHA256SUMS,
 # then: gzip -dk catalog.jsonl.gz && mv catalog.jsonl data/catalog.jsonl
+# connected mode (optional): echo 'OPENAI_API_KEY=sk-...' > .env
 python -m tools.fetch_model && python -m tools.fetch_model \
   --identity cross-encoder/ms-marco-MiniLM-L-6-v2 \
   --destination models/cross-encoder__ms-marco-MiniLM-L-6-v2 \
@@ -64,7 +66,7 @@ Run-to-run noise is ±0.013, quantified from identical-code runs. Reproduce:
 
 ```bash
 python -m tools.robustness_eval --output benchmarks/robustness.json
-python -m unittest discover -s tests   # 221 tests
+python -m unittest discover -s tests   # 225 tests, always offline
 ```
 
 ## Architecture
@@ -151,6 +153,11 @@ second of per-turn latency is attrition on a purchase that was almost made.
   included, is in `docs/ENGINEERING_JOURNAL.md`.
 
 ## Optional connected mode
+
+**Network policy (per submission rules):** the agent never *requires*
+network access. Connected mode is used only when an `OPENAI_API_KEY` is
+present; if official scoring disables network access, the agent runs its
+complete offline fallback (0.756) with zero code or config changes.
 
 OpenAI Responses API with `store=false`, strict JSON-schema outputs,
 per-call budget reservation under a $10 development cap, no retries,
