@@ -1,5 +1,5 @@
 // PROTOTYPE — Three demo-video treatments, switchable with ?variant=A|B|C.
-// This uses mock content only. It never imports or invokes the real Agent/evaluator.
+// Session excerpts were recorded from tools.demo_session; this page never invokes the Agent/evaluator.
 
 const METRICS = {
   baseline: { label: "Official baseline", hit: 0.125, mrr: 0.068, mttc: 9.81, score: 0.1067 },
@@ -8,15 +8,17 @@ const METRICS = {
 };
 
 const SCENES = [
-  { start: 0, end: 15, key: "hook", eyebrow: "THE PROBLEM", title: "Attention is the scarce resource.", note: "Name the product and the live-commerce thesis." },
-  { start: 15, end: 33, key: "demo_one", eyebrow: "BEELINE · SESSION 1", title: "One message in. Rank one. Done.", note: "Real helper replay: public_0044." },
-  { start: 33, end: 57, key: "demo_questions", eyebrow: "BEELINE · SESSION 2", title: "Every question must eliminate uncertainty.", note: "Real helper replay: public_0019." },
-  { start: 57, end: 75, key: "demo_override", eyebrow: "BEELINE · SESSION 3", title: "A changed mind must not corrupt the session.", note: "Real helper replay: public_0013." },
-  { start: 75, end: 95, key: "architecture", eyebrow: "THE ARCHITECTURE", title: "Validated state feeds bounded hybrid retrieval.", note: "One sentence per shipped stage." },
-  { start: 95, end: 105, key: "tournament", eyebrow: "THE DIFFERENTIATOR", title: "Parallelism buys coverage, not waiting time.", note: "Four nano chunks read 48 candidates concurrently." },
-  { start: 105, end: 130, key: "proof", eyebrow: "THE PROOF", title: "The bare evaluator command measures the shipped agent.", note: "Official exact score and robustness evidence." },
-  { start: 130, end: 140, key: "honesty", eyebrow: "THE HONESTY", title: "A gain ships only if it survives distribution shift.", note: "Paraphrase, novel targets, and fail-open behavior." },
-  { start: 140, end: 150, key: "close", eyebrow: "BEELINE", title: "The shortest honest path from attention to purchase.", note: "Close on product value, cost, and reproducibility." },
+  { start: 0, end: 14, key: "hook", eyebrow: "THE PROBLEM", title: "Attention is the scarce resource.", note: "Name the product and the live-commerce thesis." },
+  { start: 14, end: 31, key: "tiktok_context", eyebrow: "WHY TIKTOK SHOP", title: "Buying intent is a short-lived conversion window.", note: "Show the browse-to-buy funnel and why speed matters." },
+  { start: 31, end: 46, key: "demo_one", eyebrow: "BEELINE · SESSION 1", title: "One message in. Rank one. Done.", note: "Real helper replay: public_0044." },
+  { start: 46, end: 66, key: "demo_questions", eyebrow: "BEELINE · SESSION 2", title: "Every question must eliminate uncertainty.", note: "Real helper replay: public_0019." },
+  { start: 66, end: 81, key: "demo_override", eyebrow: "BEELINE · SESSION 3", title: "A changed mind must not corrupt the session.", note: "Real helper replay: public_0013." },
+  { start: 81, end: 105, key: "architecture", eyebrow: "THE ARCHITECTURE", title: "One correctness boundary. Two execution planes.", note: "Separate validated state from bounded retrieval and ranking." },
+  { start: 105, end: 123, key: "tournament", eyebrow: "THE RANKING DIFFERENTIATOR", title: "Parallelism buys coverage, not waiting time.", note: "Four nano chunks read 48 candidates concurrently." },
+  { start: 123, end: 143, key: "dev_process", eyebrow: "THE DEVELOPMENT PROCESS", title: "Measure. Gate. Reject. Freeze.", note: "Show benchmark-led decisions and rejected configurations." },
+  { start: 143, end: 163, key: "proof", eyebrow: "THE PROOF", title: "The bare evaluator command measures the shipped agent.", note: "Official exact score and robustness evidence." },
+  { start: 163, end: 173, key: "honesty", eyebrow: "THE HONESTY", title: "A gain ships only if it survives distribution shift.", note: "Paraphrase, novel targets, and fail-open behavior." },
+  { start: 173, end: 180, key: "close", eyebrow: "BEELINE", title: "The shortest honest path from attention to purchase.", note: "Close on product value, cost, and reproducibility." },
 ];
 
 const variants = {
@@ -30,7 +32,7 @@ const CAPTURE_MODE = params.get("capture") === "1";
 
 const state = {
   variant: getVariant(),
-  time: Math.max(0, Math.min(149.9, Number(params.get("time")) || 0)),
+  time: Math.max(0, Math.min(179.9, Number(params.get("time")) || 0)),
   playing: false,
   speed: 1,
   lastFrame: performance.now(),
@@ -63,7 +65,7 @@ function cycleVariant(direction) {
 }
 
 function formatTime(seconds) {
-  const value = Math.max(0, Math.min(150, Math.round(seconds)));
+  const value = Math.max(0, Math.min(180, Math.round(seconds)));
   return `${Math.floor(value / 60)}:${String(value % 60).padStart(2, "0")}`;
 }
 
@@ -74,7 +76,7 @@ function render() {
 
 function bindControls() {
   document.querySelector("[data-play]")?.addEventListener("click", () => {
-    if (state.time >= 150) state.time = 0;
+    if (state.time >= 180) state.time = 0;
     state.playing = !state.playing;
     render();
   });
@@ -102,19 +104,19 @@ function bindControls() {
 }
 
 function chrome(content, options = {}) {
-  const progress = (state.time / 150) * 100;
+  const progress = (state.time / 180) * 100;
   return `
     <div class="prototype-shell ${options.shellClass ?? ""}">
       <div class="prototype-warning">
         <span>PROTOTYPE</span>
-        <span>Mock data · placeholders only · no evaluator or agent execution</span>
+        <span>Recorded helper excerpts · no live evaluator or agent execution</span>
       </div>
       ${content}
       <div class="video-controls">
         <button class="control-button" data-play aria-label="${state.playing ? "Pause" : "Play"}">${state.playing ? pauseIcon() : playIcon()}</button>
         <button class="control-button" data-restart aria-label="Restart">${restartIcon()}</button>
-        <span class="timecode">${formatTime(state.time)} <i>/</i> 2:30</span>
-        <input data-scrub class="scrubber" type="range" min="0" max="150" step="1" value="${state.time}" style="--progress:${progress}%" aria-label="Video position" />
+        <span class="timecode">${formatTime(state.time)} <i>/</i> 3:00</span>
+        <input data-scrub class="scrubber" type="range" min="0" max="180" step="1" value="${state.time}" style="--progress:${progress}%" aria-label="Video position" />
         <button class="speed-button" data-speed>${state.speed}×</button>
       </div>
       <div class="variant-switcher" aria-label="Prototype variants">
@@ -149,7 +151,7 @@ function renderStoryboard(scene) {
     <section class="storyboard-layout">
       <aside class="storyboard-sidebar">
         <div>
-          <p class="kicker">2:30 VIDEO PLAN</p>
+          <p class="kicker">3:00 VIDEO PLAN</p>
           <h1>Director's<br />storyboard</h1>
         </div>
         <nav class="scene-list">
@@ -181,19 +183,19 @@ function renderProofReel(scene) {
     <section class="proof-layout">
       <header class="proof-header">
         <div><span class="signal-dot"></span> SHOPPING COPILOT / TECHNICAL CUT</div>
-        <div class="proof-score">0.7556 <span>LOCAL · FULL 200</span></div>
+        <div class="proof-score">0.8058 <span>NANO TOURNAMENT · FULL 200</span></div>
       </header>
       <div class="proof-grid">
         <div class="proof-primary scene-${scene.key}">${sceneVisual(scene, true)}</div>
         <aside class="proof-rail">
           <p class="kicker">ROBUSTNESS BOARD</p>
-          ${metricMini("Exact", 0.755552, 0.10671)}
-          ${metricMini("Paraphrased", 0.725042, 0.10671)}
-          ${metricMini("Novel targets", 0.718247, 0.10671)}
+          ${metricMini("Exact", 0.805848, 0.10671)}
+          ${metricMini("Paraphrased", 0.763434, 0.10671)}
+          ${metricMini("Novel targets", 0.755807, 0.10671)}
           <div class="fallback-card">
             <span>LOCAL FALLBACK</span>
-            <strong>0 tokens</strong>
-            <small>valid without network</small>
+            <strong>0.756</strong>
+            <small>offline · $0 · valid without network</small>
           </div>
         </aside>
       </div>
@@ -208,6 +210,8 @@ function sceneVisual(scene, compact = false) {
   switch (scene.key) {
     case "hook":
       return beelineHook();
+    case "tiktok_context":
+      return tiktokContextVisual();
     case "demo_one":
       return demoOneTurn();
     case "demo_questions":
@@ -218,6 +222,8 @@ function sceneVisual(scene, compact = false) {
       return shippedArchitecture();
     case "tournament":
       return tournamentVisual();
+    case "dev_process":
+      return developmentVisual();
     case "proof":
       return proofVisual();
     case "honesty":
@@ -229,7 +235,7 @@ function sceneVisual(scene, compact = false) {
           <div class="beeline-wordmark">BEELINE<i></i></div>
           <h2>The shortest honest path<br />from attention to purchase.</h2>
           <div class="close-modes"><span><b>OFFLINE</b> 0.756 · $0</span><span><b>CONNECTED</b> 0.806 · ~$0.01/session</span></div>
-          <p>github.com/Dharshan2004/techjam-2026-track-4-shopping-copilot</p>
+          <p>github.com/Dharshan2004/beeline</p>
         </div>`;
   }
 }
@@ -241,6 +247,29 @@ function beelineHook() {
       <h1>Seconds.<br /><span>Not minutes.</span></h1>
       <p>Every unnecessary question is another chance for the buyer to scroll on.</p>
       <div class="beeline-thesis"><strong>BEELINE</strong><i></i><span>how few turns to the exact product?</span></div>
+    </div>`;
+}
+
+function tiktokContextVisual() {
+  return `
+    <div class="tiktok-context-visual">
+      <div class="tiktok-copy">
+        <p class="eyebrow">WHY THIS MATTERS FOR TIKTOK SHOP</p>
+        <h2>Attention creates traffic.<br /><span>Intent creates revenue.</span></h2>
+        <p>Most people are browsing. A smaller group reveals buying intent—and that intent can disappear with the next swipe.</p>
+      </div>
+      <div class="intent-window">
+        <div class="audience-stage"><span>ALL VIEWERS</span><strong>browse</strong><small>discover · compare · entertain</small></div>
+        <i>→</i>
+        <div class="audience-stage shoppers"><span>BUYING SIGNAL</span><strong>intent</strong><small>requirements become concrete</small></div>
+        <i>→</i>
+        <div class="audience-stage conversion"><span>BEELINE WINDOW</span><strong>convert</strong><small>before attention moves on</small></div>
+      </div>
+      <div class="attention-clock">
+        <div><span>EVERY EXTRA TURN</span><strong>adds uncertainty + attrition</strong></div>
+        <div><span>EVERY EXTRA SECOND</span><strong>risks losing the moment</strong></div>
+        <p>Beeline optimizes the path from <b>“I might buy”</b> to <b>the exact product</b>.</p>
+      </div>
     </div>`;
 }
 
@@ -292,17 +321,23 @@ function demoOverride() {
 
 function shippedArchitecture() {
   return `
-    <div class="shipped-architecture">
-      <div class="architecture-heading"><p class="eyebrow">THE SHIPPED PIPELINE</p><h2>Conversation becomes<br />bounded retrieval.</h2></div>
-      <div class="architecture-stages">
-        <div><span>01</span><strong>Turn interpreter</strong><small>complete plan</small></div><i>→</i>
-        <div><span>02</span><strong>Atomic state</strong><small>validated revision</small></div><i>→</i>
-        <div class="route-stage"><span>03</span><strong>Three routes</strong><small>structured · BM25 · dense</small></div><i>→</i>
-        <div><span>04</span><strong>Frozen fusion</strong><small>popularity-aware admission</small></div><i>→</i>
-        <div><span>05</span><strong>Local rerank</strong><small>MiniLM · fail-open</small></div><i>→</i>
-        <div class="output-stage"><span>06</span><strong>Top 10 or ask</strong><small>highest information value</small></div>
+    <div class="shipped-architecture deep-architecture">
+      <div class="architecture-heading"><p class="eyebrow">ONE TURN · TWO EXECUTION PLANES</p><h2>Meaning can be probabilistic.<br />Correctness cannot.</h2></div>
+      <div class="plane control-plane">
+        <div class="plane-name"><span>CONTROL PLANE</span><strong>conversation → trusted state</strong></div>
+        <div class="plane-node"><span>01</span><strong>Message + dialog</strong><small>latest turn · prior evidence · budget</small></div><i>→</i>
+        <div class="plane-node"><span>02</span><strong>Complete Turn Plan</strong><small>local or model interpretation</small></div><i>→</i>
+        <div class="plane-node validator"><span>03</span><strong>Atomic validator</strong><small>all transitions—or none</small></div><i>→</i>
+        <div class="plane-node state"><span>04</span><strong>Constraint State</strong><small>revisioned · deterministic</small></div>
       </div>
-      <div class="architecture-contract"><span>EVERY MODEL STAGE FAILS OPEN</span><i></i><strong>the worst case is still the 0.756 offline agent</strong></div>
+      <div class="plane data-plane">
+        <div class="plane-name"><span>DATA PLANE</span><strong>state → ranked action</strong></div>
+        <div class="route-cluster"><b>STRUCTURED</b><b>BM25 / FTS5</b><b>DENSE / QDRANT</b><small>three independent retrieval routes</small></div><i>→</i>
+        <div class="plane-node"><span>05</span><strong>Frozen fusion</strong><small>normalize · popularity-aware pool</small></div><i>→</i>
+        <div class="plane-node"><span>06</span><strong>Local cross-encoder</strong><small>MiniLM · 1.5 s deadline</small></div><i>→</i>
+        <div class="plane-node output"><span>07</span><strong>Recommend or ask</strong><small>Top 10 · highest information value</small></div>
+      </div>
+      <div class="architecture-contract"><span>ONE CORRECTNESS BOUNDARY</span><i></i><strong>model timeout, malformed output, or budget exhaustion returns the valid local path</strong></div>
     </div>`;
 }
 
@@ -320,6 +355,19 @@ function tournamentVisual() {
         </div>
         <div class="latency-lock"><span>SHIPPED P95</span><strong>3.44 s</strong><small>1.2 s chunks · 1.6 s final · fail-open</small></div>
       </div>
+    </div>`;
+}
+
+function developmentVisual() {
+  return `
+    <div class="development-visual">
+      <div class="development-heading"><p class="eyebrow">BENCHMARK-DRIVEN DEVELOPMENT</p><h2>Measure. Gate.<br />Reject. Freeze.</h2><p>Every component had to improve shopping quality inside a declared runtime envelope.</p></div>
+      <div class="decision-ledger">
+        <article class="accepted"><span>LOCAL RERANK DEPTH 50</span><strong>SELECTED</strong><dl><div><dt>score</dt><dd>0.5072</dd></div><div><dt>p95</dt><dd>0.55 s</dd></div><div><dt>full-run wall</dt><dd>800.6 s</dd></div></dl></article>
+        <article class="rejected"><span>LOCAL RERANK DEPTH 100</span><strong>REJECTED</strong><dl><div><dt>score</dt><dd>0.5190</dd></div><div><dt>p95</dt><dd>1.09 s</dd></div><div><dt>full-run wall</dt><dd>1,366.9 s</dd></div></dl><small>failed the predeclared 900 s gate</small></article>
+        <article class="tightened"><span>NANO TOURNAMENT</span><strong>TIGHTENED</strong><dl><div><dt>initial p95</dt><dd>4.2 s</dd></div><div><dt>shipped p95</dt><dd>3.44 s</dd></div><div><dt>score</dt><dd>0.8058</dd></div></dl><small>timeouts reduced to meet the &lt;4 s product constraint</small></article>
+      </div>
+      <div class="release-gate"><strong>RELEASE GATE</strong><span>exact</span><i>+</i><span>paraphrased</span><i>+</i><span>novel targets</span><b>→</b><small>ship only when the gain survives all three</small></div>
     </div>`;
 }
 
@@ -544,11 +592,13 @@ function metricMini(label, ranked, local) {
 function voiceover(key) {
   const lines = {
     hook: "On TikTok Shop, you have seconds, not minutes. Beeline is built around how few turns it takes to reach the exact product.",
+    tiktok_context: "Most people are browsing. Only some reveal buying intent, and that conversion window can disappear with the next swipe. Beeline has to close before attention moves on.",
     demo_one: "Public 0044 converts at rank one from the first message.",
     demo_questions: "Public 0019 shows the information-value policy: each question splits the live pool, and dismissed attributes are never repeated.",
     demo_override: "Public 0013 changes its requirements on turn four. One atomic update retires stale evidence while the correct result stays at rank one.",
-    architecture: "A complete Turn Plan commits to validated state, which feeds structured, lexical, and dense retrieval, frozen fusion, bounded local reranking, and either a Top Ten or one useful question.",
+    architecture: "The control plane converts conversation into one atomically validated state revision. The data plane uses that state across three retrieval routes, frozen fusion, bounded local reranking, and either a Top Ten or one useful question.",
     tournament: "Four parallel nano chunks read forty-eight candidates at roughly one-call wall clock, then one final ranks the twelve leaders.",
+    dev_process: "We predeclared runtime gates, rejected deeper configurations that broke them, tightened the connected path below four seconds, and required every gain to survive exact, paraphrased, and novel-target evaluation.",
     proof: "The unmodified official evaluator moves from a 0.107 starter to 0.806, with 0.960 HitRate at Ten and 3.44 seconds p95.",
     honesty: "The score survives full rewording and a hundred targets absent from public labels. Benchmark-specific gains do not ship.",
     close: "Beeline is the shortest honest path from attention to purchase.",
@@ -565,14 +615,14 @@ function tick(now) {
   state.lastFrame = now;
   if (state.playing) {
     const previousScene = currentScene().key;
-    state.time = Math.min(150, state.time + delta * state.speed);
-    if (state.time >= 150) state.playing = false;
+    state.time = Math.min(180, state.time + delta * state.speed);
+    if (state.time >= 180) state.playing = false;
     if (previousScene !== currentScene().key || Math.floor(state.time) !== Math.floor(state.time - delta * state.speed)) render();
     else {
       const scrubber = document.querySelector("[data-scrub]");
       const timecode = document.querySelector(".timecode");
-      if (scrubber) { scrubber.value = state.time; scrubber.style.setProperty("--progress", `${(state.time / 150) * 100}%`); }
-      if (timecode) timecode.innerHTML = `${formatTime(state.time)} <i>/</i> 2:30`;
+      if (scrubber) { scrubber.value = state.time; scrubber.style.setProperty("--progress", `${(state.time / 180) * 100}%`); }
+      if (timecode) timecode.innerHTML = `${formatTime(state.time)} <i>/</i> 3:00`;
     }
   }
   requestAnimationFrame(tick);

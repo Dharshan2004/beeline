@@ -2,19 +2,15 @@
 
 Status: awaiting review.
 
-Question: Which treatment best tells the evidence-backed engineering journey while keeping the live Intent Override demo as the payoff?
+Question: Does the selected cinematic treatment sell problem → TikTok Shop stakes → Beeline → architecture → measured development → proof → honesty in 3:00?
 
-- [ ] A — Cinematic engineering journey
+- [x] A — Cinematic Beeline journey
 - [ ] B — Director's evidence cut
 - [ ] C — Pareto proof reel
 - [ ] Hybrid: ______________________________________
 
-Keep:
+Keep: large typography, recorded helper traces, bounded architecture, and exact robustness evidence.
 
-- _________________________________________________
-
-Change:
-
-- _________________________________________________
+Change: future edits should update the capture frames and exact-timestamp script together.
 
 After review, transfer the chosen structure into the video-production plan and delete this prototype.

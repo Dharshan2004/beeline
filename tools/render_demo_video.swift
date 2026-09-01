@@ -12,7 +12,7 @@ guard arguments.count == 3 || arguments.count == 4 else {
 let slidesDirectory = URL(fileURLWithPath: arguments[1], isDirectory: true)
 let outputURL = URL(fileURLWithPath: arguments[2])
 let codec = AVVideoCodecType(rawValue: arguments.count == 4 ? arguments[3] : "avc1")
-let slideDurations: [Double] = [12, 16, 24, 28, 20, 32, 28, 15, 5]
+let slideDurations: [Double] = [14, 17, 15, 20, 15, 24, 18, 20, 20, 10, 7]
 let width = 1920
 let height = 1080
 let framesPerSecond: Int32 = 15

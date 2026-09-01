@@ -20,7 +20,7 @@ generator.appliesPreferredTrackTransform = true
 generator.requestedTimeToleranceBefore = .zero
 generator.requestedTimeToleranceAfter = .zero
 
-let times: [Double] = [1, 20, 50, 90, 125, 150, 175]
+let times: [Double] = [1, 15, 32, 47, 67, 82, 106, 124, 144, 164, 174]
 var failures = 0
 for seconds in times {
     let image = try generator.copyCGImage(
@@ -60,4 +60,7 @@ let duration = CMTimeGetSeconds(asset.duration)
 let videoTracks = asset.tracks(withMediaType: .video).count
 let audioTracks = asset.tracks(withMediaType: .audio).count
 print("duration=\(duration) video_tracks=\(videoTracks) audio_tracks=\(audioTracks)")
+if abs(duration - 180.0) > 0.05 || videoTracks != 1 || audioTracks != 0 {
+    failures += 1
+}
 if failures > 0 { exit(1) }
