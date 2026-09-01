@@ -171,6 +171,38 @@ flowchart TD
     L --> O[Top-10 recommendations +<br/>highest-information-value question]
 ```
 
+### Trained Fusion Policy
+
+We did not guess the contribution of each retrieval route. We cached
+normalized route scores and cross-encoder results, then trained one
+non-negative Fusion Policy whose weights sum to one. A coarse search evaluated
+all 66 points on the structured/BM25/dense simplex at 0.10 increments; a local
+search evaluated 91 more candidates at 0.02 increments around the best region.
+
+Selection prioritized target recall inside the 50-product rerank pool before
+TechnicalScore, HitRate@10, and MRR, because no reranker can recover a product
+that fusion has already removed. Four scenario-balanced development folds
+selected the center of a stable five-neighbor plateau rather than a brittle
+single-run maximum. The frozen runtime weights are **0.02 structured, 0.64
+BM25, and 0.34 dense**, with 100 candidates per route and 50 admitted for
+reranking. The selected policy reached **0.825 session-level pool recall** and
+improved development Intent Override HitRate@10 from **0.375 to 0.500**.
+
+### Two-stage reranking
+
+The fused pool first enters a persistent local
+`cross-encoder/ms-marco-MiniLM-L-6-v2` worker selected through quality,
+latency, memory, and package-size benchmarks. Its 1.5-second absolute deadline
+fails open to the fused order.
+
+When connected, concurrent `gpt-5.4-nano` calls rank chunks of the 48-product
+pool and a final listwise call ranks the chunk leaders. This parallel LLM
+tournament covers the complete pool without paying serial latency. It raises
+the official score from **0.756 to 0.806** at **3.4-second p95 turn latency**
+and approximately **$0.01 per session**. Strict structured output, cost caps,
+and unconditional fail-open behavior keep the local order valid if any model
+call fails.
+
 Every model stage fails open to a deterministic path: the agent cannot
 crash, hang, or emit an invalid response because a model misbehaved. Key
 behaviors:
