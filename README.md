@@ -4,7 +4,7 @@
 
 [TikTok TechJam 2026 on Devpost](https://tiktoktechjam2026.devpost.com/) · [Three-minute demo on YouTube](https://youtu.be/m86-2L3Drpc)
 
-**The shortest path from “I’m looking” to “that’s the one.”**
+**Turn buying intent into purchase before the next swipe.**
 
 Beeline is a conversational shopping agent that turns vague, changing,
 everyday requests into ranked, catalog-valid product recommendations. It
