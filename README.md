@@ -2,11 +2,55 @@
 
 **Team TechBros — TikTok TechJam 2026, Track 4 (Shopping Copilot)**
 
-Beeline is a conversational shopping agent that takes a customer from a vague
-"I'm looking for boots" to the exact product they'll buy — in as few turns as
-possible, on commodity hardware, with every optimization proven honest by
-adversarial robustness tests. The name is the thesis: the shortest path
-between a customer's attention and the right product.
+[TikTok TechJam 2026 on Devpost](https://tiktoktechjam2026.devpost.com/) · [Three-minute demo on YouTube](https://youtu.be/m86-2L3Drpc)
+
+**The shortest path from “I’m looking” to “that’s the one.”**
+
+Beeline is a conversational shopping agent that turns vague, changing,
+everyday requests into ranked, catalog-valid product recommendations. It
+remembers what matters, lets shoppers change their minds, asks useful
+questions, and keeps working even when the network or an external model does
+not. The name is the thesis: the shortest trustworthy path between a
+shopper's attention and the right product.
+
+## Inspiration
+
+Shopping rarely starts with a perfect query. A customer might begin with “I
+need boots,” later mention a budget, say waterproofing is essential, and then
+change the request to slippers. Keyword search treats those messages as
+isolated queries; a free-form chatbot can understand them but may forget a
+constraint, invent a product, or fail when its model is unavailable.
+
+Beeline bridges that gap. It combines conversational understanding with
+deterministic state protection, catalog-grounded retrieval, measurable
+latency and cost, and a complete offline fallback. This matters in live and
+social commerce, where every unnecessary question or slow response gives the
+shopper another chance to scroll away.
+
+## What it does
+
+On every turn, Beeline returns a natural-language response, an optional
+clarification attribute, and up to ten ordered products from the frozen
+50,000-item catalog. It carries requirements across turns, distinguishes hard
+constraints from soft preferences, handles intent changes and “no preference”
+answers, understands common budget language, and asks the question expected
+to remove the most uncertainty from the current candidate pool.
+
+## Competition contract
+
+The official Python evaluator is the primary product contract. Beeline exports
+`starter.agent.Agent` with:
+
+```python
+agent.reset(session_id: str, user_profile: dict) -> None
+agent.respond(session_id: str, user_message: str, turn: int, top_k: int) -> dict
+```
+
+Every response contains a customer-facing `message`, an allowed or null
+`ask_attribute`, and ordered, unique, catalog-valid parent-ASIN
+`recommendations`. Connected runs also report non-negative token `usage`.
+Sessions are isolated by `session_id`, recommendations are returned on every
+turn, and model or network failure falls back to schema-valid local behavior.
 
 ## For judges — run it in 4 commands
 
@@ -34,6 +78,33 @@ python -m tools.demo_session --sample public_0044   # watch one annotated sessio
 # (both auto-use the shipped LLM tournament if OPENAI_API_KEY is set;
 #  export BEELINE_OFFLINE=1 to force the zero-cost offline agent)
 ```
+
+### Required assets
+
+The 50,000-row catalog and generated model/index artifacts are intentionally
+kept out of Git. Download `catalog.jsonl.gz` and `SHA256SUMS` from the
+[latest GitHub Release](https://github.com/Dharshan2004/beeline/releases/latest),
+verify the published checksum, and place the decompressed catalog at
+`data/catalog.jsonl`:
+
+```bash
+shasum -a 256 -c SHA256SUMS
+gzip -dk catalog.jsonl.gz
+mv catalog.jsonl data/catalog.jsonl
+```
+
+`python -m tools.fetch_model` downloads the two pinned local model revisions;
+`python -m retrieval.build_dense_index --catalog data/catalog.jsonl
+--verify-load` builds and verifies the embedded index. Neither step downloads
+anything during official evaluator turns.
+
+### Demo
+
+`python -m tools.demo_session --sample public_0044` replays an annotated
+multi-turn session through the same Agent interface used by the evaluator.
+The [three-minute public demo video](https://youtu.be/m86-2L3Drpc)
+demonstrates the complete flow; its narration is preserved in
+[`artifacts/team-techbros-storyboard/DEMO_SCRIPT.md`](artifacts/team-techbros-storyboard/DEMO_SCRIPT.md).
 
 ## Results
 
@@ -70,7 +141,7 @@ python -m tools.robustness_eval --output benchmarks/robustness.json
 python -m unittest discover -s tests   # 225 tests, always offline
 ```
 
-## Architecture
+## How we built it
 
 Beeline separates understanding a shopper from protecting their intent. The
 control plane converts the latest message, prior dialog, and budget evidence
@@ -143,20 +214,18 @@ second of per-turn latency is attrition on a purchase that was almost made.
   LLM tournament is the default ranking stage. It remains fail-open: a
   timeout returns the local ordering, never an error. The agent's worst case
   is the offline agent, which already scores 0.756.
-- **Honest generalization over leaderboard fit.** The private evaluation
-  uses different users and different targets. We deleted a route that scored
-  0.9628 by exploiting the public simulator, and instead gate every change
-  on paraphrased and novel-target replays — the configuration that ships is
-  the one that survives distribution shift, which is the one that would
-  survive production.
+- **Generalization is a release gate.** The private evaluation uses different
+  users and targets, so we validate the shipped configuration on fully
+  reworded conversations and 100 targets absent from public labels, not only
+  the released sessions.
 
-## Honest-optimization discipline
+## Generalization and evaluation discipline
 
 - Production code contains no evaluator imports, no simulator template
   knowledge, no per-session logic — verified by an independent adversarial
   review (`docs/ENGINEERING_JOURNAL.md`).
 - Exact / paraphrased / novel-target conditions are always reported
-  separately; a gain that dies under rewording never ships.
+  separately so benchmark-specific gains are visible.
 - Every lever is documented with its measurement — including rejections —
   in `docs/honest_optimizations.md`; the full iteration history, failures
   included, is in `docs/ENGINEERING_JOURNAL.md`.
@@ -184,6 +253,29 @@ python -m tools.llm_rank_experiment \
   --tournament --sessions 60 --output benchmarks/llm_tournament.json
 ```
 
+## Challenges and lessons
+
+- **Candidate recall and ranking are different problems.** A reranker cannot
+  recover a target excluded from its candidate pool, but increasing rerank
+  depth from 50 to 80 added enough distractors to reduce quality. We learned
+  to tune pool admission, depth, precision, and latency together.
+- **Reproducible embeddings were unexpectedly subtle.** Dynamic batch padding
+  made vectors depend on batch composition. Fixed 256-token padding, pinned
+  model revisions, checksums, and staged index publication made the dense
+  artifact reproducible and safe to rebuild.
+- **Model intelligence cannot become a dependency.** Connected stages can
+  time out, fail schema validation, or disappear with the network. Typed Turn
+  Plans, atomic state transitions, deadlines, and fail-open stages keep the
+  official Agent contract valid in every mode.
+- **Conversational search is also state management.** Remembering “blue,”
+  applying “actually, slippers” as an intent replacement, and respecting “I
+  do not care about material” change which products remain eligible—not only
+  how a query should be rewritten.
+- **Evaluation is an engineering feature.** Identical runs vary by roughly
+  ±0.013 TechnicalScore, so effects below about 0.02 are treated as noise.
+  Released, paraphrased, and novel-target scores are reported separately, and
+  plausible changes are rejected when evidence does not support them.
+
 ## Limitations
 
 - Among near-identical listings, the exact purchased product is
@@ -203,7 +295,7 @@ retrieval/        dense index, fusion, cross-encoder worker
 evaluator/        official simulator + scorer (never modified)
 tools/            robustness harness, demo replay, experiments
 docs/             engineering journal, optimization log, specs, ADRs
-tests/            218 tests incl. anti-coupling and fail-open coverage
+tests/            225 tests incl. anti-coupling and fail-open coverage
 ```
 
 ## Team TechBros — contributions
@@ -230,7 +322,9 @@ tracker (issues #1–#19); per-slice assignees:
 
 - **Development tools:** VS Code; Claude Code (Claude Fable 5) and OpenAI
   Codex as coding agents for implementation, measurement, and review;
-  GitHub CLI for the issue-tracker workflow.
+  GitHub CLI for the issue-tracker workflow; ElevenLabs for the three-minute
+  demo-video voiceover (presentation only, never part of the Agent or
+  evaluation path).
 - **APIs and models:** OpenAI Responses API — `gpt-5.4-mini` (listwise
   rerank), `gpt-5.4-nano` (chunk-tournament ranking, query rewriting),
   `gpt-5.6-sol` / `gpt-5.6-luna` (planning benchmarks, measured and not

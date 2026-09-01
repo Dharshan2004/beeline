@@ -41,8 +41,8 @@ Video: silent; deliver this script live or record it separately.
 
 ## 2:43–2:53 — Honesty: survive distribution shift
 
-> Exact-set score is not enough. With every message reworded, Beeline scores zero point seven six three. Across one hundred targets absent from public labels, it scores zero point seven five six. Benchmark-specific gains do not ship. Connected failure returns the valid local order.
+> To make sure Beeline generalizes beyond the benchmark, we tested fully reworded conversations and one hundred targets absent from public labels—and it retained scores of zero point seven six three and zero point seven five six.
 
 ## 2:53–3:00 — Close
 
-> Offline, Beeline is free. The default connected path costs about one cent per session. Beeline: the shortest honest path from attention to purchase.
+> Beeline: turn buying intent into purchase before the next swipe.
