@@ -2,7 +2,7 @@
 
 **Team TechBros — TikTok TechJam 2026, Track 4 (Shopping Copilot)**
 
-[TikTok TechJam 2026 on Devpost](https://tiktoktechjam2026.devpost.com/) · [Three-minute demo on YouTube](https://youtu.be/m86-2L3Drpc)
+[Beeline on Devpost](https://devpost.com/software/beeline-by-team-techbros) · [Three-minute demo on YouTube](https://youtu.be/m86-2L3Drpc)
 
 **Turn buying intent into purchase before the next swipe.**
 
