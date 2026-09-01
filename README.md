@@ -35,7 +35,11 @@ python -m tools.demo_session --sample public_0044   # watch one annotated sessio
 ## Results
 
 **The only valid score is the official evaluator's own output** (the command
-above; we never modify the evaluator, labels, or scoring).
+above). The evaluator's scoring math, customer simulator, and labels are
+byte-identical to the published originals — verify with
+`git diff 2a6cc8e HEAD -- evaluator/`. Our only harness additions (visible
+in that diff) are additive and score-neutral: opt-in connected-planning
+wiring, latency/diagnostic reporting, and holdout-scope guards.
 TechnicalScore = 0.5·HitRate@10 + 0.3·MRR + 0.2·Efficiency over all 200
 public sessions. Weak BM25 starter baseline: **0.107**.
 
