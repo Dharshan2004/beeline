@@ -11,11 +11,11 @@ import argparse
 import json
 from pathlib import Path
 
-from evaluator.local_evaluator import (
-    catalog_index,
-    evaluate,
-    load_openai_evaluation_settings,
+from evaluator.local_evaluator import catalog_index
+from tools.evaluation_harness import (
     _load_dotenv,
+    evaluate_with_diagnostics as evaluate,
+    load_openai_evaluation_settings,
 )
 from starter.agent import Agent
 from starter.llm_ranker import OpenAISemanticRanker

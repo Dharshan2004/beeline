@@ -512,6 +512,14 @@ Latency p50 3.1 s / p95 4.2 s per turn; ~4.6 M nano tokens per 200-session run (
 
 **Guard rails:** unit tests, and every offline measurement tool, are pinned offline — dev tools pass `semantic_ranker=None` explicitly, and the builder refuses to connect when the process was launched by a test runner (`unittest`/`pytest`/`test_*` in `argv[0]`; module-presence checks were rejected because torch imports unittest everywhere). `BEELINE_OFFLINE=1` is the universal kill switch. Verified: 225 tests pass offline in 27 s; a 10-session bare-evaluator run reports `semantic_ranking_tournament` with real token usage and p95 3.36 s.
 
+### Iteration: evaluator restored byte-identical; extensions moved to a harness (2026-09-01)
+
+**Problem:** submission rules disallow "code that modifies evaluator files." Earlier slices (7b449aa, d4e04e7) had extended `evaluator/local_evaluator.py` with additive, score-neutral plumbing (connected-planning settings, scope guards, latency/diagnostics). Score-neutral or not, the file differed from the published original.
+
+**Change:** `evaluator/local_evaluator.py` restored byte-identical to the published starter (`git diff 2a6cc8e HEAD -- evaluator/` is empty). All extensions moved verbatim to `tools/evaluation_harness.py`: settings loader, `build_evaluation_agent`, scope validation, `_load_dotenv`, `turn_latency_summary`, and `evaluate_with_diagnostics` — which wraps the agent in an instrumentation proxy (latency, exception counts, planning-source observation) and calls the pristine `evaluate()` for all scoring. Dev tools and tests re-pointed; assertions unchanged.
+
+**Evidence:** 225 tests pass; the bare pristine `python -m evaluator.local_evaluator` still auto-runs the shipped tournament through the Agent's own "auto" default (3-session smoke: tokens reported, scored normally). Latency/diagnostics reporting is preserved for dev tools via the harness; the pristine evaluator's own output no longer carries those extra keys, which is exactly the published behavior.
+
 ## Current architectural invariants
 
 ### State

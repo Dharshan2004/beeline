@@ -84,7 +84,7 @@ def main() -> None:
     # shipped nano tournament when a key is available, plain offline otherwise.
     semantic_ranker = "auto"
     if args.openai_ranker_role is not None:
-        from evaluator.local_evaluator import (
+        from tools.evaluation_harness import (
             load_openai_evaluation_settings,
             _load_dotenv,
         )

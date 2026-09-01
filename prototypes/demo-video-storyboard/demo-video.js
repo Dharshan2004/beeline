@@ -8,15 +8,15 @@ const METRICS = {
 };
 
 const SCENES = [
-  { start: 0, end: 12, key: "hook", eyebrow: "THE CHALLENGE", title: "50,000 products. One hidden purchase.", note: "Open with the evaluator's real constraint: ten turns." },
-  { start: 12, end: 28, key: "baseline", eyebrow: "WHERE WE STARTED", title: "The baseline searched each message in isolation.", note: "Show the official 0.1067 baseline and one failure trace." },
-  { start: 28, end: 52, key: "insight", eyebrow: "THE CONTROL PLANE", title: "Conversation becomes validated, revisioned state.", note: "Show the boundary between probabilistic interpretation and deterministic state." },
-  { start: 52, end: 80, key: "retrieval", eyebrow: "THE RETRIEVAL DATA PLANE", title: "Three routes. Frozen fusion. Bounded ranking.", note: "Trace the full local candidate and ranking pipeline." },
-  { start: 80, end: 100, key: "levers", eyebrow: "MEASURE, REJECT, IMPROVE", title: "We optimized shopping quality inside a runtime envelope.", note: "Connect score gains to behavior and the frozen reranker boundary." },
-  { start: 100, end: 132, key: "session", eyebrow: "LIVE DEMO SESSION", title: "The target appears only after distinguishing evidence.", note: "A real four-turn run through tools.demo_session." },
-  { start: 132, end: 160, key: "connected", eyebrow: "TIKTOK SHOP TRADE-OFF", title: "Conversion quality matters only while intent is alive.", note: "Show the paired quality/latency trade-off and fail-open behavior." },
-  { start: 160, end: 175, key: "proof", eyebrow: "ROBUSTNESS EVIDENCE", title: "One story is a demo. Robustness is the evidence.", note: "Exact, paraphrased, novel-target, and test-suite evidence." },
-  { start: 175, end: 180, key: "close", eyebrow: "THE RESULT", title: "High quality. Seconds per turn. Valid without the network.", note: "Close on the engineering principle, not a leaderboard claim." },
+  { start: 0, end: 15, key: "hook", eyebrow: "THE PROBLEM", title: "Attention is the scarce resource.", note: "Name the product and the live-commerce thesis." },
+  { start: 15, end: 33, key: "demo_one", eyebrow: "BEELINE · SESSION 1", title: "One message in. Rank one. Done.", note: "Real helper replay: public_0044." },
+  { start: 33, end: 57, key: "demo_questions", eyebrow: "BEELINE · SESSION 2", title: "Every question must eliminate uncertainty.", note: "Real helper replay: public_0019." },
+  { start: 57, end: 75, key: "demo_override", eyebrow: "BEELINE · SESSION 3", title: "A changed mind must not corrupt the session.", note: "Real helper replay: public_0013." },
+  { start: 75, end: 95, key: "architecture", eyebrow: "THE ARCHITECTURE", title: "Validated state feeds bounded hybrid retrieval.", note: "One sentence per shipped stage." },
+  { start: 95, end: 105, key: "tournament", eyebrow: "THE DIFFERENTIATOR", title: "Parallelism buys coverage, not waiting time.", note: "Four nano chunks read 48 candidates concurrently." },
+  { start: 105, end: 130, key: "proof", eyebrow: "THE PROOF", title: "The bare evaluator command measures the shipped agent.", note: "Official exact score and robustness evidence." },
+  { start: 130, end: 140, key: "honesty", eyebrow: "THE HONESTY", title: "A gain ships only if it survives distribution shift.", note: "Paraphrase, novel targets, and fail-open behavior." },
+  { start: 140, end: 150, key: "close", eyebrow: "BEELINE", title: "The shortest honest path from attention to purchase.", note: "Close on product value, cost, and reproducibility." },
 ];
 
 const variants = {
@@ -30,7 +30,7 @@ const CAPTURE_MODE = params.get("capture") === "1";
 
 const state = {
   variant: getVariant(),
-  time: Math.max(0, Math.min(179.9, Number(params.get("time")) || 0)),
+  time: Math.max(0, Math.min(149.9, Number(params.get("time")) || 0)),
   playing: false,
   speed: 1,
   lastFrame: performance.now(),
@@ -63,7 +63,7 @@ function cycleVariant(direction) {
 }
 
 function formatTime(seconds) {
-  const value = Math.max(0, Math.min(180, Math.round(seconds)));
+  const value = Math.max(0, Math.min(150, Math.round(seconds)));
   return `${Math.floor(value / 60)}:${String(value % 60).padStart(2, "0")}`;
 }
 
@@ -74,7 +74,7 @@ function render() {
 
 function bindControls() {
   document.querySelector("[data-play]")?.addEventListener("click", () => {
-    if (state.time >= 180) state.time = 0;
+    if (state.time >= 150) state.time = 0;
     state.playing = !state.playing;
     render();
   });
@@ -102,7 +102,7 @@ function bindControls() {
 }
 
 function chrome(content, options = {}) {
-  const progress = (state.time / 180) * 100;
+  const progress = (state.time / 150) * 100;
   return `
     <div class="prototype-shell ${options.shellClass ?? ""}">
       <div class="prototype-warning">
@@ -113,8 +113,8 @@ function chrome(content, options = {}) {
       <div class="video-controls">
         <button class="control-button" data-play aria-label="${state.playing ? "Pause" : "Play"}">${state.playing ? pauseIcon() : playIcon()}</button>
         <button class="control-button" data-restart aria-label="Restart">${restartIcon()}</button>
-        <span class="timecode">${formatTime(state.time)} <i>/</i> 3:00</span>
-        <input data-scrub class="scrubber" type="range" min="0" max="180" step="1" value="${state.time}" style="--progress:${progress}%" aria-label="Video position" />
+        <span class="timecode">${formatTime(state.time)} <i>/</i> 2:30</span>
+        <input data-scrub class="scrubber" type="range" min="0" max="150" step="1" value="${state.time}" style="--progress:${progress}%" aria-label="Video position" />
         <button class="speed-button" data-speed>${state.speed}×</button>
       </div>
       <div class="variant-switcher" aria-label="Prototype variants">
@@ -149,7 +149,7 @@ function renderStoryboard(scene) {
     <section class="storyboard-layout">
       <aside class="storyboard-sidebar">
         <div>
-          <p class="kicker">3:00 VIDEO PLAN</p>
+          <p class="kicker">2:30 VIDEO PLAN</p>
           <h1>Director's<br />storyboard</h1>
         </div>
         <nav class="scene-list">
@@ -207,35 +207,148 @@ function renderProofReel(scene) {
 function sceneVisual(scene, compact = false) {
   switch (scene.key) {
     case "hook":
-      return `
-        <div class="hook-visual">
-          <p class="eyebrow">${scene.eyebrow}</p>
-          <h1><span>50,000</span> products.<br />One hidden purchase.</h1>
-          <div class="ten-turns">10 <small>turns<br />maximum</small></div>
-        </div>`;
-    case "baseline":
-      return baselineVisual();
-    case "insight":
-      return architectureDiagram(compact);
-    case "retrieval":
-      return retrievalVisual();
-    case "levers":
-      return improvementVisual();
-    case "session":
-      return demoSession();
-    case "connected":
-      return connectedVisual();
+      return beelineHook();
+    case "demo_one":
+      return demoOneTurn();
+    case "demo_questions":
+      return demoQuestions();
+    case "demo_override":
+      return demoOverride();
+    case "architecture":
+      return shippedArchitecture();
+    case "tournament":
+      return tournamentVisual();
     case "proof":
-      return metricsVisual();
+      return proofVisual();
+    case "honesty":
+      return honestyVisual();
     case "close":
       return `
         <div class="close-visual">
-          <p class="eyebrow">${scene.eyebrow}</p>
-          <div class="final-score"><span>0.7556</span><small>local · full 200</small></div>
-          <h2>High quality. Seconds per turn.<br />Valid without the network.</h2>
+          <p class="eyebrow">TEAM TECHBROS · ${scene.eyebrow}</p>
+          <div class="beeline-wordmark">BEELINE<i></i></div>
+          <h2>The shortest honest path<br />from attention to purchase.</h2>
+          <div class="close-modes"><span><b>OFFLINE</b> 0.756 · $0</span><span><b>CONNECTED</b> 0.806 · ~$0.01/session</span></div>
           <p>github.com/Dharshan2004/techjam-2026-track-4-shopping-copilot</p>
         </div>`;
   }
+}
+
+function beelineHook() {
+  return `
+    <div class="beeline-hook">
+      <p class="eyebrow">A SHOPPING AGENT FOR TIKTOK SHOP</p>
+      <h1>Seconds.<br /><span>Not minutes.</span></h1>
+      <p>Every unnecessary question is another chance for the buyer to scroll on.</p>
+      <div class="beeline-thesis"><strong>BEELINE</strong><i></i><span>how few turns to the exact product?</span></div>
+    </div>`;
+}
+
+function terminalHeader(sample, scenario) {
+  return `<div class="terminal-header"><span>REAL HELPER REPLAY</span><code>python -m tools.demo_session --sample ${sample}</code><b>${scenario}</b></div>`;
+}
+
+function demoOneTurn() {
+  return `
+    <div class="demo-terminal one-turn-demo">
+      ${terminalHeader("public_0044", "BUYING")}
+      <div class="terminal-body">
+        <div class="terminal-turn"><span>TURN 1 · CUSTOMER</span><p>“I'm looking for Men Jammers. A key requirement is: fabric.”</p></div>
+        <div class="terminal-rank"><span>TOP RESULT</span><strong>#1 · K898 Men's Swimming Jammer</strong><small>B09BQ4G5BD · target</small></div>
+        <div class="terminal-outcome"><strong>CONVERTED ON TURN 1 · RANK 1</strong><span>0 connected-model tokens</span></div>
+      </div>
+      <div class="demo-callout"><span>01</span><strong>One message in.</strong><small>The beeline is done.</small></div>
+    </div>`;
+}
+
+function demoQuestions() {
+  return `
+    <div class="demo-terminal question-demo">
+      ${terminalHeader("public_0019", "BROWSING")}
+      <div class="question-trace">
+        <article><span>TURN 1</span><p>Outdoor & Work Rain · still exploring</p><strong>ASK material</strong><small>50 candidates → 6 groups · eliminates ≥46</small></article>
+        <article><span>TURN 2</span><p>no material preference</p><strong>ASK color</strong><small>dismissed material is never repeated</small></article>
+        <article><span>TURN 3</span><p>no color preference</p><strong>ASK feature</strong><small>50 candidates → 8 groups</small></article>
+        <article class="hit"><span>TURN 4</span><p>Rubber sole · 5.5-inch shaft</p><strong>TARGET #1</strong><small>Asgard Women's Ankle Rain Boots</small></article>
+      </div>
+      <div class="policy-callout"><strong>QUESTION POLICY</strong><span>Ask only when an attribute splits the live pool.</span><span>Never re-ask an answered or dismissed attribute.</span></div>
+    </div>`;
+}
+
+function demoOverride() {
+  return `
+    <div class="demo-terminal override-demo">
+      ${terminalHeader("public_0013", "INTENT OVERRIDE")}
+      <div class="override-path">
+        <div><span>TURN 1–3</span><strong>Shoes · slippers · textile</strong><small>target remains rank 1</small></div>
+        <i>→</i>
+        <div class="override-message"><span>TURN 4</span><strong>“Actually, ignore my earlier preference.”</strong><small>What I need is: Rubber sole.</small></div>
+        <i>→</i>
+        <div class="override-result"><span>ATOMIC UPDATE</span><strong>stale preference retired</strong><small>correct target remains rank 1</small></div>
+      </div>
+      <div class="state-boundary"><b>one Turn Plan</b><i></i><b>one state revision</b><i></i><b>all transitions—or none</b></div>
+    </div>`;
+}
+
+function shippedArchitecture() {
+  return `
+    <div class="shipped-architecture">
+      <div class="architecture-heading"><p class="eyebrow">THE SHIPPED PIPELINE</p><h2>Conversation becomes<br />bounded retrieval.</h2></div>
+      <div class="architecture-stages">
+        <div><span>01</span><strong>Turn interpreter</strong><small>complete plan</small></div><i>→</i>
+        <div><span>02</span><strong>Atomic state</strong><small>validated revision</small></div><i>→</i>
+        <div class="route-stage"><span>03</span><strong>Three routes</strong><small>structured · BM25 · dense</small></div><i>→</i>
+        <div><span>04</span><strong>Frozen fusion</strong><small>popularity-aware admission</small></div><i>→</i>
+        <div><span>05</span><strong>Local rerank</strong><small>MiniLM · fail-open</small></div><i>→</i>
+        <div class="output-stage"><span>06</span><strong>Top 10 or ask</strong><small>highest information value</small></div>
+      </div>
+      <div class="architecture-contract"><span>EVERY MODEL STAGE FAILS OPEN</span><i></i><strong>the worst case is still the 0.756 offline agent</strong></div>
+    </div>`;
+}
+
+function tournamentVisual() {
+  return `
+    <div class="tournament-visual">
+      <div class="tournament-copy"><p class="eyebrow">PARALLEL NANO TOURNAMENT</p><h2>Coverage.<br />Not latency.</h2><p>A single listwise call reads 12 candidates. Four concurrent nano calls read 48 at roughly one-call wall clock.</p></div>
+      <div class="tournament-diagram">
+        <div class="single-call"><span>SINGLE CALL</span><strong>12</strong><small>candidates seen</small></div>
+        <div class="parallel-bracket">
+          <div class="chunk-row"><span>12</span><span>12</span><span>12</span><span>12</span></div>
+          <strong>4 CHUNKS · IN PARALLEL</strong>
+          <i>↓ top 3 from each</i>
+          <div class="final-call"><b>12 FINALISTS</b><span>one nano final</span></div>
+        </div>
+        <div class="latency-lock"><span>SHIPPED P95</span><strong>3.44 s</strong><small>1.2 s chunks · 1.6 s final · fail-open</small></div>
+      </div>
+    </div>`;
+}
+
+function proofVisual() {
+  return `
+    <div class="proof-visual-new">
+      <div class="evaluator-terminal"><span>OFFICIAL EVALUATOR · UNMODIFIED</span><code>$ python -m evaluator.local_evaluator</code><small>same bare command · connected with key · offline without one</small></div>
+      <div class="proof-score-grid">
+        <article><span>WEAK BM25 BASELINE</span><strong>0.107</strong><small>TechnicalScore</small></article>
+        <i>→</i>
+        <article class="offline"><span>BEELINE OFFLINE</span><strong>0.756</strong><small>0.8 s p95 · $0</small></article>
+        <i>→</i>
+        <article class="connected"><span>NANO TOURNAMENT</span><strong>0.806</strong><small>3.44 s p95 · ~$0.01/session</small></article>
+      </div>
+      <div class="proof-kpis"><div><span>HITRATE@10</span><strong>0.960</strong></div><div><span>MRR</span><strong>0.628</strong></div><div><span>MTTC</span><strong>4.13</strong></div><div><span>INVALID OUTPUTS</span><strong>0</strong></div></div>
+    </div>`;
+}
+
+function honestyVisual() {
+  return `
+    <div class="honesty-visual">
+      <div><p class="eyebrow">THE HONESTY GATE</p><h2>Exact score is not enough.</h2><p>Every customer message is reworded. Then 100 targets that appear in no public label are tested through the same scorer.</p></div>
+      <div class="honesty-scores">
+        <article><span>EXACT · 200</span><strong>0.806</strong></article>
+        <article><span>PARAPHRASED · 200</span><strong>0.763</strong></article>
+        <article><span>NOVEL TARGETS · 100</span><strong>0.756</strong></article>
+      </div>
+      <div class="honesty-rule"><strong>BENCHMARK-SPECIFIC GAINS DO NOT SHIP</strong><span>no evaluator imports · no template matching · model failure returns the valid local order</span></div>
+    </div>`;
 }
 
 function baselineVisual() {
@@ -430,15 +543,15 @@ function metricMini(label, ranked, local) {
 
 function voiceover(key) {
   const lines = {
-    hook: "Fifty thousand products, one hidden purchase, and only ten turns to find it.",
-    baseline: "The official baseline treated every message like a new search. It hit only twelve and a half percent of targets and scored 0.1067.",
-    insight: "A complete Turn Plan passes an atomic validator before it can change revisioned Constraint State. Probabilistic meaning never owns correctness.",
-    retrieval: "Structured eligibility, BM25, and local dense retrieval are normalized and fused with frozen weights before a bounded local cross-encoder produces the final ordering.",
-    levers: "Conversational evidence, information-value questions, and budget-aware ordering moved the development score from 0.5518 to 0.7392, while a frozen depth of fifty kept the full run inside its runtime gate.",
-    session: "In this intent-override session, watch the old product intent retire atomically while session-level evidence survives and immediately drives a new retrieval.",
-    connected: "On TikTok Shop, most people are browsing and only some reveal purchase intent. The agent has to reduce uncertainty and close while attention is still alive, so a small ranking gain must be weighed against latency. The fast local order remains the fail-open default.",
-    proof: "The shipped local system scores 0.7556 on all two hundred released sessions, 0.7250 under paraphrase, and 0.7182 on novel targets.",
-    close: "This is not the highest score at any cost. It is a fast, reproducible shopping agent whose correctness does not depend on the network.",
+    hook: "On TikTok Shop, you have seconds, not minutes. Beeline is built around how few turns it takes to reach the exact product.",
+    demo_one: "Public 0044 converts at rank one from the first message.",
+    demo_questions: "Public 0019 shows the information-value policy: each question splits the live pool, and dismissed attributes are never repeated.",
+    demo_override: "Public 0013 changes its requirements on turn four. One atomic update retires stale evidence while the correct result stays at rank one.",
+    architecture: "A complete Turn Plan commits to validated state, which feeds structured, lexical, and dense retrieval, frozen fusion, bounded local reranking, and either a Top Ten or one useful question.",
+    tournament: "Four parallel nano chunks read forty-eight candidates at roughly one-call wall clock, then one final ranks the twelve leaders.",
+    proof: "The unmodified official evaluator moves from a 0.107 starter to 0.806, with 0.960 HitRate at Ten and 3.44 seconds p95.",
+    honesty: "The score survives full rewording and a hundred targets absent from public labels. Benchmark-specific gains do not ship.",
+    close: "Beeline is the shortest honest path from attention to purchase.",
   };
   return lines[key];
 }
@@ -452,14 +565,14 @@ function tick(now) {
   state.lastFrame = now;
   if (state.playing) {
     const previousScene = currentScene().key;
-    state.time = Math.min(180, state.time + delta * state.speed);
-    if (state.time >= 180) state.playing = false;
+    state.time = Math.min(150, state.time + delta * state.speed);
+    if (state.time >= 150) state.playing = false;
     if (previousScene !== currentScene().key || Math.floor(state.time) !== Math.floor(state.time - delta * state.speed)) render();
     else {
       const scrubber = document.querySelector("[data-scrub]");
       const timecode = document.querySelector(".timecode");
-      if (scrubber) { scrubber.value = state.time; scrubber.style.setProperty("--progress", `${(state.time / 180) * 100}%`); }
-      if (timecode) timecode.innerHTML = `${formatTime(state.time)} <i>/</i> 3:00`;
+      if (scrubber) { scrubber.value = state.time; scrubber.style.setProperty("--progress", `${(state.time / 150) * 100}%`); }
+      if (timecode) timecode.innerHTML = `${formatTime(state.time)} <i>/</i> 2:30`;
     }
   }
   requestAnimationFrame(tick);

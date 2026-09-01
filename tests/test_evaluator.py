@@ -7,13 +7,16 @@ import tempfile
 from unittest.mock import patch
 
 from evaluator.local_evaluator import (
-    build_evaluation_agent,
     catalog_index,
     evaluate,
-    load_evaluation_samples,
-    load_openai_evaluation_settings,
     metric_summary,
     normalize_recommendations,
+)
+from tools.evaluation_harness import (
+    build_evaluation_agent,
+    evaluate_with_diagnostics,
+    load_evaluation_samples,
+    load_openai_evaluation_settings,
     validate_connected_evaluation_scope,
 )
 
@@ -50,10 +53,10 @@ class EvaluatorTest(unittest.TestCase):
 
         with (
             patch(
-                "evaluator.local_evaluator.OpenAIPlanningProvider",
+                "tools.evaluation_harness.OpenAIPlanningProvider",
                 return_value=provider,
             ) as provider_type,
-            patch("evaluator.local_evaluator.Agent") as agent_type,
+            patch("tools.evaluation_harness.Agent") as agent_type,
         ):
             build_evaluation_agent("data/catalog.jsonl", settings)
 
@@ -142,7 +145,7 @@ class EvaluatorTest(unittest.TestCase):
             "intent_card": {"hard_constraints": [], "soft_preferences": []},
             "behavior": {"scenario_type": "buying"},
         }]
-        result = evaluate(
+        result = evaluate_with_diagnostics(
             FallbackAgent(),
             samples,
             {"A"},
@@ -230,10 +233,12 @@ class EvaluatorTest(unittest.TestCase):
         products = {"A": {"parent_asin": "A"}}
 
         with patch(
-            "evaluator.local_evaluator.time.perf_counter",
+            "tools.evaluation_harness.time.perf_counter",
             side_effect=[10.0, 10.125],
         ):
-            result = evaluate(EchoTargetAgent(), samples, {"A"}, {"A": []}, products)
+            result = evaluate_with_diagnostics(
+                EchoTargetAgent(), samples, {"A"}, {"A": []}, products
+            )
 
         self.assertEqual(result["turn_latency"], {
             "turn_count": 1,
