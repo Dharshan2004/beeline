@@ -22,7 +22,8 @@ python3 -m venv .venv && source .venv/bin/activate \
   && pip install -r requirements-dense.txt -r requirements-openai.txt
 # catalog: download catalog.jsonl.gz from the GitHub Release, verify SHA256SUMS,
 # then: gzip -dk catalog.jsonl.gz && mv catalog.jsonl data/catalog.jsonl
-# connected mode (optional): echo 'OPENAI_API_KEY=sk-...' > .env
+# connected mode (activated automatically when configured):
+# echo 'OPENAI_API_KEY=sk-...' > .env
 python -m tools.fetch_model && python -m tools.fetch_model \
   --identity cross-encoder/ms-marco-MiniLM-L-6-v2 \
   --destination models/cross-encoder__ms-marco-MiniLM-L-6-v2 \
@@ -71,6 +72,14 @@ python -m unittest discover -s tests   # 225 tests, always offline
 
 ## Architecture
 
+Beeline separates understanding a shopper from protecting their intent. The
+control plane converts the latest message, prior dialog, and budget evidence
+into one Turn Plan; deterministic validation applies the entire update or none
+of it. The data plane retrieves and locally reranks a catalog-valid candidate
+pool. In the shipped connected configuration, that pool then enters the
+parallel LLM ranking tournament by default. A provider failure returns the
+valid local order rather than an error.
+
 ```mermaid
 flowchart TD
     M[Customer message] --> TI[Turn interpreter<br/>deterministic turn plan]
@@ -87,7 +96,7 @@ flowchart TD
     F --> P[Popularity-aware pool admission<br/>bestseller prior, decays with evidence]
     P --> CE[Cross-encoder rerank<br/>local, 1.5 s deadline, fail-open]
     CE --> TB[Popularity tie-break<br/>within score bands, top-10 only]
-    TB --> L{Parallel LLM ranking tournament<br/>optional · margin-gated · fail-open}
+    TB --> L[Parallel LLM ranking tournament<br/>default connected stage · fail-open]
     L --> O[Top-10 recommendations +<br/>highest-information-value question]
 ```
 
@@ -127,13 +136,13 @@ second of per-turn latency is attrition on a purchase that was almost made.
   pipeline under 4 seconds (p95 3.4 s) by buying LLM coverage with
   *parallel* chunk calls rather than serial depth, and the offline path
   answers in under a second.
-- **Cost must round to zero at platform scale.** The default path costs
-  nothing; the full connected path costs ~$0.01/session with no-reasoning
+- **Cost must round to zero at platform scale.** The offline fallback costs
+  nothing; the default connected path costs ~$0.01/session with no-reasoning
   nano calls doing the volume work and budget caps enforced per call.
-- **Reliability beats brilliance.** Every LLM stage is margin-gated (skipped
-  when the local ranker is already confident) and fail-open (a timeout
-  returns the local ordering, never an error). The agent's worst case is the
-  offline agent, which already scores 0.756.
+- **Reliability beats brilliance.** When connected mode is configured, the
+  LLM tournament is the default ranking stage. It remains fail-open: a
+  timeout returns the local ordering, never an error. The agent's worst case
+  is the offline agent, which already scores 0.756.
 - **Honest generalization over leaderboard fit.** The private evaluation
   uses different users and different targets. We deleted a route that scored
   0.9628 by exploiting the public simulator, and instead gate every change
@@ -152,11 +161,12 @@ second of per-turn latency is attrition on a purchase that was almost made.
   in `docs/honest_optimizations.md`; the full iteration history, failures
   included, is in `docs/ENGINEERING_JOURNAL.md`.
 
-## Optional connected mode
+## Connected mode — automatic when configured
 
 **Network policy (per submission rules):** the agent never *requires*
-network access. Connected mode is used only when an `OPENAI_API_KEY` is
-present; if official scoring disables network access, the agent runs its
+network access. When an `OPENAI_API_KEY` is present, the agent automatically
+uses the LLM ranking tournament as its default reranking path. If official
+scoring disables network access—or the provider fails—the agent runs its
 complete offline fallback (0.756) with zero code or config changes.
 
 OpenAI Responses API with `store=false`, strict JSON-schema outputs,
