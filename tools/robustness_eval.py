@@ -182,7 +182,7 @@ def main() -> None:
 
     def build_agent() -> Agent:
         if args.openai_ranker_role is None:
-            return Agent(args.catalog)
+            return Agent(args.catalog, semantic_ranker=None)
         from starter.llm_ranker import OpenAISemanticRanker
         from starter.openai_planning import DevelopmentBudget
 

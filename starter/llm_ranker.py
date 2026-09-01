@@ -17,6 +17,7 @@ from __future__ import annotations
 
 import json
 import os
+import sys
 
 from starter.openai_planning import (
     BudgetExceededError,
@@ -52,6 +53,95 @@ INSTRUCTIONS = (
 
 class RankingUnavailable(Exception):
     """Raised internally when a ranking cannot be produced this turn."""
+
+
+# The shipped connected configuration: gpt-5.4-nano chunk tournament with the
+# gate-validated tight timeouts (exact 0.806 / paraphrase 0.763 / novel 0.756,
+# p95 3.4 s per turn).
+DEFAULT_NANO_CONFIG_PATH = "config/semantic_ranker_nano.json"
+DEFAULT_CHUNK_TIMEOUT_SECONDS = 1.2
+DEFAULT_FINAL_TIMEOUT_SECONDS = 1.6
+
+
+def _openai_key_available(env_file: str) -> bool:
+    if os.environ.get("OPENAI_API_KEY"):
+        return True
+    try:
+        with open(env_file, "r", encoding="utf-8") as handle:
+            for line in handle:
+                stripped = line.strip()
+                if stripped.startswith("OPENAI_API_KEY="):
+                    value = stripped.split("=", 1)[1].strip().strip("'\"")
+                    if value:
+                        os.environ.setdefault("OPENAI_API_KEY", value)
+                        return True
+    except OSError:
+        return False
+    return False
+
+
+def build_default_tournament_ranker(
+    config_path: str = DEFAULT_NANO_CONFIG_PATH,
+    env_file: str = ".env",
+):
+    """Best-effort construction of the shipped connected ranking stage.
+
+    Returns the gate-validated nano tournament when an OpenAI key is
+    available (environment or .env) and the shipped configuration loads;
+    returns None — plain offline mode — otherwise. Never raises, so the
+    offline agent remains the guaranteed worst case. Set BEELINE_OFFLINE=1
+    to force offline mode regardless of credentials.
+    """
+    if os.environ.get("BEELINE_OFFLINE", "").strip() not in ("", "0"):
+        return None
+    # Unit tests must stay offline, free, and deterministic no matter how the
+    # suite is invoked. The launch command is the reliable signal (module
+    # presence is not: torch imports unittest in every process).
+    argv0 = sys.argv[0] if sys.argv else ""
+    argv0_name = os.path.basename(argv0)
+    if (
+        "unittest" in argv0
+        or "pytest" in argv0_name
+        or argv0_name.startswith("test_")
+    ):
+        return None
+    try:
+        if not _openai_key_available(env_file):
+            return None
+        with open(config_path, "r", encoding="utf-8") as handle:
+            config = json.load(handle)
+        model_entry = next(
+            entry for entry in config["models"] if entry["role"] == "nano_ranker"
+        )
+        rates = model_entry["pricing_usd_per_million_tokens"]
+        pricing = ModelPricing(
+            input_per_million_usd=rates["input"],
+            output_per_million_usd=rates["output"],
+        )
+        budget_config = config["budget_usd"]
+
+        def stage(timeout_seconds: float) -> "OpenAISemanticRanker":
+            return OpenAISemanticRanker(
+                model=model_entry["model"],
+                pricing=pricing,
+                budget=DevelopmentBudget(
+                    limit_usd=budget_config["phase_a_limit"],
+                    warning_usd=budget_config["warning"],
+                    review_boundary_usd=budget_config["review_boundary"],
+                    absolute_stop_usd=budget_config["absolute_stop"],
+                ),
+                reasoning_effort=config["api"]["reasoning_effort"],
+                timeout_seconds=timeout_seconds,
+                max_output_tokens=config["api"]["max_output_tokens"],
+                max_candidates=12,
+            )
+
+        return TournamentSemanticRanker(
+            stage(DEFAULT_CHUNK_TIMEOUT_SECONDS),
+            stage(DEFAULT_FINAL_TIMEOUT_SECONDS),
+        )
+    except Exception:
+        return None
 
 
 class TournamentSemanticRanker:

@@ -10,8 +10,12 @@ between a customer's attention and the right product.
 
 ## For judges — run it in 4 commands
 
-Python 3.11.9. The default agent is **fully offline** — no API key, no
-network calls, no cost.
+Python 3.11.9. With an `OPENAI_API_KEY` in `.env` (or exported), the bare
+evaluator command below runs the full shipped configuration — the nano
+ranking tournament, **0.806** — automatically. Without a key the same
+command transparently runs the fully offline agent (0.756): no network, no
+cost, never an error. The evaluator itself is never modified; the agent
+simply configures itself.
 
 ```bash
 python3 -m venv .venv && source .venv/bin/activate && pip install -r requirements-dense.txt
@@ -24,6 +28,8 @@ python -m tools.fetch_model && python -m tools.fetch_model \
   && python -m retrieval.build_dense_index --catalog data/catalog.jsonl --verify-load
 python -m evaluator.local_evaluator          # official score, all 200 public sessions
 python -m tools.demo_session --sample public_0044   # watch one annotated session
+# (both auto-use the shipped LLM tournament if OPENAI_API_KEY is set;
+#  export BEELINE_OFFLINE=1 to force the zero-cost offline agent)
 ```
 
 ## Results
@@ -35,9 +41,9 @@ public sessions. Weak BM25 starter baseline: **0.107**.
 
 | Configuration (official evaluator) | TechnicalScore | HitRate@10 | MRR | MTTC | p95/turn | Cost/session |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: |
-| Offline (default) | **0.756** | 0.910 | 0.588 | 4.79 | 0.8 s | $0 |
-| + gpt-5.4-mini listwise rerank | **0.771** | 0.910 | 0.638 | 4.75 | ~4.6 s | ~$0.02 |
-| + nano ranking tournament | **0.806** | 0.960 | 0.628 | 4.13 | 3.4 s | ~$0.01 |
+| Offline (no key, or `BEELINE_OFFLINE=1`) | **0.756** | 0.910 | 0.588 | 4.79 | 0.8 s | $0 |
+| gpt-5.4-mini listwise rerank (opt-in) | **0.771** | 0.910 | 0.638 | 4.75 | ~4.6 s | ~$0.02 |
+| Nano ranking tournament (**default with key**) | **0.806** | 0.960 | 0.628 | 4.13 | 3.4 s | ~$0.01 |
 
 Supplementary anti-overfitting evidence (not the official metric): the same
 unmodified `evaluate()` scorer replayed with every customer message fully
@@ -47,8 +53,8 @@ label. Scores that survive both are competence, not benchmark fit:
 | Configuration | Exact | Paraphrased | Novel targets |
 | --- | ---: | ---: | ---: |
 | Offline | 0.756 | 0.725 | 0.718 |
-| + mini rerank | 0.771 | 0.740 | 0.756 |
-| + nano tournament | 0.806 | 0.763 | 0.756 |
+| Mini rerank (opt-in) | 0.771 | 0.740 | 0.756 |
+| Nano tournament (default with key) | 0.806 | 0.763 | 0.756 |
 
 Run-to-run noise is ±0.013, quantified from identical-code runs. Reproduce:
 

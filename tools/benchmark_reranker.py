@@ -127,6 +127,7 @@ def build_cache(arguments: argparse.Namespace) -> dict:
         agent = Agent(
             arguments.catalog,
             reranker=UnavailableReranker("slice_7_no_reranker_baseline"),
+            semantic_ranker=None,
             candidate_pool_depth=30,
             trace_pool_depths=DEFAULT_DEPTHS,
         )

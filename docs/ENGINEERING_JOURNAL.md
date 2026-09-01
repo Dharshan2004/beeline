@@ -506,6 +506,12 @@ Latency p50 3.1 s / p95 4.2 s per turn; ~4.6 M nano tokens per 200-session run (
 
 **Follow-up (same night):** the 4.2 s p95 exceeded the <4 s product constraint, so chunk/final timeouts were tightened to 1.2 s / 1.6 s and the full three-condition gates rerun (`benchmarks/robustness_ship_tournament_fast.json`): exact-200 **0.805848** (HR 0.960 / MRR 0.628 / MTTC 4.13), paraphrase-200 0.763434, novel-100 0.755807, p95 3.44 s, ~$1/200-session run. Paraphrase and novel are unchanged within noise, and tighter timeouts can only *reduce* LLM influence (more chunk calls fail open to the local order — 33% chunk timeout rate absorbed with no score cost), so the change introduces no new coupling surface. This 1.2/1.6 configuration is the shipped connected mode and the tools' tournament default.
 
+### Iteration: shipped tournament becomes the default judge path (2026-09-01)
+
+**Change:** `Agent(semantic_ranker="auto")` is the new constructor default: when an `OPENAI_API_KEY` is available (environment or `.env`) the agent self-configures the gate-validated nano tournament (1.2 s / 1.6 s), otherwise it stays fully offline. `build_default_tournament_ranker` in `starter/llm_ranker.py` never raises — any missing dependency, key, or config falls back to offline, so the guaranteed worst case is still the 0.756 offline agent. The evaluator is untouched (`git diff HEAD -- evaluator/` empty); the bare `python -m evaluator.local_evaluator` command now scores the shipped configuration because the *agent* configures itself, not because evaluation changed.
+
+**Guard rails:** unit tests, and every offline measurement tool, are pinned offline — dev tools pass `semantic_ranker=None` explicitly, and the builder refuses to connect when the process was launched by a test runner (`unittest`/`pytest`/`test_*` in `argv[0]`; module-presence checks were rejected because torch imports unittest everywhere). `BEELINE_OFFLINE=1` is the universal kill switch. Verified: 225 tests pass offline in 27 s; a 10-session bare-evaluator run reports `semantic_ranking_tournament` with real token usage and p95 3.36 s.
+
 ## Current architectural invariants
 
 ### State

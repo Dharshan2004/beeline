@@ -26,6 +26,7 @@ def main() -> None:
         args.catalog,
         fusion_policy=args.policy,
         reranker=UnavailableReranker("transparent_retrieval_baseline"),
+        semantic_ranker=None,
         candidate_pool_depth=30,
     )
     result = evaluate(

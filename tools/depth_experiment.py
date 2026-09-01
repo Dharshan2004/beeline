@@ -20,7 +20,7 @@ def main() -> None:
 
     catalog_ids, categories, products = catalog_index(args.catalog)
     samples = load_frozen_development_samples(args.dataset)
-    agent = Agent(args.catalog, candidate_pool_depth=args.depth)
+    agent = Agent(args.catalog, semantic_ranker=None, candidate_pool_depth=args.depth)
     try:
         result = evaluate(agent, samples, catalog_ids, categories, products)
     finally:

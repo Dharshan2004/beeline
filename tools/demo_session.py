@@ -80,7 +80,9 @@ def main() -> None:
     catalog_ids, categories, products = catalog_index(args.catalog)
     target = str(samples[0]["ground_truth"]["parent_asin"])
 
-    semantic_ranker = None
+    # "auto" mirrors what judges get from the bare evaluator command: the
+    # shipped nano tournament when a key is available, plain offline otherwise.
+    semantic_ranker = "auto"
     if args.openai_ranker_role is not None:
         from evaluator.local_evaluator import (
             load_openai_evaluation_settings,

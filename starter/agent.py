@@ -65,7 +65,7 @@ class Agent:
         fusion_policy: FusionPolicy | str = "fixed",
         planning_provider: PlanningProvider | None = None,
         reranker: Reranker | None = None,
-        semantic_ranker=None,
+        semantic_ranker="auto",
         query_rewriter=None,
         candidate_pool_depth: int | None = None,
         trace_pool_depths: Sequence[int] | None = None,
@@ -84,8 +84,13 @@ class Agent:
         # for offline benchmarking. Tracing never changes the response, so a
         # cached benchmark run replays the shipped trajectory exactly.
         self.reranker = reranker or build_live_reranker()
-        # Optional LLM stages. Absent by default: the offline agent stays
-        # complete and free to run.
+        # Optional LLM stages. "auto" enables the shipped nano tournament only
+        # when an OpenAI key is available and never raises; pass None to force
+        # the offline agent, which stays complete and free to run.
+        if semantic_ranker == "auto":
+            from starter.llm_ranker import build_default_tournament_ranker
+
+            semantic_ranker = build_default_tournament_ranker()
         self.semantic_ranker = semantic_ranker
         self.query_rewriter = query_rewriter
         self.candidate_pool_depth = (

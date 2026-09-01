@@ -480,6 +480,7 @@ def build_dataset(arguments: argparse.Namespace) -> dict:
         reranker = RecordingReranker(Path(arguments.model_dir))
         agent = Agent(
             arguments.catalog,
+            semantic_ranker=None,
             reranker=reranker,
             fusion_policy=FixedFusionPolicy(
                 weights=LEGACY_FIXED_WEIGHTS,

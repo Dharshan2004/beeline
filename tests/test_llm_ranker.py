@@ -158,6 +158,59 @@ class AgentSemanticRankingTest(unittest.TestCase):
 
 
 
+class AutoRankerDefaultTest(unittest.TestCase):
+    def test_builder_honours_offline_kill_switch(self) -> None:
+        from starter.llm_ranker import build_default_tournament_ranker
+        from unittest import mock
+
+        with mock.patch.dict(
+            "os.environ",
+            {"BEELINE_OFFLINE": "1", "OPENAI_API_KEY": "test-key"},
+        ):
+            self.assertIsNone(build_default_tournament_ranker())
+
+    def test_builder_stays_offline_under_a_test_runner(self) -> None:
+        from starter.llm_ranker import build_default_tournament_ranker
+        from unittest import mock
+
+        with mock.patch.dict(
+            "os.environ", {"OPENAI_API_KEY": "test-key", "BEELINE_OFFLINE": ""}
+        ):
+            self.assertIsNone(build_default_tournament_ranker())
+
+    def test_builder_returns_none_without_credentials(self) -> None:
+        from starter.llm_ranker import build_default_tournament_ranker
+        from unittest import mock
+
+        environment = {
+            key: value
+            for key, value in __import__("os").environ.items()
+            if key not in ("OPENAI_API_KEY", "BEELINE_OFFLINE")
+        }
+        with mock.patch.dict("os.environ", environment, clear=True):
+            self.assertIsNone(
+                build_default_tournament_ranker(env_file="missing.env")
+            )
+
+    def test_builder_constructs_shipped_tournament_with_key(self) -> None:
+        from starter.llm_ranker import (
+            TournamentSemanticRanker,
+            build_default_tournament_ranker,
+        )
+        from unittest import mock
+
+        import sys
+
+        with mock.patch.dict(
+            "os.environ", {"OPENAI_API_KEY": "test-key", "BEELINE_OFFLINE": ""}
+        ), mock.patch.object(sys, "argv", ["evaluator/local_evaluator.py"]):
+            ranker = build_default_tournament_ranker()
+        self.assertIsInstance(ranker, TournamentSemanticRanker)
+        self.assertEqual(ranker.chunk_ranker.timeout_seconds, 1.2)
+        self.assertEqual(ranker.final_ranker.timeout_seconds, 1.6)
+        self.assertEqual(ranker.max_candidates, 48)
+
+
 class ScriptedRanker:
     max_candidates = 12
 

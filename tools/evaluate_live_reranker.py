@@ -125,6 +125,7 @@ def main() -> None:
             version="fixed-hybrid-v1",
         ),
         reranker=UnavailableReranker("fused_30_live_baseline"),
+        semantic_ranker=None,
         candidate_pool_depth=30,
     )
     baseline_started = time.perf_counter()
@@ -144,6 +145,7 @@ def main() -> None:
     agent = Agent(
         arguments.catalog,
         dense_route=dense_route,
+        semantic_ranker=None,
         trace_pool_depths=(FROZEN_RERANK_DEPTH,),
     )
     started = time.perf_counter()
